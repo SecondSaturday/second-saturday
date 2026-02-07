@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "654956333000",
+    "project_id": "second-saturday-41979",
+    "storage_bucket": "second-saturday-41979.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:654956333000:android:8b296fb0d129b373f522fd",
+        "android_client_info": {
+          "package_name": "com.secondsaturday.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCe6O1p9-FMeNuxX9nggOTLRnAuP4qx1V8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
