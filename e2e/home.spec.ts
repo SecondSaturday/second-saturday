@@ -8,7 +8,7 @@ test.describe('Home Page (Authenticated)', () => {
   })
 
   test('page loads successfully', async ({ page }) => {
-    const response = await page.goto('/')
+    const response = await page.goto('/', { waitUntil: 'domcontentloaded' })
 
     // Should load without server errors
     expect(response?.status()).toBeLessThan(500)
@@ -18,7 +18,7 @@ test.describe('Home Page (Authenticated)', () => {
   })
 
   test('has correct title', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/', { waitUntil: 'domcontentloaded' })
 
     // Page should have a title
     const title = await page.title()

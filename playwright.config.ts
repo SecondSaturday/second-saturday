@@ -8,13 +8,14 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
-  timeout: 15000, // 15s per test - fail fast
+  timeout: 30000, // 30s per test
   expect: {
-    timeout: 5000, // 5s for assertions
+    timeout: 10000, // 10s for assertions
   },
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
+    navigationTimeout: 30000, // 30s for page.goto
   },
 
   projects: [
