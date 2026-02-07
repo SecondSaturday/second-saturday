@@ -1,6 +1,12 @@
 import { test, expect } from '@playwright/test'
+import { setupClerkTestingToken } from '@clerk/testing/playwright'
 
 test.describe('Home Page (Authenticated)', () => {
+  test.beforeEach(async ({ page }) => {
+    // Ensure testing token is set for each test
+    await setupClerkTestingToken({ page })
+  })
+
   test('page loads successfully', async ({ page }) => {
     const response = await page.goto('/')
 

@@ -1,29 +1,19 @@
 import { test as setup } from '@playwright/test'
-import { clerk, clerkSetup } from '@clerk/testing/playwright'
+import { clerkSetup, setupClerkTestingToken } from '@clerk/testing/playwright'
 
 const authFile = '.auth/user.json'
 
 setup('authenticate', async ({ page }) => {
-  // Ensure Clerk testing is set up
+  // Fetch testing token from Clerk API
   await clerkSetup()
 
-  // Use Clerk's testing bypass - this uses the CLERK_TESTING_TOKEN
-  // to create a fake session without needing to interact with Clerk UI
+  // Inject testing token into cookies BEFORE navigation
+  // This bypasses Clerk JS entirely - auth happens at middleware level
+  await setupClerkTestingToken({ page })
+
+  // Navigate - Clerk middleware will recognize the testing token
   await page.goto('/')
 
-  // Sign in using Clerk's bypass mode with test credentials
-  await clerk.signIn({
-    page,
-    signInParams: {
-      strategy: 'password',
-      identifier: process.env.TEST_USER_EMAIL!,
-      password: process.env.TEST_USER_PASSWORD!,
-    },
-  })
-
-  // Wait for auth to be established
-  await page.waitForTimeout(1000)
-
-  // Save authentication state
+  // Save authentication state for reuse in other tests
   await page.context().storageState({ path: authFile })
 })

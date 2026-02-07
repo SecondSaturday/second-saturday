@@ -5,9 +5,13 @@ export default defineConfig({
   globalSetup: './e2e/global-setup.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 1 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
+  timeout: 15000, // 15s per test - fail fast
+  expect: {
+    timeout: 5000, // 5s for assertions
+  },
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
