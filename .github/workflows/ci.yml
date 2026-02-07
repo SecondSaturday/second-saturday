@@ -98,6 +98,4 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run tests
-        run: echo "Tests will be configured in issue #10"
-        # TODO: Replace with actual test command once Vitest is set up
-        # run: pnpm test
+        run: echo "Tests will be configured in issue 10"
