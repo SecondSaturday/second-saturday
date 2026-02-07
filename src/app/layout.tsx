@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { Instrument_Sans, Instrument_Serif, Courier_Prime } from 'next/font/google'
-import { ThemeProvider } from '@/components/theme-provider'
+import { Providers } from './providers'
 import './globals.css'
 
 const instrumentSans = Instrument_Sans({
@@ -35,14 +35,7 @@ export default function RootLayout({
       <body
         className={`${instrumentSans.variable} ${instrumentSerif.variable} ${courierPrime.variable} antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   )

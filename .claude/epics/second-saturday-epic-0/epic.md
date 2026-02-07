@@ -1,8 +1,8 @@
 ---
 name: second-saturday-epic-0
-status: backlog
+status: in-progress
 created: 2026-02-07T04:16:07Z
-progress: 0%
+progress: 10%
 prd: .claude/prds/second-saturday-epic-0.md
 github: https://github.com/SecondSaturday/second-saturday/issues/1
 ---
