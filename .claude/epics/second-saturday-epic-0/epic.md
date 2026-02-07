@@ -2,7 +2,7 @@
 name: second-saturday-epic-0
 status: in-progress
 created: 2026-02-07T04:16:07Z
-progress: 70%
+progress: 80%
 prd: .claude/prds/second-saturday-epic-0.md
 github: https://github.com/SecondSaturday/second-saturday/issues/1
 ---
@@ -150,7 +150,7 @@ The task breakdown consolidates the 13 JTBDs from the PRD into 10 focused tasks 
 - [ ] #6 - Configure External Services (parallel: true, depends: #4)
 - [ ] #7 - Set Up Capacitor Mobile (parallel: true, depends: #2, #3)
 - [ ] #9 - Configure Deployment and CI/CD (parallel: true, depends: #2)
-- [ ] #10 - Install Testing Infrastructure (parallel: true, depends: #2, #3)
+- [x] #10 - Install Testing Infrastructure (parallel: true, depends: #2, #3)
 - [ ] #11 - Set Up Monitoring and Privacy Policy (parallel: true, depends: #2, #3)
 - [ ] #12 - Validate Integrations and Document Setup (parallel: false, depends: all)
 
