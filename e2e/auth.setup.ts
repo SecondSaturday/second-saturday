@@ -1,49 +1,28 @@
-import { test as setup, expect } from '@playwright/test'
+import { test as setup } from '@playwright/test'
+import { clerk, clerkSetup } from '@clerk/testing/playwright'
 
 const authFile = '.auth/user.json'
 
 setup('authenticate', async ({ page }) => {
-  // Get test credentials from environment
-  const email = process.env.TEST_USER_EMAIL
-  const password = process.env.TEST_USER_PASSWORD
+  // Ensure Clerk testing is set up
+  await clerkSetup()
 
-  if (!email || !password) {
-    throw new Error('TEST_USER_EMAIL and TEST_USER_PASSWORD must be set in environment variables')
-  }
+  // Use Clerk's testing bypass - this uses the CLERK_TESTING_TOKEN
+  // to create a fake session without needing to interact with Clerk UI
+  await page.goto('/')
 
-  // Navigate to sign-in page
-  await page.goto('/sign-in')
+  // Sign in using Clerk's bypass mode with test credentials
+  await clerk.signIn({
+    page,
+    signInParams: {
+      strategy: 'password',
+      identifier: process.env.TEST_USER_EMAIL!,
+      password: process.env.TEST_USER_PASSWORD!,
+    },
+  })
 
-  // Wait for page to be fully loaded
-  await page.waitForLoadState('networkidle')
-
-  // Wait for Clerk to initialize and show the sign-in form
-  // Use a more flexible selector that works with Clerk's component
-  const signInForm = page.locator('.cl-rootBox, .cl-signIn-root, [data-clerk-component]').first()
-  await expect(signInForm).toBeVisible({ timeout: 30000 })
-
-  // Fill in email/identifier
-  const identifierInput = page.locator('input[name="identifier"], input[type="email"]').first()
-  await identifierInput.waitFor({ state: 'visible', timeout: 10000 })
-  await identifierInput.fill(email)
-
-  // Click continue/submit button
-  const continueButton = page.locator('button[type="submit"], button:has-text("Continue")').first()
-  await continueButton.click()
-
-  // Wait for password field
-  const passwordInput = page.locator('input[name="password"], input[type="password"]').first()
-  await passwordInput.waitFor({ state: 'visible', timeout: 10000 })
-  await passwordInput.fill(password)
-
-  // Click sign in button
-  const signInButton = page
-    .locator('button[type="submit"], button:has-text("Sign in"), button:has-text("Continue")')
-    .first()
-  await signInButton.click()
-
-  // Wait for successful authentication - should redirect away from sign-in
-  await expect(page).not.toHaveURL(/sign-in/, { timeout: 15000 })
+  // Wait for auth to be established
+  await page.waitForTimeout(1000)
 
   // Save authentication state
   await page.context().storageState({ path: authFile })
