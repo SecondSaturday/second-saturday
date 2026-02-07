@@ -1,11 +1,13 @@
 'use client'
 
+import { Suspense } from 'react'
 import { ClerkProvider } from '@clerk/nextjs'
 import { dark } from '@clerk/themes'
 import { ConvexProviderWithClerk } from 'convex/react-clerk'
 import { ConvexReactClient } from 'convex/react'
 import { useAuth } from '@clerk/nextjs'
 import { ThemeProvider, useTheme } from 'next-themes'
+import { PostHogProvider } from '@/providers/posthog-provider'
 
 const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
@@ -44,7 +46,9 @@ function ClerkWithTheme({ children }: { children: React.ReactNode }) {
   return (
     <ClerkProvider appearance={isDark ? clerkDarkAppearance : clerkAppearance}>
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
-        {children}
+        <Suspense fallback={null}>
+          <PostHogProvider>{children}</PostHogProvider>
+        </Suspense>
       </ConvexProviderWithClerk>
     </ClerkProvider>
   )
