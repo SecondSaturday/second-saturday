@@ -206,3 +206,15 @@
       25% 50%;
   }
 }
+
+/* Whatamesh Canvas Gradient Colors */
+canvas[id^='whatamesh-canvas-'] {
+  --gradient-color-1: #a442fe;
+  --gradient-color-2: #e9cfff;
+  --gradient-color-3: #f58686;
+  --gradient-color-4: #fcbe7d;
+  image-rendering: -webkit-optimize-contrast;
+  -webkit-font-smoothing: antialiased;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
