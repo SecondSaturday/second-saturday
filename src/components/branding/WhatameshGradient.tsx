@@ -1,69 +1,69 @@
-"use client";
+'use client'
 
-import { useEffect, useRef, useState, useId } from "react";
+import { useEffect, useRef, useState, useId } from 'react'
 
 interface WhatameshGradientProps {
-  className?: string;
-  style?: React.CSSProperties;
-  onReady?: () => void;
+  className?: string
+  style?: React.CSSProperties
+  onReady?: () => void
 }
 
 // Type definition for whatamesh Gradient instance
 interface GradientInstance {
-  initGradient: (selector: string) => void;
-  pause: () => void;
+  initGradient: (selector: string) => void
+  pause: () => void
 }
 
 export default function WhatameshGradient({
-  className = "",
+  className = '',
   style = {},
-  onReady
+  onReady,
 }: WhatameshGradientProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [isLoaded, setIsLoaded] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   // Generate unique ID for each instance
-  const canvasId = useId().replace(/:/g, '-');
+  const canvasId = useId().replace(/:/g, '-')
 
   useEffect(() => {
-    const canvas = canvasRef.current;
+    const canvas = canvasRef.current
     if (!canvas) {
-      setError("Canvas ref not found");
-      return;
+      setError('Canvas ref not found')
+      return
     }
 
-    let gradientInstance: GradientInstance | null = null;
+    let gradientInstance: GradientInstance | null = null
 
     // Dynamically import Gradient to avoid SSR issues
-    import("whatamesh")
+    import('whatamesh')
       .then(({ Gradient }) => {
         try {
-          gradientInstance = new Gradient();
-          gradientInstance.initGradient(`#whatamesh-canvas-${canvasId}`);
-          setIsLoaded(true);
-          console.log(`Whatamesh gradient initialized successfully (${canvasId})`);
+          gradientInstance = new Gradient()
+          gradientInstance.initGradient(`#whatamesh-canvas-${canvasId}`)
+          setIsLoaded(true)
+          console.log(`Whatamesh gradient initialized successfully (${canvasId})`)
 
           // Notify parent that gradient is ready
           if (onReady) {
-            onReady();
+            onReady()
           }
         } catch (err) {
-          console.error("Failed to initialize whatamesh gradient:", err);
-          setError(err instanceof Error ? err.message : String(err));
+          console.error('Failed to initialize whatamesh gradient:', err)
+          setError(err instanceof Error ? err.message : String(err))
         }
       })
       .catch((error) => {
-        console.error("Failed to load whatamesh module:", error);
-        setError(error instanceof Error ? error.message : String(error));
-      });
+        console.error('Failed to load whatamesh module:', error)
+        setError(error instanceof Error ? error.message : String(error))
+      })
 
     // Cleanup function
     return () => {
       if (gradientInstance && typeof gradientInstance.pause === 'function') {
-        gradientInstance.pause();
+        gradientInstance.pause()
       }
-    };
-  }, [canvasId, onReady]);
+    }
+  }, [canvasId, onReady])
 
   return (
     <>
@@ -71,11 +71,18 @@ export default function WhatameshGradient({
         id={`whatamesh-canvas-${canvasId}`}
         ref={canvasRef}
         className={className}
-        style={{
-          width: '100%',
-          height: '100%',
-          ...style
-        }}
+        style={
+          {
+            width: '100%',
+            height: '100%',
+            // Set gradient colors directly to avoid CSS variable parsing issues
+            '--gradient-color-1': '#a442fe',
+            '--gradient-color-2': '#e9cfff',
+            '--gradient-color-3': '#f58686',
+            '--gradient-color-4': '#fcbe7d',
+            ...style,
+          } as React.CSSProperties
+        }
         data-loaded={isLoaded}
         data-error={error || undefined}
       />
@@ -85,5 +92,5 @@ export default function WhatameshGradient({
         </div>
       )}
     </>
-  );
+  )
 }
