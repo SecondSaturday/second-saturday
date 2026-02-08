@@ -158,3 +158,51 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Animated CSS Mesh Gradient for Branding */
+.css-mesh-gradient {
+  background:
+    radial-gradient(circle at 20% 30%, #a442fe 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, #e9cfff 0%, transparent 50%),
+    radial-gradient(circle at 70% 70%, #f58686 0%, transparent 50%),
+    radial-gradient(circle at 30% 80%, #fcbe7d 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, #a442fe 0%, #e9cfff 100%);
+  background-size: 200% 200%;
+  animation: mesh-shift 10s ease-in-out infinite;
+}
+
+@keyframes mesh-shift {
+  0%,
+  100% {
+    background-position:
+      0% 50%,
+      100% 50%,
+      100% 100%,
+      0% 100%,
+      50% 50%;
+  }
+  25% {
+    background-position:
+      100% 0%,
+      100% 100%,
+      50% 100%,
+      0% 50%,
+      75% 25%;
+  }
+  50% {
+    background-position:
+      100% 100%,
+      0% 100%,
+      0% 50%,
+      100% 0%,
+      50% 75%;
+  }
+  75% {
+    background-position:
+      0% 100%,
+      0% 0%,
+      50% 0%,
+      100% 50%,
+      25% 50%;
+  }
+}
