@@ -34,31 +34,40 @@ export default function WhatameshGradient({
 
     let gradientInstance: GradientInstance | null = null
 
-    // Dynamically import Gradient to avoid SSR issues
-    import('whatamesh')
-      .then(({ Gradient }) => {
-        try {
-          gradientInstance = new Gradient()
-          gradientInstance.initGradient(`#whatamesh-canvas-${canvasId}`)
-          setIsLoaded(true)
-          console.log(`Whatamesh gradient initialized successfully (${canvasId})`)
+    // Set CSS variables directly on the element to ensure they're available
+    canvas.style.setProperty('--gradient-color-1', '#a442fe')
+    canvas.style.setProperty('--gradient-color-2', '#e9cfff')
+    canvas.style.setProperty('--gradient-color-3', '#f58686')
+    canvas.style.setProperty('--gradient-color-4', '#fcbe7d')
 
-          // Notify parent that gradient is ready
-          if (onReady) {
-            onReady()
+    // Small delay to ensure CSS is computed before whatamesh reads it
+    const timeoutId = setTimeout(() => {
+      // Dynamically import Gradient to avoid SSR issues
+      import('whatamesh')
+        .then(({ Gradient }) => {
+          try {
+            gradientInstance = new Gradient()
+            gradientInstance.initGradient(`#whatamesh-canvas-${canvasId}`)
+            setIsLoaded(true)
+
+            // Notify parent that gradient is ready
+            if (onReady) {
+              onReady()
+            }
+          } catch (err) {
+            console.error('Failed to initialize whatamesh gradient:', err)
+            setError(err instanceof Error ? err.message : String(err))
           }
-        } catch (err) {
-          console.error('Failed to initialize whatamesh gradient:', err)
-          setError(err instanceof Error ? err.message : String(err))
-        }
-      })
-      .catch((error) => {
-        console.error('Failed to load whatamesh module:', error)
-        setError(error instanceof Error ? error.message : String(error))
-      })
+        })
+        .catch((error) => {
+          console.error('Failed to load whatamesh module:', error)
+          setError(error instanceof Error ? error.message : String(error))
+        })
+    }, 100)
 
     // Cleanup function
     return () => {
+      clearTimeout(timeoutId)
       if (gradientInstance && typeof gradientInstance.pause === 'function') {
         gradientInstance.pause()
       }
@@ -71,18 +80,11 @@ export default function WhatameshGradient({
         id={`whatamesh-canvas-${canvasId}`}
         ref={canvasRef}
         className={className}
-        style={
-          {
-            width: '100%',
-            height: '100%',
-            // Set gradient colors directly to avoid CSS variable parsing issues
-            '--gradient-color-1': '#a442fe',
-            '--gradient-color-2': '#e9cfff',
-            '--gradient-color-3': '#f58686',
-            '--gradient-color-4': '#fcbe7d',
-            ...style,
-          } as React.CSSProperties
-        }
+        style={{
+          width: '100%',
+          height: '100%',
+          ...style,
+        }}
         data-loaded={isLoaded}
         data-error={error || undefined}
       />
