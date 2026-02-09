@@ -98,6 +98,9 @@ importers:
       tailwind-merge:
         specifier: ^3.4.0
         version: 3.4.0
+      whatamesh:
+        specifier: ^0.2.0
+        version: 0.2.0
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -3476,6 +3479,9 @@ packages:
   color-name@1.1.4:
     resolution: {integrity: sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==}
 
+  color-schemes-generator@1.0.1:
+    resolution: {integrity: sha512-pmXbEO84zprScjQR2C2wJ980VX0uk2FjUYvjOox91YnX5xgzeNvnCEhANgC7q3RLQE8GnKdJTAzpmbkJsa3LRg==}
+
   colorette@2.0.20:
     resolution: {integrity: sha512-IfEDxwoWIjkeXL1eXcDiow4UbKjhLdq6/EuSVR9GMN7KVH3r9gQ83e73hsz1Nd1T3ijd5xv1wcWRYO+D6kCI2w==}
 
@@ -6317,6 +6323,9 @@ packages:
     peerDependenciesMeta:
       webpack-cli:
         optional: true
+
+  whatamesh@0.2.0:
+    resolution: {integrity: sha512-p+ZK+IPbW+38UyNvrdxKNC1OFevlxf7xgiyKxYGCkuNrWFjxiY0yrugdry0c2vEC0RQseov+DDSrsQmp7eoLcg==}
 
   whatwg-mimetype@5.0.0:
     resolution: {integrity: sha512-sXcNcHOC51uPGF0P/D4NVtrkjSU2fNsm9iog4ZvZJsL3rjoDAzXZhkm2MWt1y+PUdggKAYVoMAIYcs78wJ51Cw==}
@@ -9945,6 +9954,8 @@ snapshots:
 
   color-name@1.1.4: {}
 
+  color-schemes-generator@1.0.1: {}
+
   colorette@2.0.20: {}
 
   combined-stream@1.0.8:
@@ -13082,6 +13093,10 @@ snapshots:
       - '@swc/core'
       - esbuild
       - uglify-js
+
+  whatamesh@0.2.0:
+    dependencies:
+      color-schemes-generator: 1.0.1
 
   whatwg-mimetype@5.0.0: {}
 
