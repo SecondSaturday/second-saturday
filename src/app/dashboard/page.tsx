@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader'
 import { CircleList } from '@/components/dashboard/CircleList'
 import { CreateCircleFAB } from '@/components/dashboard/CreateCircleFAB'
@@ -9,6 +10,7 @@ import { getNextSecondSaturday, formatShortDate } from '@/lib/dates'
 import { trackEvent } from '@/lib/analytics'
 
 export default function DashboardPage() {
+  const router = useRouter()
   const [selectedCircleId, setSelectedCircleId] = useState<string | null>(null)
   const [selectedDate, setSelectedDate] = useState(() => getNextSecondSaturday())
   const [datePickerOpen, setDatePickerOpen] = useState(false)
@@ -34,7 +36,12 @@ export default function DashboardPage() {
           dateLabel={formatShortDate(selectedDate)}
           onDatePickerOpen={() => setDatePickerOpen(true)}
         />
-        <CircleList onCircleSelect={setSelectedCircleId} />
+        <CircleList
+          onCircleSelect={(id) => {
+            setSelectedCircleId(id)
+            router.push(`/dashboard/circles/${id}`)
+          }}
+        />
         <CreateCircleFAB />
       </div>
 

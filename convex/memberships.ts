@@ -164,7 +164,7 @@ export const getSubmissionStatus = query({
           userId: m.userId,
           name: memberUser?.name ?? memberUser?.email ?? 'Unknown',
           imageUrl: memberUser?.imageUrl ?? null,
-          status: 'Not Started' as const,
+          status: 'Not Started' as 'Submitted' | 'In Progress' | 'Not Started',
           submittedAt: null as number | null,
         }
       })

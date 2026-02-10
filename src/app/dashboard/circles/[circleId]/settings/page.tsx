@@ -19,7 +19,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { ArrowLeft, Copy, RefreshCw, Check, Settings, AlertTriangle } from 'lucide-react'
+import {
+  ArrowLeft,
+  Copy,
+  RefreshCw,
+  Check,
+  Settings,
+  AlertTriangle,
+  ClipboardList,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import type { Id } from '../../../../../../convex/_generated/dataModel'
@@ -258,6 +266,18 @@ export default function CircleSettingsPage() {
           <div>
             <p className="text-sm font-medium text-foreground">Configure Prompts</p>
             <p className="text-xs text-muted-foreground">Edit, reorder, or add prompts</p>
+          </div>
+        </Link>
+
+        {/* Submission status link (admin only) */}
+        <Link
+          href={`/dashboard/circles/${circleId}/submissions`}
+          className="flex items-center gap-3 rounded-lg border border-border p-4 transition-colors hover:bg-muted/30"
+        >
+          <ClipboardList className="size-5 text-muted-foreground" />
+          <div>
+            <p className="text-sm font-medium text-foreground">Submission Status</p>
+            <p className="text-xs text-muted-foreground">View who has submitted</p>
           </div>
         </Link>
 
