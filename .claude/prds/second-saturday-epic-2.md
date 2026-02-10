@@ -1,6 +1,6 @@
 ---
 name: second-saturday-epic-2
-description: Circle Creation & Setup - creating circles, configuring prompts, managing settings, and generating invite links
+description: Circle Creation & Setup - home dashboard, creating circles, configuring prompts, managing settings, and generating invite links
 status: backlog
 created: 2026-02-04T12:00:00Z
 parent_prd: second-saturday
@@ -18,19 +18,20 @@ timeline: Week 3 (first part, combined with Epic 3: 70-90 hours total)
 
 ## Overview
 
-This epic covers how users create and configure circles. The circle creator becomes the admin and is responsible for setting the tone through prompts and inviting members.
+This epic covers the home dashboard where users see all their circles, and how users create and configure new circles. The circle creator becomes the admin and is responsible for setting the tone through prompts and inviting members.
 
-**Key Insight:** Circle creation should feel like naming a group chat, not creating a corporate workspace. The emotional tone is set through the circle name and cover image.
+**Key Insight:** The dashboard is the user's home base—it should show what needs attention at a glance (submission status) and make circle access instant. Circle creation should feel like naming a group chat, not creating a corporate workspace.
 
 ---
 
 ## Goals
 
-1. **Enable circle creation** - Users can create circles with name, icon, and cover image
-2. **Configure prompts** - Admin can select from library or write custom prompts (1-8 prompts)
-3. **Generate invite links** - Automatic invite link generation with context
-4. **Manage circle settings** - Edit name, images, prompts, regenerate invite link
-5. **Enforce 3-member minimum** - Circles need 3+ members before first newsletter sends
+1. **Provide a home dashboard** - Users see all their circles with submission status at a glance
+2. **Enable circle creation** - Users can create circles with name, icon, and cover image
+3. **Configure prompts** - Admin can select from library or write custom prompts (1-8 prompts)
+4. **Generate invite links** - Automatic invite link generation with context
+5. **Manage circle settings** - Edit name, images, prompts, regenerate invite link
+6. **Enforce 3-member minimum** - Circles need 3+ members before first newsletter sends
 
 ---
 
@@ -43,6 +44,7 @@ This epic covers how users create and configure circles. The circle creator beco
 **Activities:**
 
 1. **Identify screens and components needed**
+   - **Home dashboard** (circle list with status indicators, header with avatar/notifications/menu)
    - Circle creation form (name, icon upload, cover upload, description)
    - Prompt selection screen (library + custom prompts)
    - Prompt reorder screen (drag-and-drop interface)
@@ -54,9 +56,10 @@ This epic covers how users create and configure circles. The circle creator beco
    - Design mobile-first (375px breakpoint)
    - Design desktop (1024px+ breakpoint)
    - Apply tweakcn theme tokens
+   - **Design home dashboard with circle list, submission status dots, and FAB**
+   - **Design desktop sidebar layout (circle list + main content area)**
    - Design image upload with preview and cropping
    - Design prompt library with categories
-   - Design Instagram Stories-style circle tabs for multi-circle users
 
 3. **Design review**
    - Share with backend developer for feedback
@@ -71,7 +74,7 @@ This epic covers how users create and configure circles. The circle creator beco
    - Refine design if generated code is problematic
 
 **Deliverables:**
-- Figma designs for 6 Epic 2 screens
+- Figma designs for 7 Epic 2 screens (including home dashboard)
 - Component code generated from Figma MCP
 - Design review notes and approval
 
@@ -94,12 +97,23 @@ This epic covers how users create and configure circles. The circle creator beco
    - Create createCircle mutation (auto-generates invite code)
    - Create updateCircle mutation (name, images, description)
    - Create generateInviteLink mutation (UUID-based, regenerates code)
-   - Create getCirclesByUser query
+   - Create getCirclesByUser query (returns circles with member previews and read/unread status)
+   - Create markNewsletterRead mutation (clears unread indicator for a circle)
+   - Create getNewslettersByDate query (filters newsletters by selected month/second saturday)
    - Create getCirclePrompts query
    - Create updatePrompts mutation (add, remove, reorder)
    - Add 3-member minimum check logic
 
 3. **Build UI components**
+   - Build HomeDashboard page
+     - CircleList component (displays all user's circles)
+     - CircleListItem component (icon, name, member preview, read/unread dot)
+     - DashboardHeader component (avatar, date picker, notifications, menu)
+     - DatePicker component (scrollable list of past issues, filters main content)
+     - CreateCircleFAB component (shows next deadline date)
+     - Desktop: sidebar layout with main content area
+     - Mobile: full-screen list layout
+     - Empty state component (no circles CTA)
    - Build CircleCreationForm component
      - Name input (3-50 chars validation)
      - Icon upload with browser-image-compression
@@ -135,7 +149,8 @@ This epic covers how users create and configure circles. The circle creator beco
 
 **Deliverables:**
 - Convex schema updates (circles, prompts tables)
-- Convex functions (createCircle, updateCircle, etc.)
+- Convex functions (createCircle, updateCircle, getCirclesByUser, markNewsletterRead, getNewslettersByDate, etc.)
+- Home dashboard with circle list and real-time status
 - UI components with Convex integration
 - Analytics events tracking
 - Working circle creation in dev environment
@@ -165,6 +180,11 @@ This epic covers how users create and configure circles. The circle creator beco
    - Test getCirclePrompts query
 
 3. **Write E2E tests** (Playwright)
+   - Test home dashboard loads with user's circles
+   - Test read/unread indicator (colored dot) shows for unread newsletters, clears after viewing
+   - Test date picker filters newsletters correctly
+   - Test tap circle navigates to circle detail
+   - Test FAB opens circle creation flow
    - Test full circle creation flow (name, upload icon, add custom prompt)
    - Test invite link copy includes context
    - Test prompt library selection
@@ -219,6 +239,49 @@ This epic covers how users create and configure circles. The circle creator beco
 ---
 
 ## Jobs To Be Done (JTBDs)
+
+### JTBD 2.0: Home Dashboard
+
+**When** I open the app after logging in,
+**I want to** see all my circles at a glance with their current status,
+**So I can** quickly navigate to a circle or understand what needs my attention.
+
+**Context:** This is the primary landing page for logged-in users. It serves as the hub for all circle activity. Users need to see submission status at a glance and access any circle quickly.
+
+**Functional Requirements:**
+
+| ID | Requirement | Priority |
+|----|-------------|----------|
+| 2.0.1 | Display list of all circles user belongs to (as member or admin) | P0 |
+| 2.0.2 | Show circle icon/thumbnail for each circle | P0 |
+| 2.0.3 | Show circle name (bold) | P0 |
+| 2.0.4 | Show member names preview ("You, Alex, Dio, Shaun...") with truncation | P0 |
+| 2.0.5 | Show read/unread indicator per circle (colored dot = unread newsletter, no dot = read) - like Snapchat | P0 |
+| 2.0.6 | Tap circle row to navigate to circle detail/home screen | P0 |
+| 2.0.7 | Header shows user avatar (tap for profile/settings) | P0 |
+| 2.0.8 | Header shows current cycle date (e.g., "Sep 13") with dropdown to filter newsletters by month/second saturday; picker shows scrollable list of past issues for easy selection | P0 |
+| 2.0.9 | Header shows notification bell icon | P0 |
+| 2.0.10 | Header shows more options menu (⋮) | P0 |
+| 2.0.11 | FAB (floating action button) to create new circle, shows next deadline date (e.g., "+ Oct 11") | P0 |
+| 2.0.12 | Desktop: sidebar with circle list, main area shows selected circle's newsletter archive | P1 |
+| 2.0.13 | Mobile: full-screen circle list, tap to navigate to circle detail | P0 |
+| 2.0.14 | Empty state when user has no circles (CTA to create or join) | P0 |
+| 2.0.15 | Sort circles by most recent activity or alphabetically | P2 |
+
+**Acceptance Criteria:**
+- Dashboard loads within 2 seconds
+- Read/unread status updates in real-time (Convex subscription)
+- Colored dot disappears after user views the newsletter (like Snapchat)
+- Date picker shows all past issues in a scrollable list, easy to select any month
+- Selecting a date filters the main content area to show that issue's newsletters
+- Member names truncate gracefully on mobile (ellipsis after ~5 names)
+- User can access any circle in 1 tap
+- FAB is always visible and accessible
+- Empty state clearly explains how to get started (create circle or join via invite link)
+- Desktop layout: circle list sidebar (fixed width ~260px), main content area for newsletter archive
+- Mobile layout: full-width circle list with clear tap targets
+
+---
 
 ### JTBD 2.1: Creating a New Circle
 
@@ -315,6 +378,10 @@ This epic covers how users create and configure circles. The circle creator beco
 Track user actions throughout circle creation:
 
 **Epic 2 (Circles):**
+- `dashboard_viewed`
+- `circle_selected` (from dashboard)
+- `newsletter_read` (when unread indicator clears)
+- `date_filter_changed` (when user selects different month)
 - `circle_created`
 - `circle_updated` (field: name/cover/prompts)
 - `invite_link_generated`
@@ -381,7 +448,9 @@ Track user actions throughout circle creation:
 ## Week 3 Timeline Breakdown (Epic 2 portion)
 
 ### Days 1-2: Design (9-11 hours for Epic 2 screens)
-- Create wireframes for 6 Epic 2 screens in Figma
+- Create wireframes for 7 Epic 2 screens in Figma (including home dashboard)
+- Design home dashboard with circle list, status dots, FAB
+- Design desktop sidebar layout
 - Apply tweakcn theme tokens
 - Design for mobile (375px) and desktop (1024px+)
 - Design review with backend developer
@@ -391,6 +460,9 @@ Track user actions throughout circle creation:
 ### Days 3-5: Implementation (17-22 hours for Epic 2)
 - Create circles and prompts tables in Convex schema
 - Create circle CRUD mutations and queries
+- Create getCirclesByUser and getUserSubmissionStatus queries
+- **Build HomeDashboard page with CircleList, status indicators, and FAB**
+- **Build desktop sidebar layout**
 - Build CircleCreationForm component
 - Implement image upload with browser-image-compression
 - Build PromptSelector component (4 defaults pre-selected)
@@ -440,6 +512,14 @@ Track user actions throughout circle creation:
 
 ## Success Criteria
 
+- [ ] Home dashboard displays all user's circles with icons, names, and member previews
+- [ ] Read/unread indicator (colored dot) shows correctly per circle, clears after viewing
+- [ ] Date picker filters newsletters by selected month/second saturday
+- [ ] Dashboard loads within 2 seconds
+- [ ] Tap circle navigates to circle detail screen
+- [ ] FAB creates new circle and shows next deadline date
+- [ ] Desktop layout shows sidebar + main content area
+- [ ] Empty state displays when user has no circles
 - [ ] Users can create circles with name, icon, and cover image
 - [ ] Circle creation completes in under 30 seconds
 - [ ] Images auto-compress to <200KB client-side
