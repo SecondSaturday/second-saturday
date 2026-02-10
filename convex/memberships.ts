@@ -1,7 +1,7 @@
 import { mutation, query } from './_generated/server'
 import type { MutationCtx, QueryCtx } from './_generated/server'
 import { v } from 'convex/values'
-import type { Doc } from './_generated/dataModel'
+import type { Doc, Id } from './_generated/dataModel'
 
 /** Get the authenticated user or throw (safe for queries) */
 async function getAuthUser(ctx: QueryCtx | MutationCtx): Promise<Doc<'users'>> {
@@ -52,15 +52,17 @@ export const getCircleMembers = query({
       .withIndex('by_user_circle', (q) => q.eq('userId', user._id).eq('circleId', args.circleId))
       .first()
 
-    if (!callerMembership) throw new Error('Not a member of this circle')
+    if (!callerMembership || callerMembership.leftAt) throw new Error('Not a member of this circle')
 
     const memberships = await ctx.db
       .query('memberships')
       .withIndex('by_circle', (q) => q.eq('circleId', args.circleId))
       .collect()
 
+    const activeMembers = memberships.filter((m) => !m.leftAt)
+
     const members = await Promise.all(
-      memberships.map(async (m) => {
+      activeMembers.map(async (m) => {
         const memberUser = await ctx.db
           .query('users')
           .filter((q) => q.eq(q.field('_id'), m.userId))
@@ -87,7 +89,7 @@ export const getMembershipCount = query({
       .withIndex('by_circle', (q) => q.eq('circleId', args.circleId))
       .collect()
 
-    return members.length
+    return members.filter((m) => !m.leftAt).length
   },
 })
 
@@ -104,13 +106,20 @@ export const joinCircle = mutation({
     if (!circle) throw new Error('Invalid invite code')
     if (circle.archivedAt) throw new Error('This circle has been archived')
 
-    // Check if already a member
+    // Check if already a member or previously left
     const existing = await ctx.db
       .query('memberships')
       .withIndex('by_user_circle', (q) => q.eq('userId', user._id).eq('circleId', circle._id))
       .first()
 
-    if (existing) return { circleId: circle._id, alreadyMember: true }
+    if (existing) {
+      if (existing.blocked) throw new Error('You have been blocked from this circle')
+      if (!existing.leftAt) return { circleId: circle._id, alreadyMember: true }
+
+      // Rejoin: clear leftAt and update joinedAt
+      await ctx.db.patch(existing._id, { leftAt: undefined, joinedAt: Date.now() })
+      return { circleId: circle._id, alreadyMember: false }
+    }
 
     await ctx.db.insert('memberships', {
       userId: user._id,
@@ -120,5 +129,115 @@ export const joinCircle = mutation({
     })
 
     return { circleId: circle._id, alreadyMember: false }
+  },
+})
+
+export const getSubmissionStatus = query({
+  args: { circleId: v.id('circles') },
+  handler: async (ctx, args) => {
+    const user = await getAuthUser(ctx)
+
+    // Admin-only access
+    const callerMembership = await ctx.db
+      .query('memberships')
+      .withIndex('by_user_circle', (q) => q.eq('userId', user._id).eq('circleId', args.circleId))
+      .first()
+
+    if (!callerMembership || callerMembership.leftAt || callerMembership.role !== 'admin') {
+      throw new Error('Admin access required')
+    }
+
+    const memberships = await ctx.db
+      .query('memberships')
+      .withIndex('by_circle', (q) => q.eq('circleId', args.circleId))
+      .collect()
+
+    const activeMembers = memberships.filter((m) => !m.leftAt)
+
+    const members = await Promise.all(
+      activeMembers.map(async (m) => {
+        const memberUser = await ctx.db
+          .query('users')
+          .filter((q) => q.eq(q.field('_id'), m.userId))
+          .first()
+        return {
+          userId: m.userId,
+          name: memberUser?.name ?? memberUser?.email ?? 'Unknown',
+          imageUrl: memberUser?.imageUrl ?? null,
+          status: 'Not Started' as const,
+          submittedAt: null as number | null,
+        }
+      })
+    )
+
+    return { members, deadline: null as number | null }
+  },
+})
+
+/** Helper to get active membership */
+async function getActiveMembership(
+  ctx: QueryCtx | MutationCtx,
+  userId: Id<'users'>,
+  circleId: Id<'circles'>
+): Promise<Doc<'memberships'> | null> {
+  const membership = await ctx.db
+    .query('memberships')
+    .withIndex('by_user_circle', (q) => q.eq('userId', userId).eq('circleId', circleId))
+    .first()
+  if (!membership || membership.leftAt) return null
+  return membership
+}
+
+export const leaveCircle = mutation({
+  args: { circleId: v.id('circles') },
+  handler: async (ctx, args) => {
+    const user = await getAuthUser(ctx)
+
+    const membership = await getActiveMembership(ctx, user._id, args.circleId)
+    if (!membership) throw new Error('Not a member of this circle')
+
+    if (membership.role === 'admin') {
+      throw new Error('Transfer admin role before leaving')
+    }
+
+    await ctx.db.patch(membership._id, { leftAt: Date.now() })
+    return { success: true }
+  },
+})
+
+export const removeMember = mutation({
+  args: {
+    circleId: v.id('circles'),
+    targetUserId: v.id('users'),
+    keepContributions: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthUser(ctx)
+
+    // Verify caller is admin
+    const callerMembership = await getActiveMembership(ctx, user._id, args.circleId)
+    if (!callerMembership || callerMembership.role !== 'admin') {
+      throw new Error('Admin access required')
+    }
+
+    // Cannot remove yourself
+    if (args.targetUserId === user._id) {
+      throw new Error('Cannot remove yourself. Use leave circle instead.')
+    }
+
+    // Verify target is an active member
+    const targetMembership = await getActiveMembership(ctx, args.targetUserId, args.circleId)
+    if (!targetMembership) throw new Error('Target user is not an active member')
+
+    if (args.keepContributions) {
+      // Remove but keep contributions — member can rejoin
+      await ctx.db.patch(targetMembership._id, { leftAt: Date.now() })
+    } else {
+      // Remove and block — contributions will be cleaned up when content tables exist (Epic 4)
+      await ctx.db.patch(targetMembership._id, { leftAt: Date.now(), blocked: true })
+      // TODO: Replace contributions with "[Removed]" when content/submission tables exist
+    }
+
+    return { success: true }
   },
 })

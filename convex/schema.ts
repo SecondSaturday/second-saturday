@@ -60,6 +60,8 @@ export default defineSchema({
     circleId: v.id('circles'),
     role: v.union(v.literal('admin'), v.literal('member')),
     joinedAt: v.number(),
+    leftAt: v.optional(v.number()),
+    blocked: v.optional(v.boolean()),
   })
     .index('by_user', ['userId'])
     .index('by_circle', ['circleId'])

@@ -59,7 +59,7 @@ async function requireMembership(
     .withIndex('by_user_circle', (q) => q.eq('userId', userId).eq('circleId', circleId))
     .first()
 
-  if (!membership) throw new Error('Not a member of this circle')
+  if (!membership || membership.leftAt) throw new Error('Not a member of this circle')
   return membership
 }
 
@@ -193,19 +193,23 @@ export const getCirclesByUser = query({
       .withIndex('by_user', (q) => q.eq('userId', user._id))
       .collect()
 
+    const activeMemberships = memberships.filter((m) => !m.leftAt)
+
     const circles = await Promise.all(
-      memberships.map(async (m) => {
+      activeMemberships.map(async (m) => {
         const circle = await ctx.db
           .query('circles')
           .filter((q) => q.eq(q.field('_id'), m.circleId))
           .first()
         if (!circle || circle.archivedAt) return null
 
-        // Get member count and preview names
-        const allMembers = await ctx.db
-          .query('memberships')
-          .withIndex('by_circle', (q) => q.eq('circleId', m.circleId))
-          .collect()
+        // Get member count and preview names (active only)
+        const allMembers = (
+          await ctx.db
+            .query('memberships')
+            .withIndex('by_circle', (q) => q.eq('circleId', m.circleId))
+            .collect()
+        ).filter((mem) => !mem.leftAt)
 
         const memberUsers = await Promise.all(
           allMembers.slice(0, 5).map(async (mem) => {
@@ -268,10 +272,12 @@ export const getCircle = query({
     const iconUrl = circle.iconImageId ? await ctx.storage.getUrl(circle.iconImageId) : null
     const coverUrl = circle.coverImageId ? await ctx.storage.getUrl(circle.coverImageId) : null
 
-    const members = await ctx.db
-      .query('memberships')
-      .withIndex('by_circle', (q) => q.eq('circleId', args.circleId))
-      .collect()
+    const members = (
+      await ctx.db
+        .query('memberships')
+        .withIndex('by_circle', (q) => q.eq('circleId', args.circleId))
+        .collect()
+    ).filter((m) => !m.leftAt)
 
     const newsletters = await ctx.db
       .query('newsletters')
@@ -301,10 +307,12 @@ export const getCircleByInviteCode = query({
 
     const iconUrl = circle.iconImageId ? await ctx.storage.getUrl(circle.iconImageId) : null
 
-    const members = await ctx.db
-      .query('memberships')
-      .withIndex('by_circle', (q) => q.eq('circleId', circle._id))
-      .collect()
+    const members = (
+      await ctx.db
+        .query('memberships')
+        .withIndex('by_circle', (q) => q.eq('circleId', circle._id))
+        .collect()
+    ).filter((m) => !m.leftAt)
 
     return {
       _id: circle._id,
