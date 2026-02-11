@@ -1,8 +1,9 @@
 ---
 name: second-saturday-epic-3
-status: backlog
+status: completed
 created: 2026-02-10T18:03:22Z
-progress: 0%
+updated: 2026-02-11T11:25:31Z
+progress: 100%
 prd: .claude/prds/second-saturday-epic-3.md
 github: https://github.com/SecondSaturday/second-saturday/issues/50
 ---
@@ -65,15 +66,15 @@ Implement circle membership flows: joining via invite link, viewing members, lea
 
 ## Task Breakdown Preview
 
-- [ ] Task 1: Extend memberships schema (add `leftAt`, `blocked` fields) and update existing queries to filter active members
-- [ ] Task 2: Implement `leaveCircle` and `removeMember` mutations with contribution handling
-- [ ] Task 3: Add `getSubmissionStatus` admin query
-- [ ] Task 4: Build invite preview page (`/invite/[inviteCode]`) with join/signup/login flows
-- [ ] Task 5: Build member list page and component
-- [ ] Task 6: Build LeaveCircleModal and RemoveMemberModal components
-- [ ] Task 7: Build AdminSubmissionDashboard component
-- [ ] Task 8: Add PostHog analytics events for membership flows
-- [ ] Task 9: Write tests for membership mutations and UI flows
+- [x] Task 1: Extend memberships schema (add `leftAt`, `blocked` fields) and update existing queries to filter active members
+- [x] Task 2: Implement `leaveCircle` and `removeMember` mutations with contribution handling
+- [x] Task 3: Add `getSubmissionStatus` admin query
+- [x] Task 4: Build invite preview page (`/invite/[inviteCode]`) with join/signup/login flows
+- [x] Task 5: Build member list page and component
+- [x] Task 6: Build LeaveCircleModal and RemoveMemberModal components
+- [x] Task 7: Build AdminSubmissionDashboard component
+- [x] Task 8: Add PostHog analytics events for membership flows
+- [x] Task 9: Write tests for membership mutations and UI flows
 
 ## Dependencies
 
@@ -108,15 +109,15 @@ Implement circle membership flows: joining via invite link, viewing members, lea
 - **Critical path**: Schema changes → mutations → UI pages
 
 ## Tasks Created
-- [ ] #51 - Extend memberships schema and update existing queries (parallel: false)
-- [ ] #52 - Implement leaveCircle and removeMember mutations (parallel: false)
-- [ ] #53 - Add getSubmissionStatus admin query (parallel: true)
-- [ ] #57 - Build invite preview page (parallel: true)
-- [ ] #62 - Build member list page and component (parallel: true)
-- [ ] #63 - Build LeaveCircleModal and RemoveMemberModal (parallel: true)
-- [ ] #54 - Build AdminSubmissionDashboard component (parallel: true)
-- [ ] #55 - Add PostHog analytics events for membership flows (parallel: true)
-- [ ] #56 - Write tests for membership mutations and UI flows (parallel: false)
+- [x] #51 - Extend memberships schema and update existing queries (parallel: false) ✅
+- [x] #52 - Implement leaveCircle and removeMember mutations (parallel: false) ✅
+- [x] #53 - Add getSubmissionStatus admin query (parallel: true) ✅
+- [x] #57 - Build invite preview page (parallel: true) ✅
+- [x] #62 - Build member list page and component (parallel: true) ✅
+- [x] #63 - Build LeaveCircleModal and RemoveMemberModal (parallel: true) ✅
+- [x] #54 - Build AdminSubmissionDashboard component (parallel: true) ✅
+- [x] #55 - Add PostHog analytics events for membership flows (parallel: true) ✅
+- [x] #56 - Write tests for membership mutations and UI flows (parallel: false) ✅
 
 Total tasks: 9
 Parallel tasks: 6
