@@ -1,7 +1,7 @@
 ---
 name: second-saturday-epic-3
 description: Circle Membership - joining via invite links, viewing members, leaving circles, and admin member management
-status: backlog
+status: complete
 created: 2026-02-04T12:00:00Z
 parent_prd: second-saturday
 timeline: Week 3 (second part, combined with Epic 2: 70-90 hours total)
