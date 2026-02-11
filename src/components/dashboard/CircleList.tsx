@@ -34,7 +34,7 @@ export function CircleList({ onCircleSelect }: CircleListProps) {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto" data-testid="circle-list">
       {circles.map((circle) => {
         if (!circle) return null
         return (

@@ -1,19 +1,41 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader'
 import { CircleList } from '@/components/dashboard/CircleList'
 import { CreateCircleFAB } from '@/components/dashboard/CreateCircleFAB'
 import { DatePicker } from '@/components/dashboard/DatePicker'
+import { CircleHome } from '@/components/CircleHome'
+import { CircleSettings } from '@/components/CircleSettings'
 import { getNextSecondSaturday, formatShortDate } from '@/lib/dates'
 import { trackEvent } from '@/lib/analytics'
+import type { Id } from '../../../convex/_generated/dataModel'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 
 export default function DashboardPage() {
   const router = useRouter()
-  const [selectedCircleId, setSelectedCircleId] = useState<string | null>(null)
+  const searchParams = useSearchParams()
+  const [selectedCircleId, setSelectedCircleId] = useState<string | null>(() =>
+    searchParams.get('circle')
+  )
   const [selectedDate, setSelectedDate] = useState(() => getNextSecondSaturday())
   const [datePickerOpen, setDatePickerOpen] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+
+  const handleCircleSelect = useCallback(
+    (id: string) => {
+      setSelectedCircleId(id)
+      // On mobile (sidebar is full-width), navigate to the dedicated page
+      if (window.innerWidth < 768) {
+        router.push(`/dashboard/circles/${id}`)
+      } else {
+        // On desktop, update URL with query param for split view
+        router.push(`/dashboard?circle=${id}`, { scroll: false })
+      }
+    },
+    [router]
+  )
 
   useEffect(() => {
     trackEvent('dashboard_viewed')
@@ -36,21 +58,25 @@ export default function DashboardPage() {
           dateLabel={formatShortDate(selectedDate)}
           onDatePickerOpen={() => setDatePickerOpen(true)}
         />
-        <CircleList
-          onCircleSelect={(id) => {
-            setSelectedCircleId(id)
-            router.push(`/dashboard/circles/${id}`)
-          }}
-        />
+        <CircleList onCircleSelect={handleCircleSelect} />
         <CreateCircleFAB />
       </div>
 
       {/* Content area (desktop only) */}
-      <div className="hidden flex-1 items-center justify-center md:flex">
+      <div className="hidden flex-1 flex-col md:flex">
         {selectedCircleId ? (
-          <p className="text-muted-foreground">Newsletter view coming soon</p>
+          <CircleHome
+            circleId={selectedCircleId as Id<'circles'>}
+            onBack={() => {
+              setSelectedCircleId(null)
+              router.replace('/dashboard')
+            }}
+            onSettingsClick={() => setShowSettings(true)}
+          />
         ) : (
-          <p className="text-muted-foreground">No issues yet</p>
+          <div className="flex flex-1 items-center justify-center">
+            <p className="text-muted-foreground">Select a circle to view details</p>
+          </div>
         )}
       </div>
 
@@ -60,6 +86,22 @@ export default function DashboardPage() {
         selectedDate={selectedDate}
         onSelect={handleDateSelect}
       />
+
+      <Sheet open={showSettings} onOpenChange={setShowSettings}>
+        <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
+          <SheetHeader>
+            <SheetTitle>Circle Settings</SheetTitle>
+          </SheetHeader>
+          {selectedCircleId && (
+            <div className="mt-6">
+              <CircleSettings
+                circleId={selectedCircleId as Id<'circles'>}
+                onClose={() => setShowSettings(false)}
+              />
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }

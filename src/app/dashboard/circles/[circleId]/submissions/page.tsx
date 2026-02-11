@@ -44,7 +44,7 @@ export default function SubmissionsPage() {
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       <header className="flex items-center gap-3 border-b border-border px-4 py-3">
-        <Link href={`/dashboard/circles/${circleId}/settings`}>
+        <Link href={`/dashboard?circle=${circleId}`}>
           <ArrowLeft className="size-5 text-foreground" />
         </Link>
         <h1 className="text-lg font-semibold text-foreground">Submission Status</h1>

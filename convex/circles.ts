@@ -261,13 +261,20 @@ export const getCircle = query({
   args: { circleId: v.id('circles') },
   handler: async (ctx, args) => {
     const user = await getAuthUser(ctx)
-    const membership = await requireMembership(ctx, user._id, args.circleId)
+
+    // Check membership - return null if not a member
+    const membership = await ctx.db
+      .query('memberships')
+      .withIndex('by_user_circle', (q) => q.eq('userId', user._id).eq('circleId', args.circleId))
+      .first()
+
+    if (!membership || membership.leftAt) return null
 
     const circle = await ctx.db
       .query('circles')
       .filter((q) => q.eq(q.field('_id'), args.circleId))
       .first()
-    if (!circle) throw new Error('Circle not found')
+    if (!circle) return null
 
     const iconUrl = circle.iconImageId ? await ctx.storage.getUrl(circle.iconImageId) : null
     const coverUrl = circle.coverImageId ? await ctx.storage.getUrl(circle.coverImageId) : null
@@ -307,6 +314,8 @@ export const getCircleByInviteCode = query({
 
     const iconUrl = circle.iconImageId ? await ctx.storage.getUrl(circle.iconImageId) : null
 
+    const admin = await ctx.db.get(circle.adminId)
+
     const members = (
       await ctx.db
         .query('memberships')
@@ -320,6 +329,7 @@ export const getCircleByInviteCode = query({
       description: circle.description,
       iconUrl,
       memberCount: members.length,
+      adminName: admin?.name ?? admin?.email ?? 'Unknown',
     }
   },
 })

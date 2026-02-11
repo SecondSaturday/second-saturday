@@ -241,3 +241,36 @@ export const removeMember = mutation({
     return { success: true }
   },
 })
+
+export const getInviteStatus = query({
+  args: { inviteCode: v.string() },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) return { status: 'not_authenticated' as const }
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', (q) => q.eq('clerkId', identity.subject))
+      .first()
+
+    if (!user) return { status: 'not_authenticated' as const }
+
+    const circle = await ctx.db
+      .query('circles')
+      .withIndex('by_invite_code', (q) => q.eq('inviteCode', args.inviteCode))
+      .first()
+
+    if (!circle) return { status: 'invalid_invite' as const }
+
+    const membership = await ctx.db
+      .query('memberships')
+      .withIndex('by_user_circle', (q) => q.eq('userId', user._id).eq('circleId', circle._id))
+      .first()
+
+    if (!membership) return { status: 'can_join' as const }
+    if (membership.blocked) return { status: 'blocked' as const }
+    if (!membership.leftAt) return { status: 'already_member' as const, circleId: circle._id }
+
+    return { status: 'can_rejoin' as const }
+  },
+})

@@ -1,10 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { useQuery, useMutation } from 'convex/react'
+import { useMutation, useQuery } from 'convex/react'
 import { useUser } from '@clerk/nextjs'
-import { api } from '../../../../../../convex/_generated/api'
+import { api } from '../../convex/_generated/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -19,25 +18,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import {
-  ArrowLeft,
-  Copy,
-  RefreshCw,
-  Check,
-  Settings,
-  AlertTriangle,
-  ClipboardList,
-} from 'lucide-react'
+import { Copy, RefreshCw, Check, Settings, AlertTriangle, ClipboardList } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
-import type { Id } from '../../../../../../convex/_generated/dataModel'
+import type { Id } from '../../convex/_generated/dataModel'
 import { trackEvent } from '@/lib/analytics'
+import { LeaveCircleModal } from '@/components/LeaveCircleModal'
 
-export default function CircleSettingsPage() {
-  const params = useParams()
-  const router = useRouter()
+interface CircleSettingsProps {
+  circleId: Id<'circles'>
+  onClose?: () => void
+}
+
+export function CircleSettings({ circleId, onClose }: CircleSettingsProps) {
   const { user } = useUser()
-  const circleId = params.circleId as Id<'circles'>
 
   const circle = useQuery(api.circles.getCircle, { circleId })
   const updateCircle = useMutation(api.circles.updateCircle)
@@ -50,10 +44,11 @@ export default function CircleSettingsPage() {
   const [copied, setCopied] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
   const [showRegenDialog, setShowRegenDialog] = useState(false)
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false)
 
   if (circle === undefined) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-background">
+      <div className="flex min-h-[400px] items-center justify-center">
         <div className="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     )
@@ -61,23 +56,13 @@ export default function CircleSettingsPage() {
 
   if (!circle) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-background">
+      <div className="flex min-h-[400px] items-center justify-center">
         <p className="text-muted-foreground">Circle not found</p>
       </div>
     )
   }
 
-  if (circle.role !== 'admin') {
-    return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-2 bg-background">
-        <p className="text-muted-foreground">Only admins can access settings</p>
-        <Link href="/dashboard" className="text-sm text-primary hover:underline">
-          Back to dashboard
-        </Link>
-      </div>
-    )
-  }
-
+  const isAdmin = circle.role === 'admin'
   const displayName = name ?? circle.name
   const displayDescription = description ?? circle.description ?? ''
 
@@ -123,7 +108,14 @@ export default function CircleSettingsPage() {
         toast.success('Circle updated')
         trackEvent('circle_updated', { circleId })
       }
-      router.push('/dashboard')
+
+      // Reset local state
+      setName(null)
+      setDescription(null)
+
+      if (onClose) {
+        onClose()
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to save')
     } finally {
@@ -136,16 +128,9 @@ export default function CircleSettingsPage() {
     (description !== null && description !== (circle.description ?? ''))
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
-      <header className="flex items-center gap-3 border-b border-border px-4 py-3">
-        <Link href="/dashboard">
-          <ArrowLeft className="size-5 text-foreground" />
-        </Link>
-        <h1 className="text-lg font-semibold text-foreground">Circle Settings</h1>
-      </header>
-
-      <div className="flex flex-1 flex-col gap-6 px-6 py-6">
-        {/* Images */}
+    <div className="flex flex-col gap-6">
+      {/* Images (admin only) */}
+      {isAdmin && (
         <div className="flex flex-col items-center gap-4">
           <ImageUpload
             shape="circle"
@@ -160,8 +145,10 @@ export default function CircleSettingsPage() {
             onUpload={(storageId) => updateCircle({ circleId, coverImageId: storageId })}
           />
         </div>
+      )}
 
-        {/* Name */}
+      {/* Name (admin only) */}
+      {isAdmin && (
         <div className="space-y-2">
           <Label htmlFor="name">Circle Name</Label>
           <Input
@@ -171,8 +158,10 @@ export default function CircleSettingsPage() {
             maxLength={50}
           />
         </div>
+      )}
 
-        {/* Description */}
+      {/* Description (admin only) */}
+      {isAdmin && (
         <div className="space-y-2">
           <Label htmlFor="description">Description</Label>
           <Textarea
@@ -183,50 +172,52 @@ export default function CircleSettingsPage() {
             rows={3}
           />
         </div>
+      )}
 
-        {/* Circle Info */}
-        <div className="flex gap-6 rounded-lg border border-border bg-card p-4">
-          <div>
-            <p className="text-xs text-muted-foreground">Created</p>
-            <p className="text-sm font-medium text-foreground">
-              {new Date(circle.createdAt).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-              })}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Issues sent</p>
-            <p className="text-sm font-medium text-foreground">{circle.newsletterCount}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Members</p>
-            <p className="text-sm font-medium text-foreground">{circle.memberCount}</p>
-          </div>
+      {/* Circle Info */}
+      <div className="flex gap-6 rounded-lg border border-border bg-card p-4">
+        <div>
+          <p className="text-xs text-muted-foreground">Created</p>
+          <p className="text-sm font-medium text-foreground">
+            {new Date(circle.createdAt).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            })}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Issues sent</p>
+          <p className="text-sm font-medium text-foreground">{circle.newsletterCount}</p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Members</p>
+          <p className="text-sm font-medium text-foreground">{circle.memberCount}</p>
+        </div>
+      </div>
+
+      {/* 3-member warning (admin only) */}
+      {isAdmin && circle.memberCount < 3 && (
+        <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/30">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
+          <p className="text-sm text-amber-700 dark:text-amber-400">
+            Invite {3 - circle.memberCount} more member{circle.memberCount < 2 ? 's' : ''} to start
+            sending newsletters.
+          </p>
+        </div>
+      )}
+
+      {/* Invite Link */}
+      <div className="space-y-3">
+        <Label>Invite Link</Label>
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-card p-3">
+          <p className="flex-1 truncate text-sm text-muted-foreground">{inviteLink}</p>
+          <Button variant="ghost" size="icon" onClick={handleCopyLink}>
+            {copied ? <Check className="size-4 text-green-600" /> : <Copy className="size-4" />}
+          </Button>
         </div>
 
-        {/* 3-member warning */}
-        {circle.memberCount < 3 && (
-          <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/30">
-            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
-            <p className="text-sm text-amber-700 dark:text-amber-400">
-              Invite {3 - circle.memberCount} more member{circle.memberCount < 2 ? 's' : ''} to
-              start sending newsletters.
-            </p>
-          </div>
-        )}
-
-        {/* Invite Link */}
-        <div className="space-y-3">
-          <Label>Invite Link</Label>
-          <div className="flex items-center gap-2 rounded-lg border border-border bg-card p-3">
-            <p className="flex-1 truncate text-sm text-muted-foreground">{inviteLink}</p>
-            <Button variant="ghost" size="icon" onClick={handleCopyLink}>
-              {copied ? <Check className="size-4 text-green-600" /> : <Copy className="size-4" />}
-            </Button>
-          </div>
-
+        {isAdmin && (
           <Dialog open={showRegenDialog} onOpenChange={setShowRegenDialog}>
             <DialogTrigger asChild>
               <button
@@ -255,12 +246,15 @@ export default function CircleSettingsPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        </div>
+        )}
+      </div>
 
-        {/* Prompts link */}
+      {/* Prompts link (admin only) */}
+      {isAdmin && (
         <Link
           href={`/dashboard/circles/${circleId}/prompts`}
           className="flex items-center gap-3 rounded-lg border border-border p-4 transition-colors hover:bg-muted/30"
+          onClick={onClose}
         >
           <Settings className="size-5 text-muted-foreground" />
           <div>
@@ -268,11 +262,14 @@ export default function CircleSettingsPage() {
             <p className="text-xs text-muted-foreground">Edit, reorder, or add prompts</p>
           </div>
         </Link>
+      )}
 
-        {/* Submission status link (admin only) */}
+      {/* Submission status link (admin only) */}
+      {isAdmin && (
         <Link
           href={`/dashboard/circles/${circleId}/submissions`}
           className="flex items-center gap-3 rounded-lg border border-border p-4 transition-colors hover:bg-muted/30"
+          onClick={onClose}
         >
           <ClipboardList className="size-5 text-muted-foreground" />
           <div>
@@ -280,17 +277,37 @@ export default function CircleSettingsPage() {
             <p className="text-xs text-muted-foreground">View who has submitted</p>
           </div>
         </Link>
+      )}
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+      {/* Leave Circle section (non-admin only) */}
+      {!isAdmin && (
+        <div className="space-y-2 border-t border-border pt-4">
+          <Label className="text-muted-foreground">Danger Zone</Label>
+          <button
+            type="button"
+            onClick={() => setShowLeaveDialog(true)}
+            className="text-sm text-destructive hover:underline"
+          >
+            Leave this circle
+          </button>
+        </div>
+      )}
 
-        {hasChanges && (
-          <div className="mt-auto">
-            <Button onClick={handleSave} className="w-full" disabled={saving}>
-              {saving ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </div>
-        )}
-      </div>
+      {error && <p className="text-sm text-destructive">{error}</p>}
+
+      {isAdmin && hasChanges && (
+        <Button onClick={handleSave} className="w-full" disabled={saving}>
+          {saving ? 'Saving...' : 'Save Changes'}
+        </Button>
+      )}
+
+      {/* Leave Circle Modal */}
+      <LeaveCircleModal
+        circleId={circleId}
+        open={showLeaveDialog}
+        onOpenChange={setShowLeaveDialog}
+        onSuccess={onClose}
+      />
     </div>
   )
 }
