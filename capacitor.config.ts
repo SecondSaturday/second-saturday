@@ -20,6 +20,12 @@ const config: CapacitorConfig = {
     PushNotifications: {
       presentationOptions: ['badge', 'sound', 'alert'],
     },
+    Camera: {
+      // Camera plugin configuration
+      // Permissions are configured in platform-specific files:
+      // - iOS: ios/App/App/Info.plist
+      // - Android: android/app/src/main/AndroidManifest.xml
+    },
   },
   ios: {
     contentInset: 'automatic',
