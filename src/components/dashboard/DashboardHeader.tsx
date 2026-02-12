@@ -4,6 +4,7 @@ import { useUser } from '@clerk/nextjs'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Bell, MoreVertical, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import Link from 'next/link'
 
 interface DashboardHeaderProps {
   onDatePickerOpen?: () => void
@@ -19,10 +20,12 @@ export function DashboardHeader({ onDatePickerOpen, onMenuOpen, dateLabel }: Das
 
   return (
     <header className="flex items-center justify-between px-4 py-3">
-      <Avatar size="lg">
-        <AvatarImage src={user?.imageUrl} alt={user?.fullName ?? 'User'} />
-        <AvatarFallback>{user?.firstName?.charAt(0) ?? 'U'}</AvatarFallback>
-      </Avatar>
+      <Link href="/dashboard/settings">
+        <Avatar size="lg" className="cursor-pointer transition-opacity hover:opacity-80">
+          <AvatarImage src={user?.imageUrl} alt={user?.fullName ?? 'User'} />
+          <AvatarFallback>{user?.firstName?.charAt(0) ?? 'U'}</AvatarFallback>
+        </Avatar>
+      </Link>
 
       <button
         onClick={onDatePickerOpen}
