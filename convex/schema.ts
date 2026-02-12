@@ -83,4 +83,42 @@ export default defineSchema({
   })
     .index('by_user_circle', ['userId', 'circleId'])
     .index('by_user_newsletter', ['userId', 'newsletterId']),
+
+  submissions: defineTable({
+    circleId: v.id('circles'),
+    userId: v.id('users'),
+    cycleId: v.string(), // Format: YYYY-MM for monthly cycles
+    submittedAt: v.optional(v.number()),
+    lockedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_circle', ['circleId'])
+    .index('by_user', ['userId'])
+    .index('by_cycle', ['cycleId'])
+    .index('by_user_circle_cycle', ['userId', 'circleId', 'cycleId']),
+
+  responses: defineTable({
+    submissionId: v.id('submissions'),
+    promptId: v.id('prompts'),
+    text: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_submission', ['submissionId'])
+    .index('by_prompt', ['promptId'])
+    .index('by_submission_prompt', ['submissionId', 'promptId']),
+
+  media: defineTable({
+    responseId: v.id('responses'),
+    storageId: v.optional(v.id('_storage')),
+    muxAssetId: v.optional(v.string()),
+    type: v.union(v.literal('image'), v.literal('video')),
+    thumbnailUrl: v.optional(v.string()),
+    order: v.number(), // 0, 1, or 2 (max 3 items)
+    uploadedAt: v.number(),
+    createdAt: v.number(),
+  })
+    .index('by_response', ['responseId'])
+    .index('by_response_order', ['responseId', 'order']),
 })
