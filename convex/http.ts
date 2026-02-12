@@ -59,7 +59,26 @@ http.route({
 
     // Handle different event types
     switch (type) {
-      case 'user.created':
+      case 'user.created': {
+        const email = data.email_addresses?.[0]?.email_address
+        if (!email) {
+          console.error('No email found in webhook payload')
+          return new Response('No email in payload', { status: 400 })
+        }
+
+        const name = [data.first_name, data.last_name].filter(Boolean).join(' ') || undefined
+
+        await ctx.runMutation(api.users.upsertUser, {
+          clerkId: data.id,
+          email,
+          name,
+          imageUrl: data.image_url,
+        })
+
+        await ctx.scheduler.runAfter(0, internal.emails.sendWelcomeEmail, { email, name })
+        break
+      }
+
       case 'user.updated': {
         const email = data.email_addresses?.[0]?.email_address
         if (!email) {
