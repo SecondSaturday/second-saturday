@@ -2,6 +2,7 @@
 
 import { v } from 'convex/values'
 import { action } from './_generated/server'
+import { Id } from './_generated/dataModel'
 import Mux from '@mux/mux-node'
 import { api } from './_generated/api'
 
@@ -24,7 +25,14 @@ export const uploadVideoToMux = action({
     title: v.optional(v.string()),
     circleId: v.optional(v.id('circles')),
   },
-  handler: async (ctx, args) => {
+  handler: async (
+    ctx,
+    args
+  ): Promise<{
+    uploadUrl: string
+    uploadId: string
+    videoId: Id<'videos'>
+  }> => {
     try {
       const mux = getMuxClient()
 
@@ -38,7 +46,7 @@ export const uploadVideoToMux = action({
       })
 
       // Create video record in database
-      const videoId = await ctx.runMutation(api.videos.createVideo, {
+      const videoId: Id<'videos'> = await ctx.runMutation(api.videos.createVideo, {
         uploadId: upload.id,
         userId: args.userId,
         title: args.title,
