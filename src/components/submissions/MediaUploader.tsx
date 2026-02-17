@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
-import { useMutation, useQuery, useAction } from 'convex/react'
+import { useMutation, useAction } from 'convex/react'
 import { useUser } from '@clerk/nextjs'
 import { api } from '../../../convex/_generated/api'
 import { compressImage } from '@/lib/image'
