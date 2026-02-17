@@ -101,6 +101,7 @@ export function MediaUploader({
       setStage('selecting')
       setError(null)
       setProgress(0)
+      setMediaType('photo')
 
       // Request photo from camera or gallery
       const photo = await Camera.getPhoto({
