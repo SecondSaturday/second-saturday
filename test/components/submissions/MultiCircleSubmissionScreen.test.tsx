@@ -12,6 +12,7 @@ const {
   mockGetPromptsForCircle,
   mockUpdateResponseMutation,
   mockCreateSubmissionMutation,
+  mockLockSubmissionMutation,
   mockUseQuery,
   mockUseMutation,
 } = vi.hoisted(() => {
@@ -19,6 +20,7 @@ const {
   const mockGetPromptsForCircle = { _type: 'query', _name: 'getPromptsForCircle' }
   const mockUpdateResponseMutation = { _type: 'mutation', _name: 'updateResponse' }
   const mockCreateSubmissionMutation = { _type: 'mutation', _name: 'createSubmission' }
+  const mockLockSubmissionMutation = { _type: 'mutation', _name: 'lockSubmission' }
   const mockUseQuery = vi.fn()
   const mockUseMutation = vi.fn()
   return {
@@ -26,6 +28,7 @@ const {
     mockGetPromptsForCircle,
     mockUpdateResponseMutation,
     mockCreateSubmissionMutation,
+    mockLockSubmissionMutation,
     mockUseQuery,
     mockUseMutation,
   }
@@ -41,6 +44,7 @@ vi.mock('../../../convex/_generated/api', () => ({
       getPromptsForCircle: mockGetPromptsForCircle,
       createSubmission: mockCreateSubmissionMutation,
       updateResponse: mockUpdateResponseMutation,
+      lockSubmission: mockLockSubmissionMutation,
     },
   },
 }))
@@ -190,11 +194,13 @@ function setupMocks({
 
 const mockUpdateResponse = vi.fn()
 const mockCreateSubmission = vi.fn()
+const mockLockSubmission = vi.fn()
 
 function setupMutations() {
   mockUseMutation.mockImplementation((mutationRef: unknown) => {
     if (mutationRef === mockUpdateResponseMutation) return mockUpdateResponse
     if (mutationRef === mockCreateSubmissionMutation) return mockCreateSubmission
+    if (mutationRef === mockLockSubmissionMutation) return mockLockSubmission
     return vi.fn()
   })
 }
@@ -210,6 +216,7 @@ describe('MultiCircleSubmissionScreen', () => {
     setupMutations()
     mockUpdateResponse.mockResolvedValue(undefined)
     mockCreateSubmission.mockResolvedValue('sub-new' as Id<'submissions'>)
+    mockLockSubmission.mockResolvedValue(undefined)
   })
 
   afterEach(() => {
@@ -516,5 +523,48 @@ describe('MultiCircleSubmissionScreen', () => {
     cards.forEach((card) => {
       expect(card).toHaveAttribute('data-disabled', 'false')
     })
+  })
+
+  // -------------------------------------------------------------------------
+  // Submit button
+  // -------------------------------------------------------------------------
+
+  it('renders a Submit button when a submission exists', () => {
+    setupMocks({ submissionData: SUBMISSION, promptsData: [PROMPT_1] })
+
+    render(<MultiCircleSubmissionScreen circles={[CIRCLE_A]} cycleId="cycle-1" />)
+
+    expect(screen.getByRole('button', { name: /submit/i })).toBeInTheDocument()
+  })
+
+  it('Submit button is disabled when no submission exists yet', () => {
+    setupMocks({ submissionData: null, promptsData: [PROMPT_1] })
+
+    render(<MultiCircleSubmissionScreen circles={[CIRCLE_A]} cycleId="cycle-1" />)
+
+    expect(screen.getByRole('button', { name: /submit/i })).toBeDisabled()
+  })
+
+  it('calls lockSubmission when Submit is clicked', async () => {
+    setupMocks({ submissionData: SUBMISSION, promptsData: [PROMPT_1] })
+
+    render(<MultiCircleSubmissionScreen circles={[CIRCLE_A]} cycleId="cycle-1" />)
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /submit/i }))
+      await Promise.resolve()
+    })
+
+    expect(mockLockSubmission).toHaveBeenCalledWith({ submissionId: 'sub-1' })
+  })
+
+  it('shows Submitted state instead of Submit button when circle is submitted', () => {
+    const submittedCircle: Circle = { ...CIRCLE_A, status: 'submitted' }
+    setupMocks({ submissionData: SUBMISSION, promptsData: [PROMPT_1] })
+
+    render(<MultiCircleSubmissionScreen circles={[submittedCircle]} cycleId="cycle-1" />)
+
+    expect(screen.queryByRole('button', { name: /submit/i })).not.toBeInTheDocument()
+    expect(screen.getByText('Submitted')).toBeInTheDocument()
   })
 })

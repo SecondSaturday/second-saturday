@@ -4,7 +4,7 @@ import { useQuery } from 'convex/react'
 import { useEffect } from 'react'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
-import { Settings, Users, ClipboardList, ArrowLeft } from 'lucide-react'
+import { Settings, Users, ClipboardList, ArrowLeft, PenLine } from 'lucide-react'
 import Link from 'next/link'
 
 export function CircleHome({
@@ -91,6 +91,17 @@ export function CircleHome({
 
         {/* Navigation links */}
         <div className="flex flex-col gap-2">
+          <Link
+            href={`/dashboard/circles/${circleId}/submit`}
+            className="flex items-center gap-3 rounded-lg border border-border p-4 transition-colors hover:bg-muted/30"
+          >
+            <PenLine className="size-5 text-muted-foreground" />
+            <div>
+              <p className="text-sm font-medium text-foreground">Make Submission</p>
+              <p className="text-xs text-muted-foreground">Write your responses for this cycle</p>
+            </div>
+          </Link>
+
           <Link
             href={`/dashboard/circles/${circleId}/members`}
             className="flex items-center gap-3 rounded-lg border border-border p-4 transition-colors hover:bg-muted/30"

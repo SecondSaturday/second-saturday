@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
-import { Loader2 } from 'lucide-react'
+import { Lock, Loader2, Check } from 'lucide-react'
 import {
   CircleSubmissionTabs,
   AutoSaveIndicator,
@@ -13,11 +13,19 @@ import {
 } from '@/components/submissions'
 import type { Circle, SaveStatus } from '@/components/submissions'
 import { useDebounce } from '@/hooks/useDebounce'
+import { useDeadlineCountdown } from '@/hooks/useDeadlineCountdown'
+import { getNextSecondSaturday } from '@/lib/dates'
 import { trackEvent } from '@/lib/analytics'
 
 interface MultiCircleSubmissionScreenProps {
   circles: Circle[]
   cycleId: string
+}
+
+function getDeadlineTimestamp(): number {
+  const d = getNextSecondSaturday(new Date())
+  d.setUTCHours(10, 59, 0, 0)
+  return d.getTime()
 }
 
 export function MultiCircleSubmissionScreen({
@@ -29,6 +37,9 @@ export function MultiCircleSubmissionScreen({
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
   const [lastSaved, setLastSaved] = useState<Date | undefined>(undefined)
   const savedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const deadlineTimestamp = useMemo(() => getDeadlineTimestamp(), [])
+  const { isPast: deadlineIsPast } = useDeadlineCountdown(deadlineTimestamp)
 
   const activeCircle = circles.find((c) => c.id === activeCircleId)
 
@@ -54,6 +65,22 @@ export function MultiCircleSubmissionScreen({
   const createSubmission = useMutation(api.submissions.createSubmission)
   const updateResponse = useMutation(api.submissions.updateResponse)
   const removeMedia = useMutation(api.submissions.removeMediaFromResponse)
+  const lockSubmission = useMutation(api.submissions.lockSubmission)
+
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleSubmit = useCallback(async () => {
+    if (!submissionData?._id || isSubmitting) return
+    setIsSubmitting(true)
+    try {
+      await lockSubmission({ submissionId: submissionData._id })
+      try {
+        trackEvent('submission_locked', { circle_id: activeCircleId, cycle_id: cycleId })
+      } catch {}
+    } finally {
+      setIsSubmitting(false)
+    }
+  }, [submissionData, isSubmitting, lockSubmission, activeCircleId, cycleId])
 
   // Initialise draft texts from server data when data loads
   useEffect(() => {
@@ -262,7 +289,8 @@ export function MultiCircleSubmissionScreen({
     [circles, activeCircleId, circleProgress]
   )
 
-  const isDisabled = activeCircle?.status === 'locked' || activeCircle?.status === 'submitted'
+  const isDisabled =
+    deadlineIsPast || activeCircle?.status === 'locked' || activeCircle?.status === 'submitted'
 
   const isLoading = submissionData === undefined || promptsData === undefined
 
@@ -271,8 +299,18 @@ export function MultiCircleSubmissionScreen({
       {/* Header */}
       <div className="flex items-center justify-end gap-3 px-4 py-2 border-b border-border/50">
         <AutoSaveIndicator status={saveStatus} lastSaved={lastSaved} />
-        <DeadlineCountdown />
+        <DeadlineCountdown deadlineTimestamp={deadlineTimestamp} />
       </div>
+
+      {/* Locked banner */}
+      {deadlineIsPast && (
+        <div className="flex items-center gap-2 bg-destructive/10 border-b border-destructive/20 px-4 py-2.5">
+          <Lock className="size-4 text-destructive shrink-0" />
+          <p className="text-sm text-destructive font-medium">
+            Submissions are locked for this cycle.
+          </p>
+        </div>
+      )}
 
       {/* Tabs */}
       <CircleSubmissionTabs
@@ -325,6 +363,26 @@ export function MultiCircleSubmissionScreen({
           </div>
         )}
       </CircleSubmissionTabs>
+
+      {/* Submit footer */}
+      {!deadlineIsPast && !isLoading && (
+        <div className="sticky bottom-0 border-t border-border bg-background px-4 py-3">
+          {activeCircle?.status === 'submitted' ? (
+            <div className="flex items-center justify-center gap-2 text-sm font-medium text-green-600">
+              <Check className="size-4" />
+              Submitted
+            </div>
+          ) : (
+            <button
+              onClick={handleSubmit}
+              disabled={!submissionData?._id || isSubmitting}
+              className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity disabled:opacity-50"
+            >
+              {isSubmitting ? 'Submitting…' : 'Submit'}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }
