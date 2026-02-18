@@ -3,14 +3,14 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import type { Id } from '../../../convex/_generated/dataModel'
 
 const mockLeaveCircle = vi.fn()
-const mockPush = vi.fn()
+const mockReplace = vi.fn()
 
 vi.mock('convex/react', () => ({
   useMutation: () => mockLeaveCircle,
 }))
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockPush, replace: vi.fn() }),
+  useRouter: () => ({ push: vi.fn(), replace: mockReplace }),
 }))
 
 vi.mock('sonner', () => ({
@@ -33,6 +33,7 @@ describe('LeaveCircleModal', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockLeaveCircle.mockResolvedValue({ success: true })
+    mockReplace.mockResolvedValue(undefined)
   })
 
   it('renders dialog with title and description', () => {
@@ -65,7 +66,7 @@ describe('LeaveCircleModal', () => {
     render(<LeaveCircleModal {...defaultProps} />)
     fireEvent.click(screen.getByText('Leave Circle'))
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/dashboard')
+      expect(mockReplace).toHaveBeenCalledWith('/dashboard')
     })
   })
 

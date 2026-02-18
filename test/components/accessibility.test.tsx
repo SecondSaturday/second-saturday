@@ -119,7 +119,8 @@ describe('DashboardHeader accessibility', () => {
     const user = userEvent.setup()
     const onOpen = vi.fn()
     render(<DashboardHeader dateLabel="Sep 13" onDatePickerOpen={onOpen} />)
-    // Tab to first button (date picker)
+    // First tab lands on the avatar link; second tab reaches the date picker button
+    await user.tab()
     await user.tab()
     await user.keyboard('{Enter}')
     expect(onOpen).toHaveBeenCalled()

@@ -92,7 +92,7 @@ describe('SettingsPage', () => {
 
   it('password section visible when passwordEnabled is true', () => {
     render(<SettingsPage />)
-    expect(screen.getByText('Change Password')).toBeInTheDocument()
+    expect(screen.getAllByText('Change Password').length).toBeGreaterThan(0)
   })
 
   it('password section hidden for OAuth-only users', () => {
