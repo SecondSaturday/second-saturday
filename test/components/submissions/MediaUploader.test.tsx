@@ -423,7 +423,7 @@ describe('MediaUploader', () => {
     await user.click(cameraButton)
 
     await waitFor(() => {
-      expect(onUploadComplete).toHaveBeenCalledWith('test-media-id')
+      expect(onUploadComplete).toHaveBeenCalledWith('test-media-id', 'image')
     })
   })
 

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 
 // Mock Clerk
 const mockUpdatePassword = vi.fn()
@@ -117,10 +118,14 @@ describe('SettingsPage', () => {
     expect(screen.getByText('Passwords do not match')).toBeInTheDocument()
   })
 
-  it('delete account flow shows confirmation dialog', () => {
+  it('delete account flow shows confirmation dialog', async () => {
+    const user = userEvent.setup()
     render(<SettingsPage />)
-    fireEvent.click(screen.getByRole('button', { name: /delete account/i }))
-    expect(screen.getByText(/type.*DELETE.*to confirm/i)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /delete account/i }))
+    // Dialog opens; verify the DELETE confirmation input is visible
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('DELETE')).toBeInTheDocument()
+    })
   })
 
   it('delete requires typing DELETE', () => {
