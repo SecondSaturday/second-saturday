@@ -13,7 +13,7 @@ interface PromptResponseCardProps {
   responseId: Id<'responses'>
   initialValue?: string
   onValueChange?: (value: string) => void
-  onMediaUpload?: (mediaId: Id<'media'>) => void
+  onMediaUpload?: (mediaId: Id<'media'>, type: 'image' | 'video') => void
   onMediaError?: (error: string) => void
   disabled?: boolean
   maxLength?: number
@@ -54,9 +54,9 @@ export function PromptResponseCard({
     return 'text-muted-foreground'
   }
 
-  const handleMediaUploadComplete = (mediaId: Id<'media'>) => {
+  const handleMediaUploadComplete = (mediaId: Id<'media'>, type: 'image' | 'video') => {
     setMediaCount((prev) => prev + 1)
-    onMediaUpload?.(mediaId)
+    onMediaUpload?.(mediaId, type)
   }
 
   return (

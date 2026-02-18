@@ -20,7 +20,7 @@ import { useBlockingUpload } from '@/hooks/useBlockingUpload'
 
 interface MediaUploaderProps {
   responseId: Id<'responses'>
-  onUploadComplete?: (mediaId: Id<'media'>) => void
+  onUploadComplete?: (mediaId: Id<'media'>, type: 'image' | 'video') => void
   onUploadError?: (error: string) => void
   maxMedia?: number
   currentMediaCount?: number
@@ -222,7 +222,7 @@ export function MediaUploader({
       setProgress(100)
       setStage('idle')
       setPreview(null)
-      onUploadComplete?.(mediaId)
+      onUploadComplete?.(mediaId, 'image')
     } catch (err: unknown) {
       if (err instanceof Error && err.name === 'AbortError') {
         // Upload was cancelled
@@ -401,7 +401,7 @@ export function MediaUploader({
       videoUpload.setStage('complete')
       setProgress(100)
       setStage('idle')
-      onUploadComplete?.(mediaId)
+      onUploadComplete?.(mediaId, 'video')
 
       // Note: Video processing continues on Mux servers
       // Thumbnail and playback will be available after processing completes

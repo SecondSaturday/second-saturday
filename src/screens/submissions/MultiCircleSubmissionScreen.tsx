@@ -13,6 +13,7 @@ import {
 } from '@/components/submissions'
 import type { Circle, SaveStatus } from '@/components/submissions'
 import { useDebounce } from '@/hooks/useDebounce'
+import { trackEvent } from '@/lib/analytics'
 
 interface MultiCircleSubmissionScreenProps {
   circles: Circle[]
@@ -30,6 +31,14 @@ export function MultiCircleSubmissionScreen({
   const savedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const activeCircle = circles.find((c) => c.id === activeCircleId)
+
+  // Track submission_started when user opens/switches to a circle
+  useEffect(() => {
+    if (!activeCircleId) return
+    try {
+      trackEvent('submission_started', { circle_id: activeCircleId, cycle_id: cycleId })
+    } catch {}
+  }, [activeCircleId, cycleId])
 
   // Queries for the active circle
   const submissionData = useQuery(
@@ -149,6 +158,26 @@ export function MultiCircleSubmissionScreen({
         setSaveStatus('saved')
         setLastSaved(new Date())
 
+        const totalPrompts = promptsData.length
+        const answeredPrompts = Object.values(debouncedDraftObj).filter(
+          (t) => t.trim().length > 0
+        ).length
+
+        try {
+          trackEvent('submission_saved_draft', {
+            circle_id: circleId,
+            cycle_id: cycleId,
+            prompts_answered: answeredPrompts,
+            total_prompts: totalPrompts,
+          })
+          if (answeredPrompts === totalPrompts && totalPrompts > 0) {
+            trackEvent('submission_completed', {
+              circle_id: circleId,
+              cycle_id: cycleId,
+            })
+          }
+        } catch {}
+
         if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current)
         savedTimeoutRef.current = setTimeout(() => setSaveStatus('idle'), 3000)
       } catch {
@@ -180,12 +209,21 @@ export function MultiCircleSubmissionScreen({
   }, [])
 
   // Handler: media upload complete (media is saved immediately)
-  const handleMediaUpload = useCallback(() => {
-    setSaveStatus('saved')
-    setLastSaved(new Date())
-    if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current)
-    savedTimeoutRef.current = setTimeout(() => setSaveStatus('idle'), 3000)
-  }, [])
+  const handleMediaUpload = useCallback(
+    (_mediaId: unknown, type: 'image' | 'video') => {
+      setSaveStatus('saved')
+      setLastSaved(new Date())
+      if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current)
+      savedTimeoutRef.current = setTimeout(() => setSaveStatus('idle'), 3000)
+      try {
+        trackEvent(type === 'video' ? 'submission_video_added' : 'submission_photo_added', {
+          circle_id: activeCircleId,
+          cycle_id: cycleId,
+        })
+      } catch {}
+    },
+    [activeCircleId, cycleId]
+  )
 
   // Compute progress for active circle
   const circleProgress = useMemo(() => {
