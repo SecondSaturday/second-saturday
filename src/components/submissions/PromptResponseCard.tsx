@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import { MediaUploader } from './MediaUploader'
+import { MediaGrid } from './MediaGrid'
+import type { MediaItem } from './MediaGrid'
 import type { Id } from '../../../convex/_generated/dataModel'
 
 interface PromptResponseCardProps {
@@ -12,8 +14,10 @@ interface PromptResponseCardProps {
   promptText: string
   responseId: Id<'responses'>
   initialValue?: string
+  existingMedia?: MediaItem[]
   onValueChange?: (value: string) => void
   onMediaUpload?: (mediaId: Id<'media'>, type: 'image' | 'video') => void
+  onMediaRemove?: (mediaId: Id<'media'>) => void
   onMediaError?: (error: string) => void
   disabled?: boolean
   maxLength?: number
@@ -25,20 +29,27 @@ export function PromptResponseCard({
   promptText,
   responseId,
   initialValue = '',
+  existingMedia = [],
   onValueChange,
   onMediaUpload,
+  onMediaRemove,
   onMediaError,
   disabled = false,
   maxLength = 500,
   maxMedia = 3,
 }: PromptResponseCardProps) {
   const [value, setValue] = useState(initialValue)
-  const [mediaCount, setMediaCount] = useState(0)
+  const [mediaCount, setMediaCount] = useState(existingMedia.length)
   const charCount = value.length
 
   useEffect(() => {
     setValue(initialValue)
   }, [initialValue])
+
+  // Sync mediaCount when server data changes (e.g. on reload)
+  useEffect(() => {
+    setMediaCount(existingMedia.length)
+  }, [existingMedia.length])
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value
@@ -87,6 +98,15 @@ export function PromptResponseCard({
             {charCount}/{maxLength}
           </div>
         </div>
+
+        {/* Existing Media Preview */}
+        {existingMedia.length > 0 && (
+          <MediaGrid
+            media={existingMedia}
+            onRemove={disabled ? undefined : onMediaRemove}
+            disabled={disabled}
+          />
+        )}
 
         {/* Media Upload Area */}
         <MediaUploader

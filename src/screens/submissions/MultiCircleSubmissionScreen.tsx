@@ -53,6 +53,7 @@ export function MultiCircleSubmissionScreen({
   // Mutations
   const createSubmission = useMutation(api.submissions.createSubmission)
   const updateResponse = useMutation(api.submissions.updateResponse)
+  const removeMedia = useMutation(api.submissions.removeMediaFromResponse)
 
   // Initialise draft texts from server data when data loads
   useEffect(() => {
@@ -225,6 +226,22 @@ export function MultiCircleSubmissionScreen({
     [activeCircleId, cycleId]
   )
 
+  // Handler: remove media from a response
+  const handleMediaRemove = useCallback(
+    async (mediaId: Id<'media'>) => {
+      try {
+        await removeMedia({ mediaId })
+        setSaveStatus('saved')
+        setLastSaved(new Date())
+        if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current)
+        savedTimeoutRef.current = setTimeout(() => setSaveStatus('idle'), 3000)
+      } catch {
+        setSaveStatus('error')
+      }
+    },
+    [removeMedia]
+  )
+
   // Compute progress for active circle
   const circleProgress = useMemo(() => {
     const prompts = promptsData ?? []
@@ -281,6 +298,14 @@ export function MultiCircleSubmissionScreen({
                 serverResponse?._id ?? (`temp-${prompt._id}` as unknown as Id<'responses'>)
               const draftValue =
                 draftTexts.get(activeCircleId)?.get(prompt._id) ?? serverResponse?.text ?? ''
+              const existingMedia = (serverResponse?.media ?? [])
+                .filter((m) => m.url !== null)
+                .map((m) => ({
+                  _id: m._id,
+                  type: m.type as 'image' | 'video',
+                  url: m.url as string,
+                  thumbnailUrl: m.thumbnailUrl,
+                }))
 
               return (
                 <PromptResponseCard
@@ -289,8 +314,10 @@ export function MultiCircleSubmissionScreen({
                   promptText={prompt.text}
                   responseId={responseId}
                   initialValue={draftValue}
+                  existingMedia={existingMedia}
                   onValueChange={(value) => handleValueChange(activeCircleId, prompt._id, value)}
                   onMediaUpload={handleMediaUpload}
+                  onMediaRemove={isDisabled ? undefined : handleMediaRemove}
                   disabled={isDisabled}
                 />
               )
