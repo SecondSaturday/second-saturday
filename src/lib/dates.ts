@@ -33,3 +33,44 @@ export function getNextSecondSaturday(from: Date = new Date()): Date {
 export function formatShortDate(date: Date): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
+
+/**
+ * Returns 10:59 AM UTC on the second Saturday of the month containing `date`.
+ */
+export function getSecondSaturdayDeadline(date: Date): Date {
+  const year = date.getUTCFullYear()
+  const month = date.getUTCMonth()
+  // Find the first day of the month in UTC
+  const firstDayOfMonth = new Date(Date.UTC(year, month, 1))
+  const dayOfWeek = firstDayOfMonth.getUTCDay()
+  // Days until the first Saturday (day 6)
+  const daysToFirstSaturday = (6 - dayOfWeek + 7) % 7
+  const secondSaturdayDay = 1 + daysToFirstSaturday + 7
+  // Deadline is 10:59:00 UTC on the second Saturday
+  return new Date(Date.UTC(year, month, secondSaturdayDay, 10, 59, 0))
+}
+
+/**
+ * Returns time remaining until deadline.
+ */
+export function getTimeRemaining(deadline: Date): {
+  days: number
+  hours: number
+  minutes: number
+  seconds: number
+  isPast: boolean
+} {
+  const totalMs = deadline.getTime() - Date.now()
+
+  if (totalMs <= 0) {
+    return { days: 0, hours: 0, minutes: 0, seconds: 0, isPast: true }
+  }
+
+  const totalSeconds = Math.floor(totalMs / 1000)
+  const days = Math.floor(totalSeconds / 86400)
+  const hours = Math.floor((totalSeconds % 86400) / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+
+  return { days, hours, minutes, seconds, isPast: false }
+}

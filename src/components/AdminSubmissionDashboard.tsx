@@ -6,8 +6,17 @@ import type { Id } from '../../convex/_generated/dataModel'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Clock, Send } from 'lucide-react'
+import { Send } from 'lucide-react'
 import { toast } from 'sonner'
+import { DeadlineCountdown } from '@/components/submissions'
+import { getNextSecondSaturday } from '@/lib/dates'
+import { useMemo } from 'react'
+
+function getDeadlineTimestamp(): number {
+  const d = getNextSecondSaturday(new Date())
+  d.setUTCHours(10, 59, 0, 0)
+  return d.getTime()
+}
 
 const STATUS_STYLES = {
   Submitted: 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400',
@@ -17,6 +26,10 @@ const STATUS_STYLES = {
 
 export function AdminSubmissionDashboard({ circleId }: { circleId: Id<'circles'> }) {
   const data = useQuery(api.memberships.getSubmissionStatus, { circleId })
+  const deadlineTimestamp = useMemo(
+    () => data?.deadline ?? getDeadlineTimestamp(),
+    [data?.deadline]
+  )
 
   if (data === undefined) {
     return (
@@ -33,14 +46,7 @@ export function AdminSubmissionDashboard({ circleId }: { circleId: Id<'circles'>
   return (
     <div className="flex flex-col gap-4">
       {/* Deadline */}
-      <div className="flex items-center gap-2 rounded-lg border border-border bg-card p-3">
-        <Clock className="size-4 text-muted-foreground" />
-        <span className="text-sm text-muted-foreground">
-          {data.deadline
-            ? `Deadline: ${new Date(data.deadline).toLocaleDateString()}`
-            : 'Deadline not set'}
-        </span>
-      </div>
+      <DeadlineCountdown deadlineTimestamp={deadlineTimestamp} />
 
       {/* Reminder count */}
       <p className="text-xs text-muted-foreground">3 of 3 reminders remaining</p>

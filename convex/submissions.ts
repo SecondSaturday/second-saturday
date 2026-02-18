@@ -39,7 +39,9 @@ function validateCycleId(cycleId: string): void {
     throw new Error('Cycle ID must be in YYYY-MM format')
   }
 
-  const [year, month] = cycleId.split('-').map(Number)
+  const parts = cycleId.split('-').map(Number)
+  const year = parts[0]!
+  const month = parts[1]!
   if (year < 2024 || year > 2099) {
     throw new Error('Invalid year in cycle ID')
   }
@@ -53,6 +55,31 @@ function validateResponseText(text: string): void {
   if (text.length > 500) {
     throw new Error('Response text must be 500 characters or less')
   }
+}
+
+/**
+ * Compute the deadline timestamp (10:59 AM UTC on the second Saturday)
+ * for the given cycle month (YYYY-MM) or the current month if omitted.
+ */
+function computeDeadlineTimestamp(cycleMonth?: string): number {
+  let year: number
+  let month: number // 0-indexed
+
+  if (cycleMonth) {
+    const parts = cycleMonth.split('-').map(Number)
+    year = parts[0]!
+    month = parts[1]! - 1 // convert to 0-indexed
+  } else {
+    const now = new Date(Date.now())
+    year = now.getUTCFullYear()
+    month = now.getUTCMonth()
+  }
+
+  const firstDayOfMonth = new Date(Date.UTC(year, month, 1))
+  const dayOfWeek = firstDayOfMonth.getUTCDay()
+  const daysToFirstSaturday = (6 - dayOfWeek + 7) % 7
+  const secondSaturdayDay = 1 + daysToFirstSaturday + 7
+  return Date.UTC(year, month, secondSaturdayDay, 10, 59, 0)
 }
 
 /**
@@ -402,5 +429,27 @@ export const removeMediaFromResponse = mutation({
     }
 
     return args.mediaId
+  },
+})
+
+/**
+ * Get deadline status for the current (or specified) cycle.
+ * Returns the deadline timestamp, lock state, and seconds remaining.
+ */
+export const getDeadlineStatus = query({
+  args: {
+    cycleMonth: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const deadlineTimestamp = computeDeadlineTimestamp(args.cycleMonth)
+    const now = Date.now()
+    const secondsRemaining = Math.max(0, Math.floor((deadlineTimestamp - now) / 1000))
+    const isLocked = now >= deadlineTimestamp
+
+    return {
+      deadlineTimestamp,
+      isLocked,
+      secondsRemaining,
+    }
   },
 })

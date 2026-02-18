@@ -5,14 +5,24 @@ import { useQuery } from 'convex/react'
 import { api } from '../../../../../../convex/_generated/api'
 import type { Id } from '../../../../../../convex/_generated/dataModel'
 import { AdminSubmissionDashboard } from '@/components/AdminSubmissionDashboard'
+import { DeadlineCountdown } from '@/components/submissions'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { getNextSecondSaturday } from '@/lib/dates'
+import { useMemo } from 'react'
+
+function getDeadlineTimestamp(): number {
+  const d = getNextSecondSaturday(new Date())
+  d.setUTCHours(10, 59, 0, 0)
+  return d.getTime()
+}
 
 export default function SubmissionsPage() {
   const params = useParams()
   const circleId = params.circleId as Id<'circles'>
 
   const circle = useQuery(api.circles.getCircle, { circleId })
+  const deadlineTimestamp = useMemo(() => getDeadlineTimestamp(), [])
 
   if (circle === undefined) {
     return (
@@ -50,7 +60,8 @@ export default function SubmissionsPage() {
         <h1 className="text-lg font-semibold text-foreground">Submission Status</h1>
       </header>
 
-      <div className="flex flex-1 flex-col px-6 py-6">
+      <div className="flex flex-1 flex-col px-6 py-6 gap-4">
+        <DeadlineCountdown deadlineTimestamp={deadlineTimestamp} />
         <AdminSubmissionDashboard circleId={circleId} />
       </div>
     </div>

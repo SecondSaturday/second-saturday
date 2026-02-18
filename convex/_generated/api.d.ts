@@ -9,24 +9,30 @@
  */
 
 import type * as circles from '../circles.js'
+import type * as emails from '../emails.js'
 import type * as files from '../files.js'
 import type * as http from '../http.js'
 import type * as memberships from '../memberships.js'
 import type * as newsletterReads from '../newsletterReads.js'
 import type * as prompts from '../prompts.js'
+import type * as submissions from '../submissions.js'
 import type * as users from '../users.js'
+import type * as videoActions from '../videoActions.js'
 import type * as videos from '../videos.js'
 
 import type { ApiFromModules, FilterApi, FunctionReference } from 'convex/server'
 
 declare const fullApi: ApiFromModules<{
   circles: typeof circles
+  emails: typeof emails
   files: typeof files
   http: typeof http
   memberships: typeof memberships
   newsletterReads: typeof newsletterReads
   prompts: typeof prompts
+  submissions: typeof submissions
   users: typeof users
+  videoActions: typeof videoActions
   videos: typeof videos
 }>
 
