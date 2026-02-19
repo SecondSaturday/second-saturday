@@ -197,26 +197,20 @@ export const getCirclesByUser = query({
 
     const circles = await Promise.all(
       activeMemberships.map(async (m) => {
-        const circle = await ctx.db
-          .query('circles')
-          .filter((q) => q.eq(q.field('_id'), m.circleId))
-          .first()
+        const circle = await ctx.db.get(m.circleId)
         if (!circle || circle.archivedAt) return null
 
-        // Get member count and preview names (active only)
-        const allMembers = (
-          await ctx.db
-            .query('memberships')
-            .withIndex('by_circle', (q) => q.eq('circleId', m.circleId))
-            .collect()
-        ).filter((mem) => !mem.leftAt)
+        // Get active member count and preview names
+        // Take limited batch to avoid reading too many documents
+        const memberBatch = await ctx.db
+          .query('memberships')
+          .withIndex('by_circle', (q) => q.eq('circleId', m.circleId))
+          .take(200)
+        const activeMembers = memberBatch.filter((mem) => !mem.leftAt)
 
         const memberUsers = await Promise.all(
-          allMembers.slice(0, 5).map(async (mem) => {
-            const u = await ctx.db
-              .query('users')
-              .filter((q) => q.eq(q.field('_id'), mem.userId))
-              .first()
+          activeMembers.slice(0, 5).map(async (mem) => {
+            const u = await ctx.db.get(mem.userId)
             return u?.name ?? u?.email ?? 'Unknown'
           })
         )
@@ -246,7 +240,7 @@ export const getCirclesByUser = query({
           ...circle,
           iconUrl,
           role: m.role,
-          memberCount: allMembers.length,
+          memberCount: activeMembers.length,
           memberNames: memberUsers,
           hasUnread,
         }
@@ -270,10 +264,7 @@ export const getCircle = query({
 
     if (!membership || membership.leftAt) return null
 
-    const circle = await ctx.db
-      .query('circles')
-      .filter((q) => q.eq(q.field('_id'), args.circleId))
-      .first()
+    const circle = await ctx.db.get(args.circleId)
     if (!circle) return null
 
     const iconUrl = circle.iconImageId ? await ctx.storage.getUrl(circle.iconImageId) : null

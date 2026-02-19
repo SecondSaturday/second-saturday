@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { setupClerkTestingToken } from '@clerk/testing/playwright'
+import { waitForCreateFormHydration } from './helpers'
 
 test.describe('Circle Creation Flow', () => {
   test.beforeEach(async ({ page }) => {
@@ -8,39 +9,42 @@ test.describe('Circle Creation Flow', () => {
 
   test('create page loads with form', async ({ page }) => {
     await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('Create Circle')).toBeVisible({ timeout: 15000 })
+    await expect(page.getByRole('heading', { name: 'Create Circle' })).toBeVisible({
+      timeout: 15000,
+    })
     await expect(page.getByLabel('Circle Name')).toBeVisible()
   })
 
   test('shows back link to dashboard', async ({ page }) => {
     await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('Create Circle')).toBeVisible({ timeout: 15000 })
+    await expect(page.getByRole('heading', { name: 'Create Circle' })).toBeVisible({
+      timeout: 15000,
+    })
     const backLink = page.locator('a[href="/dashboard"]')
     await expect(backLink).toBeVisible()
   })
 
   test('submit button disabled when name too short', async ({ page }) => {
     await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByLabel('Circle Name')).toBeVisible({ timeout: 15000 })
-    // Type only 2 characters
-    await page.getByLabel('Circle Name').fill('AB')
+    await waitForCreateFormHydration(page)
+    await page.locator('#name').fill('AB')
     const submitButton = page.getByRole('button', { name: /create circle/i })
     await expect(submitButton).toBeDisabled()
   })
 
   test('submit button enabled when name is valid', async ({ page }) => {
     await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByLabel('Circle Name')).toBeVisible({ timeout: 15000 })
-    await page.getByLabel('Circle Name').fill('Test Circle')
+    await waitForCreateFormHydration(page)
+    await page.locator('#name').fill('Test Circle')
     const submitButton = page.getByRole('button', { name: /create circle/i })
-    await expect(submitButton).toBeEnabled()
+    await expect(submitButton).toBeEnabled({ timeout: 5000 })
   })
 
   test('shows character counter for name', async ({ page }) => {
     await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByLabel('Circle Name')).toBeVisible({ timeout: 15000 })
-    await page.getByLabel('Circle Name').fill('Hello')
-    await expect(page.getByText('5/50')).toBeVisible()
+    await waitForCreateFormHydration(page)
+    await page.locator('#name').fill('Hello')
+    await expect(page.getByText('5/50')).toBeVisible({ timeout: 5000 })
   })
 
   test('shows icon and cover upload areas', async ({ page }) => {
@@ -55,17 +59,18 @@ test.describe('Circle Creation Flow', () => {
   })
 
   test('full creation flow navigates to prompts', async ({ page }) => {
+    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
+    await page.waitForTimeout(2000)
+
     await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByLabel('Circle Name')).toBeVisible({ timeout: 15000 })
+    await waitForCreateFormHydration(page)
 
-    // Fill the form
-    await page.getByLabel('Circle Name').fill('E2E Test Circle')
-    await page.getByLabel(/description/i).fill('Created by Playwright test')
+    await page.locator('#name').fill('E2E Test Circle')
 
-    // Submit
-    await page.getByRole('button', { name: /create circle/i }).click()
+    const submitButton = page.getByRole('button', { name: /create circle/i })
+    await expect(submitButton).toBeEnabled({ timeout: 5000 })
+    await submitButton.click()
 
-    // Should redirect to prompts page with setup=true
     await expect(page).toHaveURL(/\/prompts\?setup=true/, { timeout: 15000 })
   })
 })

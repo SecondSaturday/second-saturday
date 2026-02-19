@@ -4,6 +4,9 @@ import { setupClerkTestingToken } from '@clerk/testing/playwright'
 test.describe('Settings Page', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
+    // Warm up Convex auth before navigating to settings
+    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
+    await page.waitForTimeout(2000)
   })
 
   test('settings page loads with user profile', async ({ page }) => {
@@ -22,18 +25,18 @@ test.describe('Settings Page', () => {
     await expect(saveButton).toBeEnabled()
   })
 
-  test('email is read-only', async ({ page }) => {
+  test('email is displayed with change option', async ({ page }) => {
     await page.goto('/dashboard/settings', { waitUntil: 'domcontentloaded' })
     await expect(page.getByText('Profile')).toBeVisible({ timeout: 15000 })
-    const emailInput = page.locator('input[disabled]')
-    await expect(emailInput).toBeVisible()
+    await expect(page.getByText('Email')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Change', exact: true })).toBeVisible()
   })
 
-  test('delete account modal opens and requires confirmation', async ({ page }) => {
+  test('delete account modal opens and requires re-authentication', async ({ page }) => {
     await page.goto('/dashboard/settings', { waitUntil: 'domcontentloaded' })
     await expect(page.getByText('Danger Zone')).toBeVisible({ timeout: 15000 })
     await page.getByRole('button', { name: /delete account/i }).click()
-    await expect(page.getByPlaceholder('DELETE')).toBeVisible()
+    await expect(page.getByRole('button', { name: /verify identity/i })).toBeVisible()
   })
 
   test('password change section renders for password users', async ({ page }) => {

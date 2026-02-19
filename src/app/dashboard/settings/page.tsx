@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useUser } from '@clerk/nextjs'
+import { useUser, useClerk } from '@clerk/nextjs'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../../../convex/_generated/api'
 import { ImageUpload } from '@/components/circles/ImageUpload'
@@ -19,16 +19,15 @@ import {
 } from '@/components/ui/dialog'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { trackEvent } from '@/lib/analytics'
 import type { Id } from '../../../../convex/_generated/dataModel'
 
 export default function SettingsPage() {
   const { user: clerkUser } = useUser()
+  const { signOut } = useClerk()
   const convexUser = useQuery(api.users.getCurrentUser)
   const updateProfile = useMutation(api.users.updateProfile)
   const deleteAccount = useMutation(api.users.deleteAccount)
-  const router = useRouter()
 
   const [name, setName] = useState<string | null>(null)
   const [avatarStorageId, setAvatarStorageId] = useState<Id<'_storage'> | null>(null)
@@ -36,12 +35,21 @@ export default function SettingsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState('')
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [deleteReauthPassword, setDeleteReauthPassword] = useState('')
+  const [deleteReauthError, setDeleteReauthError] = useState<string | null>(null)
+  const [deleteReauthVerified, setDeleteReauthVerified] = useState(false)
+  const [deleteReauthing, setDeleteReauthing] = useState(false)
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [passwordSaving, setPasswordSaving] = useState(false)
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [passwordSuccess, setPasswordSuccess] = useState(false)
+  const [emailEditing, setEmailEditing] = useState(false)
+  const [newEmail, setNewEmail] = useState('')
+  const [emailSaving, setEmailSaving] = useState(false)
+  const [emailError, setEmailError] = useState<string | null>(null)
+  const [emailSuccess, setEmailSuccess] = useState(false)
 
   const displayName = name ?? convexUser?.name ?? ''
   const hasChanges = name !== null || avatarStorageId !== null
@@ -84,10 +92,50 @@ export default function SettingsPage() {
       setNewPassword('')
       setConfirmPassword('')
       setPasswordSuccess(true)
+      trackEvent('user_reset_password', { method: 'email' })
     } catch (err) {
       setPasswordError(err instanceof Error ? err.message : 'Failed to change password')
     } finally {
       setPasswordSaving(false)
+    }
+  }
+
+  const handleChangeEmail = async () => {
+    if (!newEmail.trim() || !clerkUser) return
+    setEmailError(null)
+    setEmailSuccess(false)
+    setEmailSaving(true)
+    try {
+      const emailAddress = await clerkUser.createEmailAddress({ email: newEmail.trim() })
+      await emailAddress.prepareVerification({ strategy: 'email_code' })
+      setEmailSuccess(true)
+      setNewEmail('')
+      setEmailEditing(false)
+    } catch (err) {
+      setEmailError(err instanceof Error ? err.message : 'Failed to update email')
+    } finally {
+      setEmailSaving(false)
+    }
+  }
+
+  const handleReauthForDelete = async () => {
+    setDeleteReauthError(null)
+    setDeleteReauthing(true)
+    try {
+      const res = await fetch('/api/verify-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: deleteReauthPassword }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.verified) {
+        throw new Error(data.error || 'Invalid password')
+      }
+      setDeleteReauthVerified(true)
+    } catch (err) {
+      setDeleteReauthError(err instanceof Error ? err.message : 'Authentication failed')
+    } finally {
+      setDeleteReauthing(false)
     }
   }
 
@@ -96,8 +144,12 @@ export default function SettingsPage() {
     try {
       trackEvent('account_deleted')
       await deleteAccount()
-      await clerkUser?.delete()
-      router.push('/')
+      const res = await fetch('/api/delete-account', { method: 'POST' })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to delete Clerk account')
+      }
+      await signOut({ redirectUrl: '/' })
     } catch (err) {
       console.error('Failed to delete account:', err)
       setDeleting(false)
@@ -148,8 +200,60 @@ export default function SettingsPage() {
 
           <div className="space-y-2">
             <label className="text-sm font-medium">Email</label>
+            <div className="flex gap-2">
+              <Input
+                value={clerkUser?.primaryEmailAddress?.emailAddress ?? ''}
+                disabled
+                className="text-muted-foreground"
+              />
+              {!emailEditing && (
+                <Button variant="outline" size="sm" onClick={() => setEmailEditing(true)}>
+                  Change
+                </Button>
+              )}
+            </div>
+            {emailEditing && (
+              <div className="space-y-2 pt-2">
+                <Input
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  placeholder="New email address"
+                  type="email"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={handleChangeEmail}
+                    disabled={!newEmail.trim() || emailSaving}
+                  >
+                    {emailSaving ? 'Sending...' : 'Send Verification'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setEmailEditing(false)
+                      setNewEmail('')
+                      setEmailError(null)
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+            {emailError && <p className="text-sm text-destructive">{emailError}</p>}
+            {emailSuccess && (
+              <p className="text-sm text-green-600">
+                Verification email sent. Check your inbox to confirm.
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Timezone</label>
             <Input
-              value={clerkUser?.primaryEmailAddress?.emailAddress ?? ''}
+              value={convexUser.timezone ?? 'Not detected'}
               disabled
               className="text-muted-foreground"
             />
@@ -223,7 +327,18 @@ export default function SettingsPage() {
           <p className="mb-4 text-sm text-muted-foreground">
             Permanently delete your account and all associated data. This action cannot be undone.
           </p>
-          <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+          <Dialog
+            open={deleteOpen}
+            onOpenChange={(open) => {
+              setDeleteOpen(open)
+              if (!open) {
+                setDeleteConfirm('')
+                setDeleteReauthPassword('')
+                setDeleteReauthError(null)
+                setDeleteReauthVerified(false)
+              }
+            }}
+          >
             <DialogTrigger asChild>
               <Button variant="destructive">Delete Account</Button>
             </DialogTrigger>
@@ -235,28 +350,80 @@ export default function SettingsPage() {
                   data. This cannot be undone.
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Type <span className="font-mono font-bold">DELETE</span> to confirm
-                </label>
-                <Input
-                  value={deleteConfirm}
-                  onChange={(e) => setDeleteConfirm(e.target.value)}
-                  placeholder="DELETE"
-                />
-              </div>
-              <DialogFooter>
-                <Button variant="ghost" onClick={() => setDeleteOpen(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  variant="destructive"
-                  disabled={deleteConfirm !== 'DELETE' || deleting}
-                  onClick={handleDeleteAccount}
-                >
-                  {deleting ? 'Deleting...' : 'Delete Account'}
-                </Button>
-              </DialogFooter>
+              {!deleteReauthVerified ? (
+                <div className="space-y-4">
+                  {clerkUser?.passwordEnabled ? (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Enter your password to continue</label>
+                      <Input
+                        type="password"
+                        value={deleteReauthPassword}
+                        onChange={(e) => setDeleteReauthPassword(e.target.value)}
+                        placeholder="Current password"
+                      />
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">
+                        You signed in with an external provider. Confirm your email to continue.
+                      </p>
+                      <Input
+                        value={clerkUser?.primaryEmailAddress?.emailAddress ?? ''}
+                        disabled
+                        className="text-muted-foreground"
+                      />
+                    </div>
+                  )}
+                  {deleteReauthError && (
+                    <p className="text-sm text-destructive">{deleteReauthError}</p>
+                  )}
+                  <DialogFooter>
+                    <Button variant="ghost" onClick={() => setDeleteOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      disabled={
+                        clerkUser?.passwordEnabled
+                          ? !deleteReauthPassword || deleteReauthing
+                          : deleteReauthing
+                      }
+                      onClick={
+                        clerkUser?.passwordEnabled
+                          ? handleReauthForDelete
+                          : () => setDeleteReauthVerified(true)
+                      }
+                    >
+                      {deleteReauthing ? 'Verifying...' : 'Verify Identity'}
+                    </Button>
+                  </DialogFooter>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">
+                      Type <span className="font-mono font-bold">DELETE</span> to confirm
+                    </label>
+                    <Input
+                      value={deleteConfirm}
+                      onChange={(e) => setDeleteConfirm(e.target.value)}
+                      placeholder="DELETE"
+                    />
+                  </div>
+                  <DialogFooter>
+                    <Button variant="ghost" onClick={() => setDeleteOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      disabled={deleteConfirm !== 'DELETE' || deleting}
+                      onClick={handleDeleteAccount}
+                    >
+                      {deleting ? 'Deleting...' : 'Delete Account'}
+                    </Button>
+                  </DialogFooter>
+                </div>
+              )}
             </DialogContent>
           </Dialog>
         </CardContent>

@@ -17,7 +17,11 @@ vi.mock('@clerk/nextjs', () => ({
       passwordEnabled: mockPasswordEnabled,
       updatePassword: mockUpdatePassword,
       delete: mockDelete,
+      createEmailAddress: vi.fn(),
     },
+  }),
+  useSignIn: () => ({
+    signIn: { create: vi.fn() },
   }),
 }))
 
@@ -79,10 +83,12 @@ describe('SettingsPage', () => {
     expect(screen.getByDisplayValue('test@example.com')).toBeInTheDocument()
   })
 
-  it('email field is read-only', () => {
+  it('email field is displayed with change option', () => {
     render(<SettingsPage />)
     const emailInput = screen.getByDisplayValue('test@example.com')
     expect(emailInput).toBeDisabled()
+    // "Change" button for email (not "Change Password")
+    expect(screen.getByRole('button', { name: /^change$/i })).toBeInTheDocument()
   })
 
   it('save button disabled when no changes', () => {
@@ -118,21 +124,22 @@ describe('SettingsPage', () => {
     expect(screen.getByText('Passwords do not match')).toBeInTheDocument()
   })
 
-  it('delete account flow shows confirmation dialog', async () => {
+  it('delete account flow shows re-auth step first', async () => {
     const user = userEvent.setup()
     render(<SettingsPage />)
     await user.click(screen.getByRole('button', { name: /delete account/i }))
-    // Dialog opens; verify the DELETE confirmation input is visible
+    // Dialog opens with re-auth step, not DELETE input
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('DELETE')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /verify identity/i })).toBeInTheDocument()
     })
   })
 
-  it('delete requires typing DELETE', () => {
+  it('delete re-auth requires password for password users', () => {
     render(<SettingsPage />)
     fireEvent.click(screen.getByRole('button', { name: /delete account/i }))
-    const deleteButtons = screen.getAllByRole('button', { name: /delete account/i })
-    const confirmButton = deleteButtons[deleteButtons.length - 1]
-    expect(confirmButton).toBeDisabled()
+    // Both the password change section and re-auth dialog have "Current password" inputs
+    const passwordInputs = screen.getAllByPlaceholderText('Current password')
+    expect(passwordInputs.length).toBeGreaterThanOrEqual(2)
+    expect(screen.getByRole('button', { name: /verify identity/i })).toBeInTheDocument()
   })
 })

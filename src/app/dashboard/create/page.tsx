@@ -79,6 +79,7 @@ export default function CreateCirclePage() {
           <Label htmlFor="name">Circle Name</Label>
           <Input
             id="name"
+            name="name"
             placeholder="e.g. Fake Frems"
             value={name}
             onChange={(e) => setName(e.target.value)}

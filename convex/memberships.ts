@@ -63,10 +63,7 @@ export const getCircleMembers = query({
 
     const members = await Promise.all(
       activeMembers.map(async (m) => {
-        const memberUser = await ctx.db
-          .query('users')
-          .filter((q) => q.eq(q.field('_id'), m.userId))
-          .first()
+        const memberUser = await ctx.db.get(m.userId)
         return {
           userId: m.userId,
           role: m.role,
@@ -156,10 +153,7 @@ export const getSubmissionStatus = query({
 
     const members = await Promise.all(
       activeMembers.map(async (m) => {
-        const memberUser = await ctx.db
-          .query('users')
-          .filter((q) => q.eq(q.field('_id'), m.userId))
-          .first()
+        const memberUser = await ctx.db.get(m.userId)
         return {
           userId: m.userId,
           name: memberUser?.name ?? memberUser?.email ?? 'Unknown',

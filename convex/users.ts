@@ -97,14 +97,35 @@ export const updateProfile = mutation({
     }
 
     if (args.avatarStorageId !== undefined) {
+      // Delete old avatar from storage if replacing
+      if (user.avatarStorageId) {
+        await ctx.storage.delete(user.avatarStorageId)
+      }
       const url = await ctx.storage.getUrl(args.avatarStorageId)
       if (url) {
         updates.imageUrl = url
+        updates.avatarStorageId = args.avatarStorageId
       }
     }
 
     await ctx.db.patch(user._id, updates)
     return user._id
+  },
+})
+
+export const setTimezone = mutation({
+  args: { timezone: v.string() },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error('Not authenticated')
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', (q) => q.eq('clerkId', identity.subject))
+      .first()
+    if (!user) throw new Error('User not found')
+
+    await ctx.db.patch(user._id, { timezone: args.timezone, updatedAt: Date.now() })
   },
 })
 
@@ -142,6 +163,61 @@ export const deleteAccount = mutation({
       if (!membership.leftAt) {
         await ctx.db.patch(membership._id, { leftAt: now })
       }
+    }
+
+    // Delete all user-generated content (GDPR compliance)
+    const submissions = await ctx.db
+      .query('submissions')
+      .withIndex('by_user', (q) => q.eq('userId', user._id))
+      .collect()
+
+    for (const submission of submissions) {
+      const responses = await ctx.db
+        .query('responses')
+        .withIndex('by_submission', (q) => q.eq('submissionId', submission._id))
+        .collect()
+
+      for (const response of responses) {
+        const mediaItems = await ctx.db
+          .query('media')
+          .withIndex('by_response', (q) => q.eq('responseId', response._id))
+          .collect()
+
+        for (const mediaItem of mediaItems) {
+          if (mediaItem.storageId) {
+            await ctx.storage.delete(mediaItem.storageId)
+          }
+          await ctx.db.delete(mediaItem._id)
+        }
+
+        await ctx.db.delete(response._id)
+      }
+
+      await ctx.db.delete(submission._id)
+    }
+
+    // Delete all videos by this user
+    const videos = await ctx.db
+      .query('videos')
+      .withIndex('by_user', (q) => q.eq('userId', user.clerkId))
+      .collect()
+
+    for (const video of videos) {
+      await ctx.db.delete(video._id)
+    }
+
+    // Delete user's avatar from storage
+    if (user.avatarStorageId) {
+      await ctx.storage.delete(user.avatarStorageId)
+    }
+
+    // Clean up newsletter read records
+    const newsletterReads = await ctx.db
+      .query('newsletterReads')
+      .withIndex('by_user_circle', (q) => q.eq('userId', user._id))
+      .collect()
+    for (const read of newsletterReads) {
+      await ctx.db.delete(read._id)
     }
 
     // Send deletion confirmation email

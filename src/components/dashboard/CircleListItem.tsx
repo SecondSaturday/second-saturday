@@ -24,6 +24,7 @@ export function CircleListItem({
   return (
     <button
       onClick={onClick}
+      data-testid="circle-card"
       className="flex w-full items-center gap-4 border-b border-border/50 px-4 py-4 text-left transition-colors hover:bg-muted/30"
     >
       <Avatar className="size-14 ring-2 ring-background">

@@ -9,6 +9,7 @@
  */
 
 import type * as circles from '../circles.js'
+import type * as crons from '../crons.js'
 import type * as emails from '../emails.js'
 import type * as files from '../files.js'
 import type * as http from '../http.js'
@@ -24,6 +25,7 @@ import type { ApiFromModules, FilterApi, FunctionReference } from 'convex/server
 
 declare const fullApi: ApiFromModules<{
   circles: typeof circles
+  crons: typeof crons
   emails: typeof emails
   files: typeof files
   http: typeof http

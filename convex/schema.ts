@@ -7,6 +7,8 @@ export default defineSchema({
     email: v.string(),
     name: v.optional(v.string()),
     imageUrl: v.optional(v.string()),
+    avatarStorageId: v.optional(v.id('_storage')),
+    timezone: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })

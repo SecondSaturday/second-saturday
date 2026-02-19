@@ -37,6 +37,33 @@ export async function compressImage(file: File, options: CompressImageOptions = 
   }
 }
 
+export interface PixelCrop {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+// Apply a pixel crop to an image file using canvas
+export async function cropImage(file: File, crop: PixelCrop): Promise<File> {
+  const img = await createImageBitmap(file)
+  const canvas = document.createElement('canvas')
+  canvas.width = crop.width
+  canvas.height = crop.height
+  const ctx = canvas.getContext('2d')!
+  ctx.drawImage(img, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height)
+
+  return new Promise((resolve) => {
+    canvas.toBlob(
+      (blob) => {
+        resolve(new File([blob!], file.name, { type: file.type || 'image/jpeg' }))
+      },
+      file.type || 'image/jpeg',
+      0.92
+    )
+  })
+}
+
 // Check if file is an image
 export function isImageFile(file: File): boolean {
   return file.type.startsWith('image/')

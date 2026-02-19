@@ -5,52 +5,70 @@ import type { Page } from '@playwright/test'
  */
 
 /**
- * Creates a new circle via the dashboard
- * @param page Playwright page object
- * @param name Circle name
- * @param description Optional circle description
- * @returns The circle ID extracted from the URL
+ * Waits for React hydration on the create circle page.
+ * SSR renders the page but React event handlers aren't attached until hydration.
+ * We check for React's internal __reactFiber property on the input element.
+ */
+export async function waitForCreateFormHydration(page: Page): Promise<void> {
+  await page.waitForFunction(
+    () => {
+      const el = document.querySelector('#name')
+      if (!el) return false
+      return Object.keys(el).some((k) => k.startsWith('__reactFiber'))
+    },
+    { timeout: 15000 }
+  )
+}
+
+/**
+ * Waits for Convex auth to establish by visiting dashboard and waiting.
+ */
+export async function warmupConvexAuth(page: Page): Promise<void> {
+  await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
+  await page.waitForTimeout(2000)
+}
+
+/**
+ * Creates a new circle via the create page.
+ * Returns the circle ID extracted from the redirect URL.
  */
 export async function createCircle(
   page: Page,
   name: string,
   description?: string
 ): Promise<string> {
-  await page.goto('/dashboard', { waitUntil: 'networkidle' })
+  // Warm up Convex auth
+  await warmupConvexAuth(page)
 
-  // Wait for dashboard to load - either create button or circle list should appear
-  try {
-    await Promise.race([
-      page.waitForSelector('[data-testid="create-circle-button"]', { timeout: 20000 }),
-      page.waitForSelector('[data-testid="circle-list"]', { timeout: 20000 }),
-    ])
-  } catch {
-    // Take a screenshot for debugging
-    await page.screenshot({ path: `test-results/dashboard-load-error-${Date.now()}.png` })
-    throw new Error('Dashboard failed to load - neither create button nor circle list appeared')
-  }
+  await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
 
-  // Now click the create button
-  await page.click('[data-testid="create-circle-button"]')
+  // Wait for React hydration - ensure event handlers are attached
+  await waitForCreateFormHydration(page)
 
-  // Wait for create form
-  await page.waitForSelector('[name="name"]', { timeout: 10000 })
+  // Fill in circle name - fill() works with React controlled inputs
+  await page.locator('#name').fill(name)
 
-  // Fill in circle details
-  await page.fill('[name="name"]', name)
   if (description) {
-    await page.fill('[name="description"]', description)
+    await page.locator('#description').fill(description)
   }
 
-  // Submit form
-  await page.click('button[type="submit"]:has-text("Create")')
+  // Wait for button to be enabled and click
+  const submitBtn = page.getByRole('button', { name: /create circle/i })
+  await submitBtn.waitFor({ state: 'visible', timeout: 5000 })
+  await page.waitForFunction(
+    () => {
+      const btn = document.querySelector('button[type="submit"]')
+      return btn && !(btn as HTMLButtonElement).disabled
+    },
+    { timeout: 5000 }
+  )
+  await submitBtn.click()
 
-  // Wait for redirect to circle page
-  await page.waitForURL(/\/dashboard\/circles\//, { timeout: 15000 })
+  // App redirects to /dashboard/circles/{id}/prompts?setup=true
+  await page.waitForURL(/\/circles\/[^/]+\/prompts/, { timeout: 15000 })
 
-  // Extract circle ID from URL
   const url = page.url()
-  const match = url.match(/\/dashboard\/circles\/([^/]+)/)
+  const match = url.match(/\/circles\/([^/]+)\/prompts/)
   if (!match) {
     throw new Error(`Failed to extract circle ID from URL: ${url}`)
   }
@@ -59,29 +77,40 @@ export async function createCircle(
 }
 
 /**
- * Gets the invite code for a circle
- * @param page Playwright page object
- * @param circleId Circle ID
- * @returns The invite code
+ * Gets the invite code for a circle by opening its settings drawer.
  */
 export async function getInviteCode(page: Page, circleId: string): Promise<string> {
-  // Navigate to circle if not already there
-  if (!page.url().includes(`/dashboard/circles/${circleId}`)) {
-    await page.goto(`/dashboard/circles/${circleId}`)
-  }
+  await page.goto(`/dashboard/circles/${circleId}`, {
+    waitUntil: 'domcontentloaded',
+  })
 
-  // Click settings button
-  const settingsButton = page.locator(
-    '[data-testid="settings-button"], button:has-text("Settings")'
+  // Wait for settings button to be visible (always rendered, doesn't depend on Convex data)
+  const settingsBtn = page
+    .locator('button')
+    .filter({ has: page.locator('svg.lucide-settings') })
+    .first()
+  await settingsBtn.waitFor({ state: 'visible', timeout: 15000 })
+
+  // Open settings drawer via the settings icon button
+  await settingsBtn.click()
+
+  // Wait for CircleSettings component to finish loading
+  await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+
+  // Wait for the invite link to render
+  await page.waitForFunction(
+    () =>
+      Array.from(document.querySelectorAll('p')).some((p) => p.textContent?.includes('/invite/')),
+    { timeout: 15000 }
   )
-  await settingsButton.click({ timeout: 10000 })
 
-  // Wait for settings panel to open
-  await page.waitForSelector('text=Invite Link', { timeout: 10000 })
-
-  // Get invite code from the page
-  const inviteLinkElement = await page.locator('text=/\\/invite\\/[^\\s]+/').first()
-  const inviteLinkText = await inviteLinkElement.textContent()
+  // Get invite code from the displayed link
+  const inviteLinkText = await page.evaluate(() => {
+    const p = Array.from(document.querySelectorAll('p')).find((el) =>
+      el.textContent?.includes('/invite/')
+    )
+    return p?.textContent ?? null
+  })
 
   if (!inviteLinkText) {
     throw new Error('Failed to find invite link')
@@ -96,19 +125,7 @@ export async function getInviteCode(page: Page, circleId: string): Promise<strin
 }
 
 /**
- * Waits for a circle to be created and navigates to its page
- * @param page Playwright page object
- * @param timeout Maximum time to wait in ms
- */
-export async function waitForCircleCreation(page: Page, timeout = 15000): Promise<void> {
-  await page.waitForURL(/\/dashboard\/circles\//, { timeout })
-}
-
-/**
  * Checks if an element exists on the page
- * @param page Playwright page object
- * @param selector Element selector
- * @returns True if element exists, false otherwise
  */
 export async function elementExists(page: Page, selector: string): Promise<boolean> {
   try {
@@ -117,17 +134,4 @@ export async function elementExists(page: Page, selector: string): Promise<boole
   } catch {
     return false
   }
-}
-
-/**
- * Waits for dashboard to fully load
- * @param page Playwright page object
- */
-export async function waitForDashboard(page: Page): Promise<void> {
-  await page.goto('/dashboard')
-  // Wait for either the create button or circle list to appear
-  await Promise.race([
-    page.waitForSelector('[data-testid="create-circle-button"]', { timeout: 15000 }),
-    page.waitForSelector('[data-testid="circle-list"]', { timeout: 15000 }),
-  ])
 }

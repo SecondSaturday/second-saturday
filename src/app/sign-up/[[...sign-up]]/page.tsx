@@ -12,7 +12,7 @@ export default function SignUpPage() {
     <AuthLayout>
       <div className="flex flex-col items-center gap-8">
         <Image src="/icon.svg" alt="Second Saturday" width={48} height={48} />
-        <SignUp />
+        <SignUp afterSignUpUrl="/complete-profile" />
       </div>
     </AuthLayout>
   )
