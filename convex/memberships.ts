@@ -129,6 +129,26 @@ export const joinCircle = mutation({
   },
 })
 
+/** Get current cycle ID in YYYY-MM format */
+function getCurrentCycleId(): string {
+  const now = new Date(Date.now())
+  const year = now.getUTCFullYear()
+  const month = String(now.getUTCMonth() + 1).padStart(2, '0')
+  return `${year}-${month}`
+}
+
+/** Compute deadline timestamp for a cycle (second Saturday at 10:59 UTC) */
+function computeDeadline(cycleId: string): number {
+  const parts = cycleId.split('-').map(Number)
+  const year = parts[0]!
+  const month = parts[1]! - 1
+  const firstDay = new Date(Date.UTC(year, month, 1))
+  const dayOfWeek = firstDay.getUTCDay()
+  const daysToFirstSaturday = (6 - dayOfWeek + 7) % 7
+  const secondSaturdayDay = 1 + daysToFirstSaturday + 7
+  return Date.UTC(year, month, secondSaturdayDay, 10, 59, 0)
+}
+
 export const getSubmissionStatus = query({
   args: { circleId: v.id('circles') },
   handler: async (ctx, args) => {
@@ -144,6 +164,9 @@ export const getSubmissionStatus = query({
       throw new Error('Admin access required')
     }
 
+    const cycleId = getCurrentCycleId()
+    const deadline = computeDeadline(cycleId)
+
     const memberships = await ctx.db
       .query('memberships')
       .withIndex('by_circle', (q) => q.eq('circleId', args.circleId))
@@ -154,17 +177,38 @@ export const getSubmissionStatus = query({
     const members = await Promise.all(
       activeMembers.map(async (m) => {
         const memberUser = await ctx.db.get(m.userId)
+
+        // Look up submission for this member in the current cycle
+        const submission = await ctx.db
+          .query('submissions')
+          .withIndex('by_user_circle_cycle', (q) =>
+            q.eq('userId', m.userId).eq('circleId', args.circleId).eq('cycleId', cycleId)
+          )
+          .first()
+
+        let status: 'Submitted' | 'In Progress' | 'Not Started' = 'Not Started'
+        let submittedAt: number | null = null
+
+        if (submission) {
+          if (submission.submittedAt) {
+            status = 'Submitted'
+            submittedAt = submission.submittedAt
+          } else {
+            status = 'In Progress'
+          }
+        }
+
         return {
           userId: m.userId,
           name: memberUser?.name ?? memberUser?.email ?? 'Unknown',
           imageUrl: memberUser?.imageUrl ?? null,
-          status: 'Not Started' as 'Submitted' | 'In Progress' | 'Not Started',
-          submittedAt: null as number | null,
+          status,
+          submittedAt,
         }
       })
     )
 
-    return { members, deadline: null as number | null }
+    return { members, deadline }
   },
 })
 
@@ -181,6 +225,40 @@ async function getActiveMembership(
   if (!membership || membership.leftAt) return null
   return membership
 }
+
+export const transferAdmin = mutation({
+  args: {
+    circleId: v.id('circles'),
+    newAdminUserId: v.id('users'),
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthUser(ctx)
+
+    // Verify caller is current admin
+    const callerMembership = await getActiveMembership(ctx, user._id, args.circleId)
+    if (!callerMembership || callerMembership.role !== 'admin') {
+      throw new Error('Admin access required')
+    }
+
+    // Cannot transfer to yourself
+    if (args.newAdminUserId === user._id) {
+      throw new Error('Cannot transfer admin to yourself')
+    }
+
+    // Verify target is an active member
+    const targetMembership = await getActiveMembership(ctx, args.newAdminUserId, args.circleId)
+    if (!targetMembership) throw new Error('Target user is not an active member')
+
+    // Transfer: promote target, demote caller
+    await ctx.db.patch(targetMembership._id, { role: 'admin' })
+    await ctx.db.patch(callerMembership._id, { role: 'member' })
+
+    // Update adminId on the circle
+    await ctx.db.patch(args.circleId, { adminId: args.newAdminUserId, updatedAt: Date.now() })
+
+    return { success: true }
+  },
+})
 
 export const leaveCircle = mutation({
   args: { circleId: v.id('circles') },
@@ -227,9 +305,41 @@ export const removeMember = mutation({
       // Remove but keep contributions — member can rejoin
       await ctx.db.patch(targetMembership._id, { leftAt: Date.now() })
     } else {
-      // Remove and block — contributions will be cleaned up when content tables exist (Epic 4)
+      // Remove and block — redact all contributions
       await ctx.db.patch(targetMembership._id, { leftAt: Date.now(), blocked: true })
-      // TODO: Replace contributions with "[Removed]" when content/submission tables exist
+
+      // Find all submissions by this user in this circle and redact responses
+      const userSubmissions = await ctx.db
+        .query('submissions')
+        .withIndex('by_user_circle_cycle', (q) =>
+          q.eq('userId', args.targetUserId).eq('circleId', args.circleId)
+        )
+        .collect()
+
+      for (const submission of userSubmissions) {
+        // Redact all responses for this submission
+        const responses = await ctx.db
+          .query('responses')
+          .withIndex('by_submission', (q) => q.eq('submissionId', submission._id))
+          .collect()
+
+        for (const response of responses) {
+          await ctx.db.patch(response._id, { text: '[Removed]', updatedAt: Date.now() })
+
+          // Delete associated media
+          const mediaItems = await ctx.db
+            .query('media')
+            .withIndex('by_response', (q) => q.eq('responseId', response._id))
+            .collect()
+
+          for (const item of mediaItems) {
+            if (item.storageId) {
+              await ctx.storage.delete(item.storageId)
+            }
+            await ctx.db.delete(item._id)
+          }
+        }
+      }
     }
 
     return { success: true }

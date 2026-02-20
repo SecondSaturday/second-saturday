@@ -5,6 +5,7 @@ import { useEffect } from 'react'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
 import { Settings, Users, ClipboardList, ArrowLeft, PenLine } from 'lucide-react'
+import { trackEvent } from '@/lib/analytics'
 import Link from 'next/link'
 
 export function CircleHome({
@@ -25,6 +26,13 @@ export function CircleHome({
       onBack()
     }
   }, [circle, onBack])
+
+  // Track newsletter_read when the user actually views the circle
+  useEffect(() => {
+    if (circle) {
+      trackEvent('newsletter_read', { circleId })
+    }
+  }, [circle, circleId])
 
   if (circle === undefined) {
     return (

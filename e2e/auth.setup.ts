@@ -37,8 +37,42 @@ setup('authenticate', async ({ page }) => {
   await page.locator('input[name=password]').fill(process.env.E2E_CLERK_USER_PASSWORD!)
   await page.getByRole('button', { name: 'Continue', exact: true }).click()
 
+  // Handle email verification / 2FA if required (Clerk's input-otp component)
+  try {
+    await page.waitForURL(/\/factor/, { timeout: 5000 })
+    await page.waitForTimeout(1000)
+
+    // Clerk uses input-otp: a single hidden input inside [data-input-otp-container]
+    // Click the container to focus, then type the code
+    const otpContainer = page.locator('[data-input-otp-container]')
+    await otpContainer.waitFor({ state: 'visible', timeout: 5000 })
+
+    // Remove pointer-events:none so we can interact
+    await page.evaluate(() => {
+      const container = document.querySelector('[data-input-otp-container]') as HTMLElement
+      if (container) container.style.pointerEvents = 'auto'
+    })
+
+    // Focus the hidden input and type the code
+    const input = page.locator('input').first()
+    await input.focus()
+    await page.keyboard.type('424242', { delay: 50 })
+
+    // Wait for auto-submit or click Continue
+    await page.waitForTimeout(500)
+    const continueBtn = page.getByRole('button', { name: 'Continue', exact: true })
+    if (await continueBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await continueBtn.click()
+    }
+  } catch {
+    // No verification step required, continue
+  }
+
   // Wait for redirect to dashboard after successful sign-in
-  await page.waitForURL(/\/dashboard/, { timeout: 15000 })
+  await page.waitForURL(/\/dashboard/, { timeout: 15000 }).catch(async (err) => {
+    await page.screenshot({ path: 'e2e-auth-debug.png' })
+    throw err
+  })
 
   // Save authentication state for reuse in other tests
   await page.context().storageState({ path: authFile })

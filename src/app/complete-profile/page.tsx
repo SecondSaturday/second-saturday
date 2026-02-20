@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
 import { AuthLayout } from '@/components/auth'
@@ -13,6 +13,11 @@ import type { Id } from '../../../convex/_generated/dataModel'
 
 export default function CompleteProfilePage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const rawRedirect = searchParams.get('redirect_url')
+  // Only allow internal relative paths to prevent open redirect
+  const redirectUrl =
+    rawRedirect?.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : null
   const currentUser = useQuery(api.users.getCurrentUser)
   const updateProfile = useMutation(api.users.updateProfile)
 
@@ -21,12 +26,12 @@ export default function CompleteProfilePage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // If user already has a name, skip to dashboard
+  // If user already has a name, skip to destination
   useEffect(() => {
     if (currentUser && currentUser.name) {
-      router.replace('/dashboard')
+      router.replace(redirectUrl || '/dashboard')
     }
-  }, [currentUser, router])
+  }, [currentUser, router, redirectUrl])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,7 +45,7 @@ export default function CompleteProfilePage() {
         name: trimmed,
         ...(avatarStorageId ? { avatarStorageId } : {}),
       })
-      router.replace('/dashboard')
+      router.replace(redirectUrl || '/dashboard')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save profile')
       setSaving(false)

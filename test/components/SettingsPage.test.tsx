@@ -20,6 +20,9 @@ vi.mock('@clerk/nextjs', () => ({
       createEmailAddress: vi.fn(),
     },
   }),
+  useClerk: () => ({
+    signOut: vi.fn(),
+  }),
   useSignIn: () => ({
     signIn: { create: vi.fn() },
   }),

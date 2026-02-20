@@ -95,6 +95,14 @@ export default function MembersPage() {
 
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{member.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  Joined{' '}
+                  {new Date(member.joinedAt).toLocaleDateString(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </p>
                 {member.role === 'admin' && (
                   <Badge variant="secondary" className="mt-1 gap-1">
                     <Shield className="size-3" />

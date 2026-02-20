@@ -47,3 +47,4 @@ next-env.d.ts
 
 # dev analysis files
 .claude/epics/epic-1-analysis.md
+.claude/epics/epic-3-audit.md

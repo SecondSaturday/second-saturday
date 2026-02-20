@@ -279,19 +279,17 @@ export function CircleSettings({ circleId, onClose }: CircleSettingsProps) {
         </Link>
       )}
 
-      {/* Leave Circle section (non-admin only) */}
-      {!isAdmin && (
-        <div className="space-y-2 border-t border-border pt-4">
-          <Label className="text-muted-foreground">Danger Zone</Label>
-          <button
-            type="button"
-            onClick={() => setShowLeaveDialog(true)}
-            className="text-sm text-destructive hover:underline"
-          >
-            Leave this circle
-          </button>
-        </div>
-      )}
+      {/* Leave Circle section */}
+      <div className="space-y-2 border-t border-border pt-4">
+        <Label className="text-muted-foreground">Danger Zone</Label>
+        <button
+          type="button"
+          onClick={() => setShowLeaveDialog(true)}
+          className="text-sm text-destructive hover:underline"
+        >
+          Leave this circle
+        </button>
+      </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
@@ -304,6 +302,7 @@ export function CircleSettings({ circleId, onClose }: CircleSettingsProps) {
       {/* Leave Circle Modal */}
       <LeaveCircleModal
         circleId={circleId}
+        isAdmin={isAdmin}
         open={showLeaveDialog}
         onOpenChange={setShowLeaveDialog}
         onSuccess={onClose}

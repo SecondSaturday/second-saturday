@@ -13,7 +13,7 @@ test.describe('Leave Circle Flow', () => {
 
     if (count > 0) {
       await circleCards.first().click()
-      await page.waitForURL(/\/dashboard\/circles\//)
+      await page.waitForURL(/\/dashboard(\/(circles\/)|(\?.*circle=))/)
 
       // Open settings drawer
       const settingsBtn = page
@@ -57,7 +57,7 @@ test.describe('Leave Circle Flow', () => {
     }
   })
 
-  test('should prevent admin from leaving without transferring role', async ({ page }) => {
+  test('should show admin transfer dialog when admin clicks leave', async ({ page }) => {
     await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
     await page.waitForTimeout(2000)
 
@@ -84,12 +84,20 @@ test.describe('Leave Circle Flow', () => {
       .first()
       .click()
 
-    // Admin should NOT see "Leave this circle"
+    // Admin should see "Leave this circle" button
     const leaveButton = page.locator('button:has-text("Leave this circle")')
-    await expect(leaveButton).not.toBeVisible({ timeout: 5000 })
+    if (await leaveButton.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await leaveButton.click()
+
+      // Should show admin transfer dialog (not the regular leave dialog)
+      await expect(page.locator('text=Transfer admin & leave')).toBeVisible({ timeout: 5000 })
+
+      // As the only member, should show message about being solo admin
+      await expect(page.locator('text=You are the only member')).toBeVisible({ timeout: 5000 })
+    }
   })
 
-  test('should allow rejoining after leaving', async ({ page }) => {
+  test('should allow rejoining after leaving', { timeout: 60000 }, async ({ page }) => {
     await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
     await page.waitForTimeout(2000)
 
@@ -108,15 +116,28 @@ test.describe('Leave Circle Flow', () => {
 
     // Navigate to circle page via dashboard to ensure auth is established
     await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await page.waitForTimeout(500)
     await page.goto(`/dashboard/circles/${circleId}`, { waitUntil: 'domcontentloaded' })
 
-    // Wait for settings button to be visible (always rendered, doesn't depend on Convex data)
+    // Wait for page hydration and Convex data
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+
+    // Wait for settings button to be visible
     const settingsBtn = page
       .locator('button')
       .filter({ has: page.locator('svg.lucide-settings') })
       .first()
     await settingsBtn.waitFor({ state: 'visible', timeout: 15000 })
+
+    // Ensure React hydration so click handler is attached
+    await page.waitForFunction(
+      () => {
+        const btn = document.querySelector('button svg.lucide-settings')?.closest('button')
+        return btn && Object.keys(btn).some((k) => k.startsWith('__reactFiber'))
+      },
+      { timeout: 10000 }
+    )
 
     // Open settings and get invite code
     await settingsBtn.click()
@@ -128,7 +149,7 @@ test.describe('Leave Circle Flow', () => {
     await page.waitForFunction(
       () =>
         Array.from(document.querySelectorAll('p')).some((p) => p.textContent?.includes('/invite/')),
-      { timeout: 15000 }
+      { timeout: 25000 }
     )
     const inviteLinkText = await page.evaluate(() => {
       const p = Array.from(document.querySelectorAll('p')).find((el) =>

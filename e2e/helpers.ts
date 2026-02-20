@@ -21,11 +21,15 @@ export async function waitForCreateFormHydration(page: Page): Promise<void> {
 }
 
 /**
- * Waits for Convex auth to establish by visiting dashboard and waiting.
+ * Waits for Convex auth to establish by visiting dashboard and waiting
+ * for the loading spinner to disappear (proves auth + initial data loaded).
  */
 export async function warmupConvexAuth(page: Page): Promise<void> {
   await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-  await page.waitForTimeout(2000)
+  // Wait until the Convex-powered dashboard finishes loading
+  await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+  // Small extra buffer for auth token propagation to Convex client
+  await page.waitForTimeout(500)
 }
 
 /**
@@ -84,12 +88,24 @@ export async function getInviteCode(page: Page, circleId: string): Promise<strin
     waitUntil: 'domcontentloaded',
   })
 
-  // Wait for settings button to be visible (always rendered, doesn't depend on Convex data)
+  // Wait for page to hydrate (Convex data loaded, spinner gone)
+  await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+
+  // Wait for settings button to be visible
   const settingsBtn = page
     .locator('button')
     .filter({ has: page.locator('svg.lucide-settings') })
     .first()
   await settingsBtn.waitFor({ state: 'visible', timeout: 15000 })
+
+  // Ensure React hydration so click handler is attached
+  await page.waitForFunction(
+    () => {
+      const btn = document.querySelector('button svg.lucide-settings')?.closest('button')
+      return btn && Object.keys(btn).some((k) => k.startsWith('__reactFiber'))
+    },
+    { timeout: 10000 }
+  )
 
   // Open settings drawer via the settings icon button
   await settingsBtn.click()
@@ -97,11 +113,11 @@ export async function getInviteCode(page: Page, circleId: string): Promise<strin
   // Wait for CircleSettings component to finish loading
   await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
-  // Wait for the invite link to render
+  // Wait for the invite link to render (Convex data must load)
   await page.waitForFunction(
     () =>
       Array.from(document.querySelectorAll('p')).some((p) => p.textContent?.includes('/invite/')),
-    { timeout: 15000 }
+    { timeout: 25000 }
   )
 
   // Get invite code from the displayed link

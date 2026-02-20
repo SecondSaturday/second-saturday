@@ -9,13 +9,30 @@ import { Button } from '@/components/ui/button'
 import { Send } from 'lucide-react'
 import { toast } from 'sonner'
 import { DeadlineCountdown } from '@/components/submissions'
-import { getNextSecondSaturday } from '@/lib/dates'
 import { useMemo } from 'react'
 
+/** Compute second Saturday deadline in UTC (fallback when backend hasn't loaded) */
 function getDeadlineTimestamp(): number {
-  const d = getNextSecondSaturday(new Date())
-  d.setUTCHours(10, 59, 0, 0)
-  return d.getTime()
+  const now = new Date(Date.now())
+  const year = now.getUTCFullYear()
+  const month = now.getUTCMonth()
+  const firstDay = new Date(Date.UTC(year, month, 1))
+  const dayOfWeek = firstDay.getUTCDay()
+  const daysToFirstSaturday = (6 - dayOfWeek + 7) % 7
+  const secondSaturdayDay = 1 + daysToFirstSaturday + 7
+  const deadline = Date.UTC(year, month, secondSaturdayDay, 10, 59, 0)
+  // If past this month's deadline, compute next month's
+  if (Date.now() > deadline) {
+    const nextMonth = month + 1
+    const nextYear = nextMonth > 11 ? year + 1 : year
+    const adjMonth = nextMonth > 11 ? 0 : nextMonth
+    const nextFirstDay = new Date(Date.UTC(nextYear, adjMonth, 1))
+    const nextDayOfWeek = nextFirstDay.getUTCDay()
+    const nextDaysToFirstSat = (6 - nextDayOfWeek + 7) % 7
+    const nextSecondSatDay = 1 + nextDaysToFirstSat + 7
+    return Date.UTC(nextYear, adjMonth, nextSecondSatDay, 10, 59, 0)
+  }
+  return deadline
 }
 
 const STATUS_STYLES = {

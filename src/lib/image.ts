@@ -14,12 +14,32 @@ const DEFAULT_OPTIONS: CompressImageOptions = {
   useWebWorker: true,
 }
 
+// Convert HEIC/HEIF to JPEG for cross-browser compatibility
+async function convertHeicIfNeeded(file: File): Promise<File> {
+  const heicTypes = ['image/heic', 'image/heif']
+  const isHeic = heicTypes.includes(file.type) || /\.hei[cf]$/i.test(file.name)
+  if (!isHeic) return file
+
+  try {
+    const { default: heic2any } = await import('heic2any')
+    const result = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 })
+    const converted = Array.isArray(result) ? result[0] : result
+    if (!converted) return file
+    return new File([converted], file.name.replace(/\.hei[cf]$/i, '.jpg'), { type: 'image/jpeg' })
+  } catch (err) {
+    console.error('HEIC conversion failed:', err)
+    return file
+  }
+}
+
 // Compress an image file before upload
 export async function compressImage(file: File, options: CompressImageOptions = {}): Promise<File> {
   const mergedOptions = { ...DEFAULT_OPTIONS, ...options }
 
   try {
-    const compressedFile = await imageCompression(file, {
+    // Convert HEIC to JPEG first for non-Apple browser support
+    const inputFile = await convertHeicIfNeeded(file)
+    const compressedFile = await imageCompression(inputFile, {
       maxSizeMB: mergedOptions.maxSizeMB,
       maxWidthOrHeight: mergedOptions.maxWidthOrHeight,
       useWebWorker: mergedOptions.useWebWorker,

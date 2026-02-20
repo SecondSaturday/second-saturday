@@ -29,15 +29,6 @@ import { CSS } from '@dnd-kit/utilities'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
-const PROMPT_LIBRARY: Record<string, string[]> = {
-  reflection: ['What did you do this month?', "What's something you learned recently?"],
-  fun: ['What are you listening to?', 'Best meal you had this month?'],
-  gratitude: ['One Good Thing', 'Who made your month better?'],
-  deep: ['On Your Mind', 'What are you looking forward to?'],
-}
-
-const ALL_LIBRARY_PROMPTS = Object.values(PROMPT_LIBRARY).flat()
-
 interface PromptItem {
   id: string
   dbId?: Id<'prompts'>
@@ -102,6 +93,7 @@ export default function PromptsPage() {
   const circleId = params.circleId as Id<'circles'>
 
   const existingPrompts = useQuery(api.prompts.getCirclePrompts, { circleId })
+  const promptLibrary = useQuery(api.prompts.getPromptLibrary)
   const updatePrompts = useMutation(api.prompts.updatePrompts)
 
   const [prompts, setPrompts] = useState<PromptItem[]>([])
@@ -181,9 +173,10 @@ export default function PromptsPage() {
   }
 
   // Check if any library prompts are still available
-  const hasAvailableLibrary = ALL_LIBRARY_PROMPTS.some((lp) => !prompts.some((p) => p.text === lp))
+  const allLibraryPrompts = promptLibrary ? Object.values(promptLibrary).flat() : []
+  const hasAvailableLibrary = allLibraryPrompts.some((lp) => !prompts.some((p) => p.text === lp))
 
-  if (existingPrompts === undefined) {
+  if (existingPrompts === undefined || promptLibrary === undefined) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-background">
         <div className="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -233,10 +226,10 @@ export default function PromptsPage() {
         )}
 
         {/* Prompt library */}
-        {hasAvailableLibrary && prompts.length < 8 && (
+        {hasAvailableLibrary && promptLibrary && prompts.length < 8 && (
           <div className="space-y-4">
             <h2 className="text-sm font-medium text-muted-foreground">Prompt Library</h2>
-            {Object.entries(PROMPT_LIBRARY).map(([category, categoryPrompts]) => {
+            {Object.entries(promptLibrary).map(([category, categoryPrompts]) => {
               const available = categoryPrompts.filter((lp) => !prompts.some((p) => p.text === lp))
               if (available.length === 0) return null
               return (

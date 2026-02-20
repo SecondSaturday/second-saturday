@@ -11,7 +11,7 @@ test.describe('Member List Display', () => {
     const circleCards = page.locator('[data-testid="circle-card"]')
     if ((await circleCards.count()) > 0) {
       await circleCards.first().click()
-      await page.waitForURL(/\/dashboard\/circles\//)
+      await page.waitForURL(/\/dashboard(\/(circles\/)|(\?.*circle=))/)
 
       const membersLink = page.locator('a:has-text("Members")')
       if (await membersLink.isVisible().catch(() => false)) {
@@ -28,7 +28,7 @@ test.describe('Member List Display', () => {
     const circleCards = page.locator('[data-testid="circle-card"]')
     if ((await circleCards.count()) > 0) {
       await circleCards.first().click()
-      await page.waitForURL(/\/dashboard\/circles\//)
+      await page.waitForURL(/\/dashboard(\/(circles\/)|(\?.*circle=))/)
       const membersLink = page.locator('a:has-text("Members")')
       if (await membersLink.isVisible().catch(() => false)) {
         await membersLink.click()
@@ -74,7 +74,7 @@ test.describe('Member List Display', () => {
     const circleCards = page.locator('[data-testid="circle-card"]')
     if ((await circleCards.count()) > 0) {
       await circleCards.first().click()
-      await page.waitForURL(/\/dashboard\/circles\//)
+      await page.waitForURL(/\/dashboard(\/(circles\/)|(\?.*circle=))/)
       const membersLink = page.locator('a:has-text("Members")')
       if (await membersLink.isVisible().catch(() => false)) {
         await membersLink.click()
@@ -96,7 +96,7 @@ test.describe('Member List Display', () => {
     const circleCards = page.locator('[data-testid="circle-card"]')
     if ((await circleCards.count()) > 0) {
       await circleCards.first().click()
-      await page.waitForURL(/\/dashboard\/circles\//)
+      await page.waitForURL(/\/dashboard(\/(circles\/)|(\?.*circle=))/)
       const membersLink = page.locator('a:has-text("Members")')
       if (await membersLink.isVisible().catch(() => false)) {
         await membersLink.click()
@@ -113,7 +113,7 @@ test.describe('Member List Display', () => {
     const circleCards = page.locator('[data-testid="circle-card"]')
     if ((await circleCards.count()) > 0) {
       await circleCards.first().click()
-      await page.waitForURL(/\/dashboard\/circles\//)
+      await page.waitForURL(/\/dashboard(\/(circles\/)|(\?.*circle=))/)
       const membersLink = page.locator('a:has-text("Members")')
       if (await membersLink.isVisible().catch(() => false)) {
         await membersLink.click()
@@ -153,7 +153,7 @@ test.describe('Member List Display', () => {
     const circleCards = page.locator('[data-testid="circle-card"]')
     if ((await circleCards.count()) > 0) {
       await circleCards.first().click()
-      await page.waitForURL(/\/dashboard\/circles\//)
+      await page.waitForURL(/\/dashboard(\/(circles\/)|(\?.*circle=))/)
       const membersLink = page.locator('a:has-text("Members")')
       if (await membersLink.isVisible().catch(() => false)) {
         await membersLink.click()
@@ -169,7 +169,7 @@ test.describe('Member List Display', () => {
     const circleCards = page.locator('[data-testid="circle-card"]')
     if ((await circleCards.count()) > 0) {
       await circleCards.first().click()
-      await page.waitForURL(/\/dashboard\/circles\//)
+      await page.waitForURL(/\/dashboard(\/(circles\/)|(\?.*circle=))/)
       const membersLink = page.locator('a:has-text("Members")')
       if (await membersLink.isVisible().catch(() => false)) {
         await membersLink.click()
@@ -186,7 +186,7 @@ test.describe('Member List Display', () => {
     const circleCards = page.locator('[data-testid="circle-card"]')
     if ((await circleCards.count()) > 0) {
       await circleCards.first().click()
-      await page.waitForURL(/\/dashboard\/circles\//)
+      await page.waitForURL(/\/dashboard(\/(circles\/)|(\?.*circle=))/)
       // Verify circle page loads
       await expect(page.locator('body')).toBeVisible()
     }
@@ -242,7 +242,7 @@ test.describe('Member List Display', () => {
     const circleCards = page.locator('[data-testid="circle-card"]')
     if ((await circleCards.count()) > 0) {
       await circleCards.first().click()
-      await page.waitForURL(/\/dashboard\/circles\//)
+      await page.waitForURL(/\/dashboard(\/(circles\/)|(\?.*circle=))/)
       // Just verify page loads
       await expect(page.locator('body')).toBeVisible()
     }

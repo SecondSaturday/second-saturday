@@ -57,6 +57,20 @@ async function requireAdmin(
   return membership
 }
 
+const PROMPT_LIBRARY: Record<string, string[]> = {
+  reflection: ['What did you do this month?', "What's something you learned recently?"],
+  fun: ['What are you listening to?', 'Best meal you had this month?'],
+  gratitude: ['One Good Thing', 'Who made your month better?'],
+  deep: ['On Your Mind', 'What are you looking forward to?'],
+}
+
+export const getPromptLibrary = query({
+  args: {},
+  handler: async () => {
+    return PROMPT_LIBRARY
+  },
+})
+
 export const getCirclePrompts = query({
   args: { circleId: v.id('circles') },
   handler: async (ctx, args) => {

@@ -34,7 +34,7 @@ export function CircleList({ onCircleSelect }: CircleListProps) {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto" data-testid="circle-list">
+    <div className="flex-1 overflow-y-auto pb-20" data-testid="circle-list">
       {circles.map((circle) => {
         if (!circle) return null
         return (
@@ -47,9 +47,6 @@ export function CircleList({ onCircleSelect }: CircleListProps) {
             hasUnread={circle.hasUnread}
             onClick={() => {
               trackEvent('circle_selected', { circleId: circle._id })
-              if (circle.hasUnread) {
-                trackEvent('newsletter_read', { circleId: circle._id })
-              }
               onCircleSelect?.(circle._id)
             }}
           />

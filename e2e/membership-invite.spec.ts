@@ -4,6 +4,8 @@ import { createCircle, getInviteCode } from './helpers'
 test.describe('Invite Link Flow', () => {
   test.describe('Logged-in User', () => {
     test.use({ storageState: '.auth/user.json' })
+    // These tests create circles + open settings + get invite code - needs extra time
+    test.setTimeout(60000)
 
     test('should show circle preview and join button for authenticated user', async ({ page }) => {
       // Create a circle and get its invite code
