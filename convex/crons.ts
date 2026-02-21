@@ -21,8 +21,8 @@ export const lockPastDeadlineSubmissions = internalMutation({
     for (const submission of unlocked) {
       // Derive deadline for this submission's cycle (YYYY-MM)
       const [yearStr, monthStr] = submission.cycleId.split('-')
-      const year = parseInt(yearStr, 10)
-      const month = parseInt(monthStr, 10) - 1 // 0-indexed
+      const year = parseInt(yearStr!, 10)
+      const month = parseInt(monthStr!, 10) - 1 // 0-indexed
 
       const firstDayOfMonth = new Date(Date.UTC(year, month, 1))
       const dayOfWeek = firstDayOfMonth.getUTCDay()

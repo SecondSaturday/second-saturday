@@ -77,7 +77,7 @@ export async function createCircle(
     throw new Error(`Failed to extract circle ID from URL: ${url}`)
   }
 
-  return match[1]
+  return match[1]!
 }
 
 /**
@@ -137,7 +137,7 @@ export async function getInviteCode(page: Page, circleId: string): Promise<strin
     throw new Error(`Failed to extract invite code from: ${inviteLinkText}`)
   }
 
-  return match[1]
+  return match[1]!
 }
 
 /**

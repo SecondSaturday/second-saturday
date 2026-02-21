@@ -73,8 +73,9 @@ function validateAssetCreatedEvent(event: Record<string, unknown>): {
     return { valid: false, error: 'Invalid event type' }
   }
 
-  const uploadId = event.data?.id
-  const assetId = event.data?.asset_id
+  const data = event.data as Record<string, unknown> | undefined
+  const uploadId = data?.id
+  const assetId = data?.asset_id
 
   if (!uploadId || typeof uploadId !== 'string') {
     return { valid: false, error: 'Upload ID is required' }
@@ -102,8 +103,9 @@ function validateAssetReadyEvent(event: Record<string, unknown>): {
     return { valid: false, error: 'Invalid event type' }
   }
 
-  const assetId = event.data?.id
-  const playbackIds = event.data?.playback_ids
+  const data = event.data as Record<string, unknown> | undefined
+  const assetId = data?.id
+  const playbackIds = data?.playback_ids
 
   if (!assetId || typeof assetId !== 'string') {
     return { valid: false, error: 'Asset ID is required' }
@@ -113,7 +115,7 @@ function validateAssetReadyEvent(event: Record<string, unknown>): {
     return { valid: false, error: 'Playback IDs are required' }
   }
 
-  const playbackId = playbackIds[0]?.id
+  const playbackId = (playbackIds[0] as Record<string, unknown>)?.id
   if (!playbackId || typeof playbackId !== 'string') {
     return { valid: false, error: 'Valid playback ID is required' }
   }
@@ -123,8 +125,8 @@ function validateAssetReadyEvent(event: Record<string, unknown>): {
     data: {
       assetId,
       playbackId,
-      duration: event.data.duration,
-      aspectRatio: event.data.aspect_ratio,
+      duration: data?.duration as number | undefined,
+      aspectRatio: data?.aspect_ratio as string | undefined,
     },
   }
 }
@@ -139,13 +141,15 @@ function validateAssetErroredEvent(event: Record<string, unknown>): {
     return { valid: false, error: 'Invalid event type' }
   }
 
-  const assetId = event.data?.id
+  const data = event.data as Record<string, unknown> | undefined
+  const assetId = data?.id
   if (!assetId || typeof assetId !== 'string') {
     return { valid: false, error: 'Asset ID is required' }
   }
 
-  const errors = event.data?.errors
-  const errorMessage = errors?.messages?.[0] || 'Unknown error occurred during processing'
+  const errors = data?.errors as Record<string, unknown> | undefined
+  const errorMessage =
+    (errors?.messages as string[] | undefined)?.[0] || 'Unknown error occurred during processing'
 
   return { valid: true, data: { assetId, errorMessage } }
 }

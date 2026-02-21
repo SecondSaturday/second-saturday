@@ -87,7 +87,7 @@ function validateCycleId(cycleId: string): { valid: boolean; error?: string } {
     return { valid: false, error: 'Cycle ID must be in YYYY-MM format' }
   }
 
-  const [year, month] = cycleId.split('-').map(Number)
+  const [year, month] = cycleId.split('-').map(Number) as [number, number]
   if (year < 2024 || year > 2099) {
     return { valid: false, error: 'Invalid year in cycle ID' }
   }
@@ -109,7 +109,7 @@ function checkMembership(
   userId: string,
   circleId: string,
   memberships: Membership[]
-): { valid: boolean; error?: string } {
+): { valid: boolean; error?: string; membership?: Membership } {
   const membership = memberships.find((m) => m.userId === userId && m.circleId === circleId)
 
   if (!membership) {
@@ -160,7 +160,7 @@ function checkSubmissionLocked(submission: Submission): { valid: boolean; error?
 function checkMediaCount(
   responseId: string,
   mediaItems: Media[]
-): { valid: boolean; error?: string } {
+): { valid: boolean; error?: string; count?: number } {
   const count = mediaItems.filter((m) => m.responseId === responseId).length
 
   if (count >= 3) {

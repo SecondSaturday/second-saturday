@@ -49,7 +49,7 @@ test.describe('Prompt Configuration', () => {
         .catch(() => {})
     }
 
-    return match[1]
+    return match[1] ?? null
   }
 
   test('prompts page loads with setup heading after circle creation', async ({ page }) => {

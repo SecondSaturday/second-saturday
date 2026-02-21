@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import type { Id } from '../../../convex/_generated/dataModel'
+import type { Id } from '../../convex/_generated/dataModel'
 
 const mockRemoveMember = vi.fn()
 
@@ -69,7 +69,7 @@ describe('RemoveMemberModal', () => {
     render(<RemoveMemberModal {...defaultProps} />)
     const blockButtons = screen.getAllByText('Remove & Block')
     // Click the button (last one with that text, which is the actual button)
-    fireEvent.click(blockButtons[blockButtons.length - 1])
+    fireEvent.click(blockButtons[blockButtons.length - 1]!)
     await waitFor(() => {
       expect(mockRemoveMember).toHaveBeenCalledWith({
         circleId: 'circle1',
@@ -95,7 +95,7 @@ describe('RemoveMemberModal', () => {
     const { toast } = await import('sonner')
     render(<RemoveMemberModal {...defaultProps} />)
     const blockButtons = screen.getAllByText('Remove & Block')
-    fireEvent.click(blockButtons[blockButtons.length - 1])
+    fireEvent.click(blockButtons[blockButtons.length - 1]!)
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith('Admin access required')
     })

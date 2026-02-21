@@ -203,7 +203,7 @@ describe('Analytics Module', () => {
 
   describe('isFeatureEnabled', () => {
     it('returns true when feature is enabled', () => {
-      posthog.isFeatureEnabled.mockReturnValue(true)
+      vi.mocked(posthog.isFeatureEnabled).mockReturnValue(true)
 
       const result = isFeatureEnabled('new-feature')
 
@@ -212,7 +212,7 @@ describe('Analytics Module', () => {
     })
 
     it('returns false when feature is disabled', () => {
-      posthog.isFeatureEnabled.mockReturnValue(false)
+      vi.mocked(posthog.isFeatureEnabled).mockReturnValue(false)
 
       const result = isFeatureEnabled('new-feature')
 
@@ -220,7 +220,7 @@ describe('Analytics Module', () => {
     })
 
     it('returns false when result is null/undefined', () => {
-      posthog.isFeatureEnabled.mockReturnValue(null)
+      vi.mocked(posthog.isFeatureEnabled).mockReturnValue(null as unknown as boolean)
 
       const result = isFeatureEnabled('new-feature')
 
@@ -239,7 +239,7 @@ describe('Analytics Module', () => {
 
   describe('getFeatureFlag', () => {
     it('returns string flag value', () => {
-      posthog.getFeatureFlag.mockReturnValue('variant-a')
+      vi.mocked(posthog.getFeatureFlag).mockReturnValue('variant-a')
 
       const result = getFeatureFlag('experiment')
 
@@ -248,7 +248,7 @@ describe('Analytics Module', () => {
     })
 
     it('returns boolean flag value', () => {
-      posthog.getFeatureFlag.mockReturnValue(true)
+      vi.mocked(posthog.getFeatureFlag).mockReturnValue(true)
 
       const result = getFeatureFlag('feature-toggle')
 
@@ -256,7 +256,7 @@ describe('Analytics Module', () => {
     })
 
     it('returns undefined when flag not found', () => {
-      posthog.getFeatureFlag.mockReturnValue(undefined)
+      vi.mocked(posthog.getFeatureFlag).mockReturnValue(undefined as unknown as string | boolean)
 
       const result = getFeatureFlag('unknown-flag')
 

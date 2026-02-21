@@ -35,8 +35,8 @@ test.describe('Video Upload', () => {
         try {
           document.querySelectorAll('*')
           // Try to find and patch Camera on window
-          if ((window as Record<string, unknown>).__CAPACITOR_CAMERA_PATCHED__) return
-          ;(window as Record<string, unknown>).__CAPACITOR_CAMERA_PATCHED__ = true
+          if ((window as unknown as Record<string, unknown>).__CAPACITOR_CAMERA_PATCHED__) return
+          ;(window as unknown as Record<string, unknown>).__CAPACITOR_CAMERA_PATCHED__ = true
         } catch {}
       }, 100)
     })

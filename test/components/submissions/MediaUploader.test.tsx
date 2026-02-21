@@ -91,7 +91,7 @@ describe('MediaUploader', () => {
       webPath: mockWebPath,
       format: 'jpeg',
     })
-    vi.mocked(global.fetch).mockImplementation((url: string) => {
+    vi.mocked(global.fetch).mockImplementation(((url: string) => {
       if (url === mockWebPath) {
         return Promise.resolve({
           blob: () => Promise.resolve(mockBlob),
@@ -104,7 +104,7 @@ describe('MediaUploader', () => {
         })
       }
       return Promise.reject(new Error('Unknown URL'))
-    })
+    }) as typeof fetch)
 
     mockGenerateUploadUrl.mockResolvedValue('https://upload.url')
     mockAddMediaToResponse.mockResolvedValue('test-media-id')
@@ -140,7 +140,7 @@ describe('MediaUploader', () => {
       webPath: mockWebPath,
       format: 'png',
     })
-    vi.mocked(global.fetch).mockImplementation((url: string) => {
+    vi.mocked(global.fetch).mockImplementation(((url: string) => {
       if (url === mockWebPath) {
         return Promise.resolve({
           blob: () => Promise.resolve(mockBlob),
@@ -153,7 +153,7 @@ describe('MediaUploader', () => {
         })
       }
       return Promise.reject(new Error('Unknown URL'))
-    })
+    }) as typeof fetch)
 
     mockGenerateUploadUrl.mockResolvedValue('https://upload.url')
     mockAddMediaToResponse.mockResolvedValue('test-media-id')
@@ -227,7 +227,7 @@ describe('MediaUploader', () => {
       webPath: mockWebPath,
       format: 'jpeg',
     })
-    vi.mocked(global.fetch).mockImplementation((url: string) => {
+    vi.mocked(global.fetch).mockImplementation(((url: string) => {
       if (url === mockWebPath) {
         return Promise.resolve({
           blob: () => Promise.resolve(mockBlob),
@@ -240,7 +240,7 @@ describe('MediaUploader', () => {
         })
       }
       return Promise.reject(new Error('Unknown URL'))
-    })
+    }) as typeof fetch)
 
     mockGenerateUploadUrl.mockResolvedValue('https://upload.url')
 
@@ -265,7 +265,7 @@ describe('MediaUploader', () => {
       webPath: mockWebPath,
       format: 'jpeg',
     })
-    vi.mocked(global.fetch).mockImplementation((url: string) => {
+    vi.mocked(global.fetch).mockImplementation(((url: string) => {
       if (url === mockWebPath) {
         return Promise.resolve({
           blob: () => Promise.resolve(mockBlob),
@@ -275,7 +275,7 @@ describe('MediaUploader', () => {
         return Promise.reject(new TypeError('Failed to fetch'))
       }
       return Promise.reject(new Error('Unknown URL'))
-    })
+    }) as typeof fetch)
 
     mockGenerateUploadUrl.mockResolvedValue('https://upload.url')
 
@@ -307,7 +307,7 @@ describe('MediaUploader', () => {
       uploadResolve = resolve
     })
 
-    vi.mocked(global.fetch).mockImplementation((url: string) => {
+    vi.mocked(global.fetch).mockImplementation(((url: string) => {
       if (url === mockWebPath) {
         return Promise.resolve({
           blob: () => Promise.resolve(mockBlob),
@@ -317,7 +317,7 @@ describe('MediaUploader', () => {
         return uploadPromise
       }
       return Promise.reject(new Error('Unknown URL'))
-    })
+    }) as typeof fetch)
 
     mockGenerateUploadUrl.mockResolvedValue('https://upload.url')
 
@@ -357,7 +357,7 @@ describe('MediaUploader', () => {
       webPath: mockWebPath,
       format: 'jpeg',
     })
-    vi.mocked(global.fetch).mockImplementation((url: string) => {
+    vi.mocked(global.fetch).mockImplementation(((url: string) => {
       if (url === mockWebPath) {
         return Promise.resolve({
           blob: () => Promise.resolve(mockBlob),
@@ -370,7 +370,7 @@ describe('MediaUploader', () => {
         })
       }
       return Promise.reject(new Error('Unknown URL'))
-    })
+    }) as typeof fetch)
 
     mockGenerateUploadUrl.mockResolvedValue('https://upload.url')
     mockAddMediaToResponse.mockResolvedValue('test-media-id')
@@ -399,7 +399,7 @@ describe('MediaUploader', () => {
       webPath: mockWebPath,
       format: 'jpeg',
     })
-    vi.mocked(global.fetch).mockImplementation((url: string) => {
+    vi.mocked(global.fetch).mockImplementation(((url: string) => {
       if (url === mockWebPath) {
         return Promise.resolve({
           blob: () => Promise.resolve(mockBlob),
@@ -412,7 +412,7 @@ describe('MediaUploader', () => {
         })
       }
       return Promise.reject(new Error('Unknown URL'))
-    })
+    }) as typeof fetch)
 
     mockGenerateUploadUrl.mockResolvedValue('https://upload.url')
     mockAddMediaToResponse.mockResolvedValue('test-media-id')
@@ -452,7 +452,7 @@ describe('MediaUploader', () => {
       webPath: mockWebPath,
       format: 'jpeg',
     })
-    vi.mocked(global.fetch).mockImplementation((url: string) => {
+    vi.mocked(global.fetch).mockImplementation(((url: string) => {
       if (url === mockWebPath) {
         return Promise.resolve({
           blob: () => Promise.resolve(mockBlob),
@@ -465,7 +465,7 @@ describe('MediaUploader', () => {
         })
       }
       return Promise.reject(new Error('Unknown URL'))
-    })
+    }) as typeof fetch)
 
     mockGenerateUploadUrl.mockResolvedValue('https://upload.url')
     mockAddMediaToResponse.mockRejectedValue(new Error('Response can have up to 3 media items'))

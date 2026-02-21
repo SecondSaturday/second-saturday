@@ -97,7 +97,8 @@ test.describe('Leave Circle Flow', () => {
     }
   })
 
-  test('should allow rejoining after leaving', { timeout: 60000 }, async ({ page }) => {
+  test('should allow rejoining after leaving', async ({ page }) => {
+    test.setTimeout(60000)
     await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
     await page.waitForTimeout(2000)
 

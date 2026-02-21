@@ -89,7 +89,7 @@ function validateCycleId(cycleId: string): { valid: boolean; error?: string } {
     return { valid: false, error: 'Cycle ID must be in YYYY-MM format' }
   }
 
-  const [year, month] = cycleId.split('-').map(Number)
+  const [year, month] = cycleId.split('-').map(Number) as [number, number]
   if (year < 2024 || year > 2099) {
     return { valid: false, error: 'Invalid year in cycle ID' }
   }

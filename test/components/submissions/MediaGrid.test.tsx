@@ -148,8 +148,8 @@ describe('MediaGrid', () => {
     const { container } = render(<MediaGrid media={media} />)
 
     const items = container.querySelectorAll('.group.relative')
-    expect(items[0].className).toMatch(/col-span-2/)
-    expect(items[1].className).not.toMatch(/col-span-2/)
+    expect(items[0]!.className).toMatch(/col-span-2/)
+    expect(items[1]!.className).not.toMatch(/col-span-2/)
   })
 
   it('accepts and applies custom className to the grid', () => {
