@@ -4,9 +4,10 @@ import { useQuery } from 'convex/react'
 import { useEffect } from 'react'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
-import { Settings, Users, ClipboardList, ArrowLeft, PenLine } from 'lucide-react'
+import { Settings, Users, ClipboardList, ArrowLeft, PenLine, Newspaper } from 'lucide-react'
 import { trackEvent } from '@/lib/analytics'
 import Link from 'next/link'
+import { NewsletterArchive } from './newsletter/NewsletterArchive'
 
 export function CircleHome({
   circleId,
@@ -135,7 +136,6 @@ export function CircleHome({
               </Link>
             </>
           )}
-
           {onSettingsClick && (
             <button
               onClick={onSettingsClick}
@@ -152,6 +152,15 @@ export function CircleHome({
               </div>
             </button>
           )}
+        </div>
+
+        {/* Newsletter Archive */}
+        <div className="space-y-2">
+          <h2 className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <Newspaper className="size-4" />
+            Newsletters
+          </h2>
+          <NewsletterArchive circleId={circleId} />
         </div>
       </div>
     </div>
