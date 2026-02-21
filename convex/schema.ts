@@ -64,6 +64,7 @@ export default defineSchema({
     joinedAt: v.number(),
     leftAt: v.optional(v.number()),
     blocked: v.optional(v.boolean()),
+    emailUnsubscribed: v.optional(v.boolean()),
   })
     .index('by_user', ['userId'])
     .index('by_circle', ['circleId'])
@@ -71,11 +72,19 @@ export default defineSchema({
 
   newsletters: defineTable({
     circleId: v.id('circles'),
+    cycleId: v.string(), // Format: YYYY-MM
     title: v.optional(v.string()),
+    htmlContent: v.optional(v.string()),
+    issueNumber: v.number(),
     status: v.string(), // draft, published
+    submissionCount: v.optional(v.number()),
+    memberCount: v.optional(v.number()),
+    recipientCount: v.optional(v.number()),
     publishedAt: v.optional(v.number()),
     createdAt: v.number(),
-  }).index('by_circle', ['circleId']),
+  })
+    .index('by_circle', ['circleId'])
+    .index('by_circle_cycle', ['circleId', 'cycleId']),
 
   newsletterReads: defineTable({
     userId: v.id('users'),
