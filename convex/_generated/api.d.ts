@@ -15,6 +15,8 @@ import type * as emails from '../emails.js'
 import type * as files from '../files.js'
 import type * as http from '../http.js'
 import type * as memberships from '../memberships.js'
+import type * as newsletterEmails from '../newsletterEmails.js'
+import type * as newsletterHelpers from '../newsletterHelpers.js'
 import type * as newsletterReads from '../newsletterReads.js'
 import type * as newsletters from '../newsletters.js'
 import type * as prompts from '../prompts.js'
@@ -33,6 +35,8 @@ declare const fullApi: ApiFromModules<{
   files: typeof files
   http: typeof http
   memberships: typeof memberships
+  newsletterEmails: typeof newsletterEmails
+  newsletterHelpers: typeof newsletterHelpers
   newsletterReads: typeof newsletterReads
   newsletters: typeof newsletters
   prompts: typeof prompts

@@ -54,4 +54,11 @@ crons.cron(
   {}
 )
 
+crons.cron(
+  'compile and send newsletters',
+  '0 11 * * 6', // 11:00 AM UTC every Saturday (action checks for second Saturday)
+  internal.newsletterEmails.processNewsletters,
+  {}
+)
+
 export default crons
