@@ -321,6 +321,13 @@ export const compileNewsletter = internalMutation({
 
     const missedMonth = submissionCount === 0
 
+    console.log('[analytics] newsletter_compiled', {
+      circle_id: circleId,
+      member_count: memberCount,
+      submission_count: submissionCount,
+      issue_number: issueNumber,
+    })
+
     return { newsletterId, submissionCount, memberCount, missedMonth }
   },
 })

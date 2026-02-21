@@ -5,9 +5,11 @@ import { useParams } from 'next/navigation'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../../../../../../convex/_generated/api'
 import type { Id } from '../../../../../../../convex/_generated/dataModel'
+import { useSearchParams } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { NewsletterView } from '@/components/newsletter/NewsletterView'
+import { trackEvent } from '@/lib/analytics'
 
 interface MediaItem {
   type: 'image' | 'video'
@@ -45,19 +47,41 @@ export default function NewsletterPage() {
   const circleId = params.circleId as Id<'circles'>
   const newsletterId = params.newsletterId as Id<'newsletters'>
 
+  const searchParams = useSearchParams()
   const newsletter = useQuery(api.newsletters.getNewsletterById, { newsletterId })
   const markRead = useMutation(api.newsletterReads.markNewsletterRead)
   const hasMarkedRead = useRef(false)
+  const hasTracked = useRef(false)
 
-  // Mark as read on mount
+  // Mark as read and track analytics on mount
   useEffect(() => {
+    if (newsletter && !hasTracked.current) {
+      hasTracked.current = true
+
+      // Track newsletter opened
+      trackEvent('newsletter_opened', {
+        circle_id: circleId,
+        newsletter_id: newsletterId,
+        issue_number: newsletter.issueNumber,
+      })
+
+      // Track click from email if UTM source present
+      if (searchParams.get('utm_source') === 'email') {
+        trackEvent('newsletter_clicked', {
+          circle_id: circleId,
+          newsletter_id: newsletterId,
+          source: 'email',
+        })
+      }
+    }
+
     if (newsletter && !newsletter.isRead && !hasMarkedRead.current) {
       hasMarkedRead.current = true
       markRead({ circleId, newsletterId }).catch(() => {
         // Silently fail - not critical
       })
     }
-  }, [newsletter, circleId, newsletterId, markRead])
+  }, [newsletter, circleId, newsletterId, markRead, searchParams])
 
   // Loading state
   if (newsletter === undefined) {

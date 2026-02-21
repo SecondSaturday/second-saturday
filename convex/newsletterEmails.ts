@@ -51,7 +51,7 @@ export const sendNewsletter = internalAction({
     ]
     const date = `${monthNames[parseInt(month!, 10) - 1]} ${year}`
 
-    const viewInAppUrl = `${APP_URL}/circles/${newsletter.circleId}/newsletters/${newsletter._id}`
+    const viewInAppUrl = `${APP_URL}/dashboard/circles/${newsletter.circleId}/newsletter/${newsletter._id}?utm_source=email&utm_medium=newsletter`
     const unsubscribeUrl = `${APP_URL}/circles/${newsletter.circleId}/unsubscribe`
 
     // Render React Email template to HTML
@@ -90,6 +90,11 @@ export const sendNewsletter = internalAction({
       recipientCount: sentCount,
     })
 
+    console.log('[analytics] newsletter_sent', {
+      circle_id: newsletter.circleId,
+      recipient_count: sentCount,
+      issue_number: newsletter.issueNumber,
+    })
     console.log(`Newsletter ${newsletter._id} sent to ${sentCount}/${recipients.length} recipients`)
   },
 })
