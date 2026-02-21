@@ -1,4 +1,4 @@
-import { mutation, query } from './_generated/server'
+import { mutation, query, internalMutation } from './_generated/server'
 import type { MutationCtx, QueryCtx } from './_generated/server'
 import { v } from 'convex/values'
 import type { Doc } from './_generated/dataModel'
@@ -152,5 +152,175 @@ export const resubscribeToEmail = mutation({
 
     await ctx.db.patch(membership._id, { emailUnsubscribed: undefined })
     return { success: true }
+  },
+})
+
+/**
+ * Compile a newsletter from submissions for a given circle and cycle.
+ * Gathers all submissions, organizes responses by prompt, resolves media URLs,
+ * and stores the compiled data as a JSON string in htmlContent.
+ */
+export const compileNewsletter = internalMutation({
+  args: {
+    circleId: v.id('circles'),
+    cycleId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { circleId, cycleId } = args
+
+    // Get circle for title
+    const circle = await ctx.db.get(circleId)
+    if (!circle) throw new Error('Circle not found')
+
+    // Get active prompts sorted by order
+    const allPrompts = await ctx.db
+      .query('prompts')
+      .withIndex('by_circle', (q) => q.eq('circleId', circleId))
+      .collect()
+    const prompts = allPrompts.filter((p) => p.active).sort((a, b) => a.order - b.order)
+
+    // Get active memberships for this circle
+    const allMemberships = await ctx.db
+      .query('memberships')
+      .withIndex('by_circle', (q) => q.eq('circleId', circleId))
+      .collect()
+    const activeMembers = allMemberships.filter((m) => !m.leftAt)
+    const memberCount = activeMembers.length
+
+    // Get all submissions for this circle and cycle
+    const allSubmissions = await ctx.db
+      .query('submissions')
+      .withIndex('by_circle', (q) => q.eq('circleId', circleId))
+      .collect()
+    const submissions = allSubmissions.filter((s) => s.cycleId === cycleId && s.lockedAt)
+    const submissionCount = submissions.length
+
+    // Build a map of userId -> user for member names
+    const userIds = [...new Set(submissions.map((s) => s.userId))]
+    const userMap = new Map<string, string>()
+    for (const userId of userIds) {
+      const user = await ctx.db.get(userId)
+      userMap.set(userId as string, user?.name ?? user?.email ?? 'Unknown Member')
+    }
+
+    // For each prompt, collect responses from all submissions
+    const sections: Array<{
+      promptTitle: string
+      responses: Array<{
+        memberName: string
+        text: string
+        media: Array<{ type: string; url: string; thumbnailUrl?: string }>
+      }>
+    }> = []
+
+    for (const prompt of prompts) {
+      const promptResponses: (typeof sections)[number]['responses'] = []
+
+      for (const submission of submissions) {
+        // Get response for this submission + prompt
+        const response = await ctx.db
+          .query('responses')
+          .withIndex('by_submission_prompt', (q) =>
+            q.eq('submissionId', submission._id).eq('promptId', prompt._id)
+          )
+          .first()
+
+        if (!response) continue
+
+        // Get media for this response
+        const mediaItems = await ctx.db
+          .query('media')
+          .withIndex('by_response', (q) => q.eq('responseId', response._id))
+          .collect()
+        const sortedMedia = mediaItems.sort((a, b) => a.order - b.order)
+
+        // Resolve media URLs
+        const media: Array<{ type: string; url: string; thumbnailUrl?: string }> = []
+        for (const m of sortedMedia) {
+          if (m.type === 'image' && m.storageId) {
+            const url = await ctx.storage.getUrl(m.storageId)
+            if (url) {
+              media.push({ type: 'image', url })
+            }
+          } else if (m.type === 'video' && m.muxAssetId) {
+            // Look up playbackId from videos table
+            const video = await ctx.db
+              .query('videos')
+              .withIndex('by_asset_id', (q) => q.eq('assetId', m.muxAssetId!))
+              .first()
+            if (video?.playbackId) {
+              const thumbnailUrl = `https://image.mux.com/${video.playbackId}/thumbnail.jpg?width=640&height=360&fit_mode=smartcrop`
+              media.push({
+                type: 'video',
+                url: `https://stream.mux.com/${video.playbackId}.m3u8`,
+                thumbnailUrl,
+              })
+            }
+          }
+        }
+
+        promptResponses.push({
+          memberName: userMap.get(submission.userId as string) ?? 'Unknown Member',
+          text: response.text,
+          media,
+        })
+      }
+
+      // Omit prompts with zero responses
+      if (promptResponses.length > 0) {
+        sections.push({
+          promptTitle: prompt.text,
+          responses: promptResponses,
+        })
+      }
+    }
+
+    // Calculate issue number
+    const existingNewsletters = await ctx.db
+      .query('newsletters')
+      .withIndex('by_circle', (q) => q.eq('circleId', circleId))
+      .collect()
+    const issueNumber = existingNewsletters.length + 1
+
+    // Format title
+    const [year, month] = cycleId.split('-')
+    const monthNames = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ]
+    const monthName = monthNames[parseInt(month!, 10) - 1] ?? month
+    const title = `${circle.name} - ${monthName} ${year}`
+
+    const now = Date.now()
+
+    // Store compiled data as JSON in htmlContent
+    const htmlContent = JSON.stringify({ sections })
+
+    const newsletterId = await ctx.db.insert('newsletters', {
+      circleId,
+      cycleId,
+      title,
+      htmlContent,
+      issueNumber,
+      status: 'published',
+      submissionCount,
+      memberCount,
+      publishedAt: now,
+      createdAt: now,
+    })
+
+    const missedMonth = submissionCount === 0
+
+    return { newsletterId, submissionCount, memberCount, missedMonth }
   },
 })
