@@ -45,6 +45,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# playwright browser cache
+/.playwright/
+
+# clone cache
+/.clone/
+
 # dev analysis files
 .claude/epics/epic-1-analysis.md
 .claude/epics/epic-3-audit.md
