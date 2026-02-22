@@ -51,6 +51,10 @@ export default function SettingsPage() {
   const [emailSaving, setEmailSaving] = useState(false)
   const [emailError, setEmailError] = useState<string | null>(null)
   const [emailSuccess, setEmailSuccess] = useState(false)
+  const [emailVerifying, setEmailVerifying] = useState(false)
+  const [emailCode, setEmailCode] = useState('')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [pendingEmailResource, setPendingEmailResource] = useState<any>(null)
 
   const displayName = name ?? convexUser?.name ?? ''
   const hasChanges = name !== null || avatarStorageId !== null
@@ -114,11 +118,36 @@ export default function SettingsPage() {
     try {
       const emailAddress = await clerkUser.createEmailAddress({ email: newEmail.trim() })
       await emailAddress.prepareVerification({ strategy: 'email_code' })
-      setEmailSuccess(true)
-      setNewEmail('')
-      setEmailEditing(false)
+      setPendingEmailResource(emailAddress)
+      setEmailVerifying(true)
     } catch (err) {
       setEmailError(err instanceof Error ? err.message : 'Failed to update email')
+    } finally {
+      setEmailSaving(false)
+    }
+  }
+
+  const handleVerifyEmailCode = async () => {
+    if (!pendingEmailResource || !emailCode.trim() || !clerkUser) return
+    setEmailError(null)
+    setEmailSaving(true)
+    try {
+      const verified = await pendingEmailResource.attemptVerification({ code: emailCode.trim() })
+      if (verified.verification?.status === 'verified') {
+        // Set the new email as primary
+        await clerkUser.update({ primaryEmailAddressId: verified.id })
+        setEmailSuccess(true)
+        setEmailVerifying(false)
+        setEmailEditing(false)
+        setNewEmail('')
+        setEmailCode('')
+        setPendingEmailResource(null)
+        trackEvent('email_changed')
+      } else {
+        setEmailError('Verification failed. Please try again.')
+      }
+    } catch (err) {
+      setEmailError(err instanceof Error ? err.message : 'Invalid verification code')
     } finally {
       setEmailSaving(false)
     }
@@ -218,7 +247,7 @@ export default function SettingsPage() {
                 </Button>
               )}
             </div>
-            {emailEditing && (
+            {emailEditing && !emailVerifying && (
               <div className="space-y-2 pt-2">
                 <Input
                   value={newEmail}
@@ -248,12 +277,44 @@ export default function SettingsPage() {
                 </div>
               </div>
             )}
-            {emailError && <p className="text-sm text-destructive">{emailError}</p>}
-            {emailSuccess && (
-              <p className="text-sm text-green-600">
-                Verification email sent. Check your inbox to confirm.
-              </p>
+            {emailVerifying && (
+              <div className="space-y-2 pt-2">
+                <p className="text-sm text-muted-foreground">
+                  Enter the verification code sent to <strong>{newEmail}</strong>
+                </p>
+                <Input
+                  value={emailCode}
+                  onChange={(e) => setEmailCode(e.target.value)}
+                  placeholder="Verification code"
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={handleVerifyEmailCode}
+                    disabled={!emailCode.trim() || emailSaving}
+                  >
+                    {emailSaving ? 'Verifying...' : 'Verify'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setEmailVerifying(false)
+                      setEmailEditing(false)
+                      setNewEmail('')
+                      setEmailCode('')
+                      setPendingEmailResource(null)
+                      setEmailError(null)
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
             )}
+            {emailError && <p className="text-sm text-destructive">{emailError}</p>}
+            {emailSuccess && <p className="text-sm text-green-600">Email updated successfully.</p>}
           </div>
 
           <div className="space-y-2">

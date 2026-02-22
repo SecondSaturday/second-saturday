@@ -32,10 +32,11 @@ function routeWebhookEvent(payload: ClerkWebhookPayload): {
   switch (type) {
     case 'user.created':
       if (!email) return { action: 'ignore', sendWelcome: false }
+      // Note: name is NOT passed to upsert on user.created (let user set it on /complete-profile)
       return {
         action: 'upsert',
         sendWelcome: true,
-        userData: { clerkId: data.id, email, name, imageUrl: data.image_url },
+        userData: { clerkId: data.id, email, imageUrl: data.image_url },
       }
     case 'user.updated':
       if (!email) return { action: 'ignore', sendWelcome: false }
@@ -153,7 +154,6 @@ describe('Webhook routing logic', () => {
     expect(result.userData).toEqual({
       clerkId: 'user_abc',
       email: 'new@test.com',
-      name: 'Jane Doe',
       imageUrl: 'https://img.clerk.com/abc',
     })
   })
@@ -206,9 +206,22 @@ describe('Webhook routing logic', () => {
     expect(result.action).toBe('ignore')
   })
 
-  it('constructs name from first + last', () => {
+  it('user.created does not include name (deferred to /complete-profile)', () => {
     const result = routeWebhookEvent({
       type: 'user.created',
+      data: {
+        id: 'user_abc',
+        email_addresses: [{ email_address: 'a@b.com' }],
+        first_name: 'First',
+        last_name: 'Last',
+      },
+    })
+    expect(result.userData?.name).toBeUndefined()
+  })
+
+  it('user.updated constructs name from first + last', () => {
+    const result = routeWebhookEvent({
+      type: 'user.updated',
       data: {
         id: 'user_abc',
         email_addresses: [{ email_address: 'a@b.com' }],
@@ -219,9 +232,9 @@ describe('Webhook routing logic', () => {
     expect(result.userData?.name).toBe('First Last')
   })
 
-  it('handles first name only', () => {
+  it('user.updated handles first name only', () => {
     const result = routeWebhookEvent({
-      type: 'user.created',
+      type: 'user.updated',
       data: {
         id: 'user_abc',
         email_addresses: [{ email_address: 'a@b.com' }],
@@ -231,9 +244,9 @@ describe('Webhook routing logic', () => {
     expect(result.userData?.name).toBe('Solo')
   })
 
-  it('handles missing name fields', () => {
+  it('user.updated handles missing name fields', () => {
     const result = routeWebhookEvent({
-      type: 'user.created',
+      type: 'user.updated',
       data: {
         id: 'user_abc',
         email_addresses: [{ email_address: 'a@b.com' }],

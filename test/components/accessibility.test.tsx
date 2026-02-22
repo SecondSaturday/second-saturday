@@ -41,6 +41,19 @@ vi.mock('@clerk/nextjs', () => ({
   }),
 }))
 
+// Mock Convex (needed by DashboardHeader)
+vi.mock('convex/react', () => ({
+  useQuery: () => null,
+}))
+
+vi.mock('../../../convex/_generated/api', () => ({
+  api: {
+    users: {
+      getCurrentUser: { _name: 'users:getCurrentUser' },
+    },
+  },
+}))
+
 describe('CircleListItem accessibility', () => {
   const defaultProps = {
     name: 'Test Circle',

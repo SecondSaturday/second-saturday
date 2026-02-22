@@ -43,7 +43,6 @@ function createMockMuxUploadResponse() {
     timeout: 3600,
     new_asset_settings: {
       playback_policy: ['public'],
-      mp4_support: 'standard',
     },
   }
 }
@@ -143,10 +142,10 @@ describe('Mux Upload Integration Tests', () => {
       expect(response.new_asset_settings.playback_policy).toContain('public')
     })
 
-    it('should enable standard MP4 support', () => {
+    it('should not include deprecated mp4_support', () => {
       const response = createMockMuxUploadResponse()
 
-      expect(response.new_asset_settings.mp4_support).toBe('standard')
+      expect(response.new_asset_settings).not.toHaveProperty('mp4_support')
     })
 
     it('should set appropriate timeout', () => {

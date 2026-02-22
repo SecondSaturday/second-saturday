@@ -15,25 +15,20 @@ test.describe('Video Submission - Upload Buttons', () => {
     await setupClerkTestingToken({ page })
   })
 
-  test('shows Record Video and Choose Video buttons', async ({ page }) => {
+  test('shows Choose Video button', async ({ page }) => {
     await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
 
-    await expect(page.getByRole('button', { name: /record video/i })).toBeVisible({
-      timeout: 15000,
-    })
     await expect(page.getByRole('button', { name: /choose video/i })).toBeVisible({
       timeout: 15000,
     })
   })
 
-  test('video buttons are enabled when under media limit', async ({ page }) => {
+  test('video button is enabled when under media limit', async ({ page }) => {
     await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
 
-    const recordVideo = page.getByRole('button', { name: /record video/i })
     const chooseVideo = page.getByRole('button', { name: /choose video/i })
 
-    await expect(recordVideo).toBeVisible({ timeout: 15000 })
-    await expect(recordVideo).not.toBeDisabled()
+    await expect(chooseVideo).toBeVisible({ timeout: 15000 })
     await expect(chooseVideo).not.toBeDisabled()
   })
 })
@@ -198,7 +193,7 @@ test.describe('Video Submission - Cancel Flow', () => {
       .click()
 
     // Modal should close and upload buttons should be visible again
-    await expect(page.getByRole('button', { name: /record video/i })).toBeVisible({ timeout: 5000 })
+    await expect(page.getByRole('button', { name: /choose video/i })).toBeVisible({ timeout: 5000 })
   })
 })
 
@@ -265,6 +260,6 @@ test.describe('Video Submission - Format Validation', () => {
 
     // Clicking Try Again should reset back to idle upload state
     await tryAgain.click()
-    await expect(page.getByRole('button', { name: /record video/i })).toBeVisible({ timeout: 5000 })
+    await expect(page.getByRole('button', { name: /choose video/i })).toBeVisible({ timeout: 5000 })
   })
 })

@@ -8,9 +8,26 @@ vi.mock('@clerk/nextjs', () => ({
     user: {
       fullName: 'Test User',
       firstName: 'Test',
-      imageUrl: 'https://example.com/avatar.jpg',
+      imageUrl: 'https://example.com/clerk-avatar.jpg',
     },
   }),
+}))
+
+// Mock Convex
+vi.mock('convex/react', () => ({
+  useQuery: () => ({
+    name: 'Convex User',
+    imageUrl: 'https://example.com/convex-avatar.jpg',
+  }),
+}))
+
+// Mock convex api
+vi.mock('../../../convex/_generated/api', () => ({
+  api: {
+    users: {
+      getCurrentUser: { _name: 'users:getCurrentUser' },
+    },
+  },
 }))
 
 describe('DashboardHeader', () => {
@@ -38,5 +55,11 @@ describe('DashboardHeader', () => {
     const buttons = screen.getAllByRole('button')
     // Should have date picker + bell + menu = at least 3 buttons
     expect(buttons.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('uses Convex user name for avatar fallback', () => {
+    render(<DashboardHeader />)
+    // The avatar fallback should show the first letter of the Convex user's name
+    expect(screen.getByText('C')).toBeInTheDocument()
   })
 })

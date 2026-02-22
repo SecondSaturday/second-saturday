@@ -266,6 +266,21 @@ describe('PromptResponseCard', () => {
     expect(screen.getByTestId('media-uploader')).toHaveAttribute('data-max', '5')
   })
 
+  it('hides MediaUploader when responseId is a temp ID', () => {
+    const tempId = 'temp-some-prompt-id' as unknown as Id<'responses'>
+    render(<PromptResponseCard promptId="p1" promptText="Prompt" responseId={tempId} />)
+
+    expect(screen.queryByTestId('media-uploader')).not.toBeInTheDocument()
+    expect(screen.getByText(/start typing to enable photo/i)).toBeInTheDocument()
+  })
+
+  it('shows MediaUploader when responseId is a real ID', () => {
+    render(<PromptResponseCard promptId="p1" promptText="Prompt" responseId={RESPONSE_ID} />)
+
+    expect(screen.getByTestId('media-uploader')).toBeInTheDocument()
+    expect(screen.queryByText(/start typing to enable photo/i)).not.toBeInTheDocument()
+  })
+
   it('does not pass onRemove to MediaGrid when disabled', () => {
     const onMediaRemove = vi.fn()
     const existingMedia = [makeMediaItem('m1')]

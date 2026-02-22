@@ -25,7 +25,6 @@ test.describe('Text Submission Flow', () => {
     // Upload buttons visible
     await expect(page.getByRole('button', { name: /take photo/i })).toBeVisible()
     await expect(page.getByRole('button', { name: /choose photo/i })).toBeVisible()
-    await expect(page.getByRole('button', { name: /record video/i })).toBeVisible()
     await expect(page.getByRole('button', { name: /choose video/i })).toBeVisible()
   })
 
