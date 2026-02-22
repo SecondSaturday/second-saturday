@@ -11,27 +11,27 @@ test.describe('Notification Preferences', () => {
 
   test('notification preferences section loads on settings page', async ({ page }) => {
     await page.goto('/dashboard/settings', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('Notifications')).toBeVisible({ timeout: 15000 })
+    await expect(page.getByText('Notifications', { exact: true })).toBeVisible({ timeout: 15000 })
     await expect(page.getByText('Control how Second Saturday communicates with you')).toBeVisible()
   })
 
   test('submission reminders label is visible', async ({ page }) => {
     await page.goto('/dashboard/settings', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('Notifications')).toBeVisible({ timeout: 15000 })
+    await expect(page.getByText('Notifications', { exact: true })).toBeVisible({ timeout: 15000 })
     await expect(page.getByText('Submission Reminders')).toBeVisible()
     await expect(page.getByText('Get reminded before the submission deadline')).toBeVisible()
   })
 
   test('newsletter notifications label is visible', async ({ page }) => {
     await page.goto('/dashboard/settings', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('Notifications')).toBeVisible({ timeout: 15000 })
+    await expect(page.getByText('Notifications', { exact: true })).toBeVisible({ timeout: 15000 })
     await expect(page.getByText('Newsletter Notifications')).toBeVisible()
     await expect(page.getByText('Get notified when a new newsletter is ready')).toBeVisible()
   })
 
   test('both notification switches render and are checked by default', async ({ page }) => {
     await page.goto('/dashboard/settings', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('Notifications')).toBeVisible({ timeout: 15000 })
+    await expect(page.getByText('Notifications', { exact: true })).toBeVisible({ timeout: 15000 })
 
     // Wait for switches to load (skeleton replaced by actual switches)
     const submissionSwitch = page.locator('#submission-reminders')
@@ -47,7 +47,7 @@ test.describe('Notification Preferences', () => {
 
   test('toggle submission reminders switch', async ({ page }) => {
     await page.goto('/dashboard/settings', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('Notifications')).toBeVisible({ timeout: 15000 })
+    await expect(page.getByText('Notifications', { exact: true })).toBeVisible({ timeout: 15000 })
 
     const submissionSwitch = page.locator('#submission-reminders')
     await expect(submissionSwitch).toBeVisible({ timeout: 15000 })
@@ -65,7 +65,7 @@ test.describe('Notification Preferences', () => {
 
   test('toggle newsletter notifications switch', async ({ page }) => {
     await page.goto('/dashboard/settings', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('Notifications')).toBeVisible({ timeout: 15000 })
+    await expect(page.getByText('Notifications', { exact: true })).toBeVisible({ timeout: 15000 })
 
     const newsletterSwitch = page.locator('#newsletter-ready')
     await expect(newsletterSwitch).toBeVisible({ timeout: 15000 })
