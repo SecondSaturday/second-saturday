@@ -20,6 +20,12 @@ function validateUpdatePrompts(prompts: Array<{ text: string; order: number; id?
       return { valid: false, error: 'Prompt text must be 200 characters or less' }
     }
   }
+  // Check for duplicate prompt texts
+  const texts = prompts.map((p) => p.text.trim().toLowerCase())
+  const uniqueTexts = new Set(texts)
+  if (uniqueTexts.size !== texts.length) {
+    return { valid: false, error: 'Duplicate prompts are not allowed' }
+  }
   return { valid: true }
 }
 
@@ -155,6 +161,43 @@ describe('updatePrompts processing', () => {
     expect(result).toHaveLength(2)
     expect(result[0]!._id).toBe('p1')
     expect(result[1]!._id).toBeUndefined()
+  })
+})
+
+describe('updatePrompts duplicate validation', () => {
+  it('rejects duplicate prompt texts', () => {
+    const result = validateUpdatePrompts([
+      { text: 'What did you do?', order: 0 },
+      { text: 'What did you do?', order: 1 },
+    ])
+    expect(result.valid).toBe(false)
+    expect(result.error).toContain('Duplicate')
+  })
+
+  it('rejects case-insensitive duplicates', () => {
+    const result = validateUpdatePrompts([
+      { text: 'Hello World', order: 0 },
+      { text: 'hello world', order: 1 },
+    ])
+    expect(result.valid).toBe(false)
+    expect(result.error).toContain('Duplicate')
+  })
+
+  it('rejects duplicates with whitespace differences', () => {
+    const result = validateUpdatePrompts([
+      { text: '  Hello  ', order: 0 },
+      { text: 'Hello', order: 1 },
+    ])
+    expect(result.valid).toBe(false)
+    expect(result.error).toContain('Duplicate')
+  })
+
+  it('accepts unique prompt texts', () => {
+    const result = validateUpdatePrompts([
+      { text: 'Prompt one', order: 0 },
+      { text: 'Prompt two', order: 1 },
+    ])
+    expect(result.valid).toBe(true)
   })
 })
 

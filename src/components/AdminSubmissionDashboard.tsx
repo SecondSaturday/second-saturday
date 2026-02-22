@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Send } from 'lucide-react'
 import { toast } from 'sonner'
-import { DeadlineCountdown } from '@/components/submissions'
 import { useMemo } from 'react'
 
 /** Compute second Saturday deadline in UTC (fallback when backend hasn't loaded) */
@@ -62,9 +61,6 @@ export function AdminSubmissionDashboard({ circleId }: { circleId: Id<'circles'>
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Deadline */}
-      <DeadlineCountdown deadlineTimestamp={deadlineTimestamp} />
-
       {/* Reminder count */}
       <p className="text-xs text-muted-foreground">3 of 3 reminders remaining</p>
 

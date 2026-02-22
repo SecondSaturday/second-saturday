@@ -131,6 +131,13 @@ export default function PromptsPage() {
 
   const addPrompt = (text: string) => {
     if (prompts.length >= 8) return
+    if (
+      text.trim() &&
+      prompts.some((p) => p.text.trim().toLowerCase() === text.trim().toLowerCase())
+    ) {
+      toast.error('This prompt already exists')
+      return
+    }
     setPrompts((prev) => [...prev, { id: `prompt-${Date.now()}`, text }])
   }
 
@@ -148,6 +155,14 @@ export default function PromptsPage() {
     const validPrompts = prompts.filter((p) => p.text.trim())
     if (validPrompts.length < 1) {
       setError('At least 1 prompt is required')
+      return
+    }
+
+    // Check for duplicate prompt texts
+    const texts = validPrompts.map((p) => p.text.trim().toLowerCase())
+    const uniqueTexts = new Set(texts)
+    if (uniqueTexts.size !== texts.length) {
+      setError('Duplicate prompts are not allowed')
       return
     }
 

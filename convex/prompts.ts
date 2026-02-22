@@ -118,6 +118,13 @@ export const updatePrompts = mutation({
       }
     }
 
+    // Check for duplicate prompt texts
+    const texts = args.prompts.map((p) => p.text.trim().toLowerCase())
+    const uniqueTexts = new Set(texts)
+    if (uniqueTexts.size !== texts.length) {
+      throw new Error('Duplicate prompts are not allowed')
+    }
+
     // Deactivate all existing prompts for this circle
     const existing = await ctx.db
       .query('prompts')

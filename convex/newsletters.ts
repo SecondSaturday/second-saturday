@@ -140,6 +140,9 @@ export const unsubscribeFromEmail = mutation({
     const membership = await requireMembership(ctx, user._id, args.circleId)
 
     await ctx.db.patch(membership._id, { emailUnsubscribed: true })
+    console.log('[analytics] newsletter_unsubscribed', {
+      circle_id: args.circleId,
+    })
     return { success: true }
   },
 })

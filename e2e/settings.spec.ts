@@ -46,4 +46,10 @@ test.describe('Settings Page', () => {
     // Just verify the page loads without error
     await expect(page.getByText('Profile')).toBeVisible()
   })
+
+  test('log out button is visible', async ({ page }) => {
+    await page.goto('/dashboard/settings', { waitUntil: 'domcontentloaded' })
+    await expect(page.getByText('Settings')).toBeVisible({ timeout: 15000 })
+    await expect(page.getByRole('button', { name: /log out/i })).toBeVisible()
+  })
 })

@@ -149,7 +149,7 @@ test.describe('Deadline Locking - Past Deadline', () => {
     await expect(lockedText).toBeVisible({ timeout: 10000 })
   })
 
-  test('locked banner appears on submission screen when deadline passed', async ({ page }) => {
+  test('info banner appears on submission screen when deadline passed', async ({ page }) => {
     // Mock clock to be past the deadline
     await page.addInitScript(injectPastDeadlineClock('2099-06-15T12:00:00Z'))
 
@@ -166,22 +166,21 @@ test.describe('Deadline Locking - Past Deadline', () => {
     await circleCard.click()
     await page.waitForURL(/\/dashboard\/circles\//, { timeout: 10000 })
 
-    // The locked banner ("Submissions are locked for this cycle.") is shown by
-    // MultiCircleSubmissionScreen when deadlineIsPast === true.
-    // It's rendered on the circle page, not the /submissions admin page.
-    const lockedBanner = page.getByText(/submissions are locked for this cycle/i)
-    const hasLockedBanner = await lockedBanner.isVisible({ timeout: 5000 }).catch(() => false)
+    // After deadline, an informational banner shows instead of a destructive lock banner.
+    // The banner says submissions will be included in next month's newsletter.
+    const infoBanner = page.getByText(/deadline for this cycle has passed/i)
+    const hasInfoBanner = await infoBanner.isVisible({ timeout: 5000 }).catch(() => false)
 
     // The banner may or may not render depending on whether the circle page
-    // renders MultiCircleSubmissionScreen. Verify either the banner or locked countdown.
-    if (hasLockedBanner) {
-      await expect(lockedBanner).toBeVisible()
+    // renders MultiCircleSubmissionScreen. Verify either the banner or the page loads.
+    if (hasInfoBanner) {
+      await expect(infoBanner).toBeVisible()
     }
     // Either way, the page should load without error
     await expect(page.locator('body')).toBeVisible()
   })
 
-  test('textarea is disabled when deadline is past', async ({ page }) => {
+  test('textarea remains enabled when deadline is past', async ({ page }) => {
     await page.addInitScript(injectPastDeadlineClock('2099-03-10T12:00:00Z'))
 
     await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
@@ -197,19 +196,16 @@ test.describe('Deadline Locking - Past Deadline', () => {
     await circleCard.click()
     await page.waitForURL(/\/dashboard\/circles\//, { timeout: 10000 })
 
-    // If there are textareas on this page (PromptResponseCard), they should be disabled
+    // Textareas should remain enabled even after deadline — users can still submit late
     const textareas = page.locator('textarea')
     const textareaCount = await textareas.count()
 
     if (textareaCount > 0) {
-      // When deadlineIsPast, disabled prop is passed to PromptResponseCard
       for (let i = 0; i < textareaCount; i++) {
         const textarea = textareas.nth(i)
         const isDisabled = await textarea.isDisabled()
-        // If deadline is past and textarea is in a submission form, it should be disabled
-        if (isDisabled) {
-          expect(isDisabled).toBe(true)
-        }
+        // Textareas should not be disabled just because the deadline passed
+        expect(isDisabled).toBe(false)
       }
     }
   })

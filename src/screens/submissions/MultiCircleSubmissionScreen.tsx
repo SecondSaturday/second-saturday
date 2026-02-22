@@ -289,8 +289,7 @@ export function MultiCircleSubmissionScreen({
     [circles, activeCircleId, circleProgress]
   )
 
-  const isDisabled =
-    deadlineIsPast || activeCircle?.status === 'locked' || activeCircle?.status === 'submitted'
+  const isDisabled = activeCircle?.status === 'locked' || activeCircle?.status === 'submitted'
 
   const isLoading = submissionData === undefined || promptsData === undefined
 
@@ -302,12 +301,13 @@ export function MultiCircleSubmissionScreen({
         <DeadlineCountdown deadlineTimestamp={deadlineTimestamp} />
       </div>
 
-      {/* Locked banner */}
+      {/* Late submission info note */}
       {deadlineIsPast && (
-        <div className="flex items-center gap-2 bg-destructive/10 border-b border-destructive/20 px-4 py-2.5">
-          <Lock className="size-4 text-destructive shrink-0" />
-          <p className="text-sm text-destructive font-medium">
-            Submissions are locked for this cycle.
+        <div className="flex items-center gap-2 bg-muted/50 border-b border-border px-4 py-2.5">
+          <Lock className="size-4 text-muted-foreground shrink-0" />
+          <p className="text-sm text-muted-foreground font-medium">
+            The deadline for this cycle has passed. Your submission will be included in next
+            month&apos;s newsletter.
           </p>
         </div>
       )}
@@ -365,7 +365,7 @@ export function MultiCircleSubmissionScreen({
       </CircleSubmissionTabs>
 
       {/* Submit footer */}
-      {!deadlineIsPast && !isLoading && (
+      {!isLoading && (
         <div className="sticky bottom-0 border-t border-border bg-background px-4 py-3">
           {activeCircle?.status === 'submitted' ? (
             <div className="flex items-center justify-center gap-2 text-sm font-medium text-green-600">

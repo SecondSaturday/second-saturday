@@ -567,4 +567,28 @@ describe('MultiCircleSubmissionScreen', () => {
     expect(screen.queryByRole('button', { name: /submit/i })).not.toBeInTheDocument()
     expect(screen.getByText('Submitted')).toBeInTheDocument()
   })
+
+  // -------------------------------------------------------------------------
+  // Post-deadline behavior (submissions allowed after deadline)
+  // -------------------------------------------------------------------------
+
+  it('does not disable prompt cards when deadline is past', () => {
+    // Deadline is past but circle status is not-started — inputs should remain enabled
+    setupMocks({ submissionData: SUBMISSION, promptsData: [PROMPT_1] })
+
+    render(<MultiCircleSubmissionScreen circles={[CIRCLE_A]} cycleId="cycle-1" />)
+
+    const cards = screen.getAllByTestId('prompt-card')
+    cards.forEach((card) => {
+      expect(card).toHaveAttribute('data-disabled', 'false')
+    })
+  })
+
+  it('shows submit button even when deadline is past', () => {
+    setupMocks({ submissionData: SUBMISSION, promptsData: [PROMPT_1] })
+
+    render(<MultiCircleSubmissionScreen circles={[CIRCLE_A]} cycleId="cycle-1" />)
+
+    expect(screen.getByRole('button', { name: /submit/i })).toBeInTheDocument()
+  })
 })

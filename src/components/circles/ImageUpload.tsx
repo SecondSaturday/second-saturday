@@ -7,7 +7,7 @@ import { compressImage, cropImage } from '@/lib/image'
 import type { PixelCrop } from '@/lib/image'
 import { ImageCropModal } from './ImageCropModal'
 import Image from 'next/image'
-import { Camera } from 'lucide-react'
+import { Camera, Pencil } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Id } from '../../../convex/_generated/dataModel'
 import type { Area } from 'react-easy-crop'
@@ -119,7 +119,12 @@ export function ImageUpload({
         )}
       >
         {preview ? (
-          <Image src={preview} alt={label} fill unoptimized className="object-cover" />
+          <>
+            <Image src={preview} alt={label} fill unoptimized className="object-cover" />
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity hover:opacity-100">
+              <Pencil className="size-5 text-white" />
+            </div>
+          </>
         ) : (
           <div className="flex flex-col items-center gap-1 text-muted-foreground">
             <Camera className="size-5" />

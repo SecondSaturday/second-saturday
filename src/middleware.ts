@@ -13,9 +13,12 @@ const isPublicRoute = createRouteMatcher([
 export default clerkMiddleware(async (auth, request) => {
   const { userId } = await auth()
 
-  // Redirect authenticated users from home to dashboard
-  if (userId && request.nextUrl.pathname === '/') {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+  // Redirect home page: authenticated → dashboard, unauthenticated → sign-in
+  if (request.nextUrl.pathname === '/') {
+    if (userId) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+    return NextResponse.redirect(new URL('/sign-in', request.url))
   }
 
   // Redirect unauthenticated users from protected routes to sign-in

@@ -17,7 +17,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, LogOut } from 'lucide-react'
 import Link from 'next/link'
 import { trackEvent } from '@/lib/analytics'
 import type { Id } from '../../../../convex/_generated/dataModel'
@@ -77,7 +77,10 @@ export default function SettingsPage() {
   }
 
   const passwordValid =
-    newPassword.length >= 8 && newPassword === confirmPassword && currentPassword.length > 0
+    newPassword.length >= 8 &&
+    newPassword === confirmPassword &&
+    currentPassword.length > 0 &&
+    newPassword !== currentPassword
 
   const handleChangePassword = async () => {
     setPasswordError(null)
@@ -93,6 +96,8 @@ export default function SettingsPage() {
       setConfirmPassword('')
       setPasswordSuccess(true)
       trackEvent('user_reset_password', { method: 'email' })
+      // Force re-authentication after password change
+      setTimeout(() => signOut({ redirectUrl: '/sign-in' }), 1500)
     } catch (err) {
       setPasswordError(err instanceof Error ? err.message : 'Failed to change password')
     } finally {
@@ -304,6 +309,11 @@ export default function SettingsPage() {
             {confirmPassword.length > 0 && newPassword !== confirmPassword && (
               <p className="text-sm text-destructive">Passwords do not match</p>
             )}
+            {newPassword.length > 0 && newPassword === currentPassword && (
+              <p className="text-sm text-destructive">
+                New password must be different from current password
+              </p>
+            )}
             {passwordError && <p className="text-sm text-destructive">{passwordError}</p>}
             {passwordSuccess && (
               <p className="text-sm text-green-600">Password changed successfully</p>
@@ -318,6 +328,22 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       )}
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Account</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => signOut({ redirectUrl: '/sign-in' })}
+          >
+            <LogOut className="mr-2 size-4" />
+            Log Out
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card className="mt-6 border-destructive/50">
         <CardHeader>

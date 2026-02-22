@@ -127,6 +127,34 @@ describe('SettingsPage', () => {
     expect(screen.getByText('Passwords do not match')).toBeInTheDocument()
   })
 
+  it('password change rejects same password as current', () => {
+    render(<SettingsPage />)
+    const currentPasswordInput = screen.getByPlaceholderText('Current password')
+    const newPasswordInput = screen.getByPlaceholderText('New password (min 8 characters)')
+    fireEvent.change(currentPasswordInput, { target: { value: 'mypassword123' } })
+    fireEvent.change(newPasswordInput, { target: { value: 'mypassword123' } })
+    expect(
+      screen.getByText('New password must be different from current password')
+    ).toBeInTheDocument()
+  })
+
+  it('change password button disabled when new matches current', () => {
+    render(<SettingsPage />)
+    const currentPasswordInput = screen.getByPlaceholderText('Current password')
+    const newPasswordInput = screen.getByPlaceholderText('New password (min 8 characters)')
+    const confirmInput = screen.getByPlaceholderText('Confirm new password')
+    fireEvent.change(currentPasswordInput, { target: { value: 'mypassword123' } })
+    fireEvent.change(newPasswordInput, { target: { value: 'mypassword123' } })
+    fireEvent.change(confirmInput, { target: { value: 'mypassword123' } })
+    const changeButton = screen.getByRole('button', { name: /change password/i })
+    expect(changeButton).toBeDisabled()
+  })
+
+  it('renders a log out button', () => {
+    render(<SettingsPage />)
+    expect(screen.getByRole('button', { name: /log out/i })).toBeInTheDocument()
+  })
+
   it('delete account flow shows re-auth step first', async () => {
     const user = userEvent.setup()
     render(<SettingsPage />)

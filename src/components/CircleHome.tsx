@@ -100,16 +100,26 @@ export function CircleHome({
 
         {/* Navigation links */}
         <div className="flex flex-col gap-2">
-          <Link
-            href={`/dashboard/circles/${circleId}/submit`}
-            className="flex items-center gap-3 rounded-lg border border-border p-4 transition-colors hover:bg-muted/30"
-          >
-            <PenLine className="size-5 text-muted-foreground" />
-            <div>
-              <p className="text-sm font-medium text-foreground">Make Submission</p>
-              <p className="text-xs text-muted-foreground">Write your responses for this cycle</p>
+          {circle.memberCount < 3 ? (
+            <div className="flex items-center gap-3 rounded-lg border border-border p-4 opacity-50 pointer-events-none">
+              <PenLine className="size-5 text-muted-foreground" />
+              <div>
+                <p className="text-sm font-medium text-foreground">Make Submission</p>
+                <p className="text-xs text-muted-foreground">Need 3+ members to submit</p>
+              </div>
             </div>
-          </Link>
+          ) : (
+            <Link
+              href={`/dashboard/circles/${circleId}/submit`}
+              className="flex items-center gap-3 rounded-lg border border-border p-4 transition-colors hover:bg-muted/30"
+            >
+              <PenLine className="size-5 text-muted-foreground" />
+              <div>
+                <p className="text-sm font-medium text-foreground">Make Submission</p>
+                <p className="text-xs text-muted-foreground">Write your responses for this cycle</p>
+              </div>
+            </Link>
+          )}
 
           <Link
             href={`/dashboard/circles/${circleId}/members`}
@@ -135,22 +145,6 @@ export function CircleHome({
                 </div>
               </Link>
             </>
-          )}
-          {onSettingsClick && (
-            <button
-              onClick={onSettingsClick}
-              className="flex items-center gap-3 rounded-lg border border-border p-4 text-left transition-colors hover:bg-muted/30"
-            >
-              <Settings className="size-5 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium text-foreground">Circle Settings</p>
-                <p className="text-xs text-muted-foreground">
-                  {isAdmin
-                    ? 'Edit circle details and invite link'
-                    : 'View circle info and manage membership'}
-                </p>
-              </div>
-            </button>
           )}
         </div>
 
