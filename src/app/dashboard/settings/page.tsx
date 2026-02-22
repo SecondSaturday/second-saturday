@@ -20,6 +20,7 @@ import {
 import { ArrowLeft, LogOut } from 'lucide-react'
 import Link from 'next/link'
 import { trackEvent } from '@/lib/analytics'
+import { NotificationPreferences } from '@/components/NotificationPreferences'
 import type { Id } from '../../../../convex/_generated/dataModel'
 
 export default function SettingsPage() {
@@ -269,6 +270,10 @@ export default function SettingsPage() {
           </Button>
         </CardContent>
       </Card>
+
+      <div className="mt-6">
+        <NotificationPreferences />
+      </div>
 
       {clerkUser?.passwordEnabled && (
         <Card className="mt-6">
