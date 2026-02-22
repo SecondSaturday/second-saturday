@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { setupClerkTestingToken } from '@clerk/testing/playwright'
 import { waitForCreateFormHydration } from './helpers'
 
 test.describe('Rejoin Circle Flow', () => {
@@ -7,6 +8,7 @@ test.describe('Rejoin Circle Flow', () => {
   test.describe('After Voluntary Leave', () => {
     test('should allow rejoining via invite link after leaving', async ({ page }) => {
       test.setTimeout(60000)
+      await setupClerkTestingToken({ page })
       await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
       await page.waitForTimeout(2000)
 
