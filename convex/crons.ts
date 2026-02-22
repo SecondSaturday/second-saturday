@@ -61,4 +61,12 @@ crons.cron(
   {}
 )
 
+// Run every Wednesday at 11:00 UTC to send submission reminders
+// (3 days before Saturday deadline — action checks for second Saturday)
+crons.weekly(
+  'send submission reminders',
+  { dayOfWeek: 'wednesday', hourUTC: 11, minuteUTC: 0 },
+  internal.notifications.sendSubmissionReminder
+)
+
 export default crons

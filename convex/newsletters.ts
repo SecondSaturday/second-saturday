@@ -1,5 +1,6 @@
 import { mutation, query, internalMutation } from './_generated/server'
 import type { MutationCtx, QueryCtx } from './_generated/server'
+import { internal } from './_generated/api'
 import { v } from 'convex/values'
 import type { Doc } from './_generated/dataModel'
 
@@ -323,6 +324,14 @@ export const compileNewsletter = internalMutation({
     })
 
     const missedMonth = submissionCount === 0
+
+    // If newsletter has submissions, schedule push notification and admin reminder cleanup
+    if (!missedMonth) {
+      await ctx.scheduler.runAfter(0, internal.notifications.sendNewsletterReadyNotification, {
+        circleId,
+        cycleId,
+      })
+    }
 
     console.log('[analytics] newsletter_compiled', {
       circle_id: circleId,
