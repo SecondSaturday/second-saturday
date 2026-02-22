@@ -66,12 +66,12 @@ http.route({
           return new Response('No email in payload', { status: 400 })
         }
 
+        // Don't set name here — let the user set it on /complete-profile
         const name = [data.first_name, data.last_name].filter(Boolean).join(' ') || undefined
 
         await ctx.runMutation(api.users.upsertUser, {
           clerkId: data.id,
           email,
-          name,
           imageUrl: data.image_url,
         })
 

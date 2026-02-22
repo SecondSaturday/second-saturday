@@ -66,6 +66,7 @@ export function MediaUploader({
     },
   })
 
+  const videoInputRef = useRef<HTMLInputElement | null>(null)
   const canUploadMore = currentMediaCount < maxMedia
 
   const resetUpload = () => {
@@ -252,11 +253,19 @@ export function MediaUploader({
     }
   }
 
-  const handleVideoCapture = async (source: CameraSource) => {
+  const handleVideoSelect = () => {
     if (!canUploadMore) {
       handleError(`Maximum ${maxMedia} media items allowed per response`)
       return
     }
+    videoInputRef.current?.click()
+  }
+
+  const handleVideoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    // Reset input so the same file can be re-selected
+    if (e.target) e.target.value = ''
+    if (!file) return
 
     try {
       setStage('selecting')
@@ -266,50 +275,20 @@ export function MediaUploader({
       videoUpload.setStage('selecting')
       videoUpload.setProgress(10)
 
-      // Request video from camera or gallery
-      const video = await Camera.getPhoto({
-        quality: 90,
-        allowEditing: false,
-        resultType: CameraResultType.Uri,
-        source,
-        // @ts-expect-error - mediaType is supported but not in types
-        mediaType: 'video',
-      })
-
-      if (!video.webPath) {
-        throw new Error('No video path returned')
-      }
-
-      // Convert video to blob/file for upload
-      const response = await fetch(video.webPath)
-      const blob = await response.blob()
-      const file = new File([blob], `video-${Date.now()}.${video.format || 'mp4'}`, {
-        type: blob.type || 'video/mp4',
-      })
-
       // Show preview
-      setPreview(video.webPath)
+      const previewUrl = URL.createObjectURL(file)
+      setPreview(previewUrl)
       videoUpload.setProgress(20)
 
       await uploadVideo(file)
     } catch (err: unknown) {
-      // Handle specific permission errors
       const errorMessage = err instanceof Error ? err.message : String(err)
       if (errorMessage?.includes('User cancelled') || errorMessage?.includes('cancelled')) {
-        // User cancelled, just reset
         videoUpload.reset()
         resetUpload()
         return
       }
-
-      if (errorMessage?.includes('permission') || errorMessage?.includes('denied')) {
-        handleError(
-          'Camera permission denied. Please enable camera access in your device settings.'
-        )
-        return
-      }
-
-      handleError('Failed to capture video', err)
+      handleError('Failed to select video', err)
     }
   }
 
@@ -488,20 +467,7 @@ export function MediaUploader({
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => handleVideoCapture(CameraSource.Camera)}
-              disabled={!canUploadMore}
-              className={cn(
-                'flex flex-1 items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/50 px-4 py-3 text-sm font-medium transition-colors hover:bg-muted',
-                !canUploadMore && 'cursor-not-allowed opacity-50'
-              )}
-            >
-              <VideoIcon className="size-5" />
-              <span>Record Video</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleVideoCapture(CameraSource.Photos)}
+              onClick={handleVideoSelect}
               disabled={!canUploadMore}
               className={cn(
                 'flex flex-1 items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/50 px-4 py-3 text-sm font-medium transition-colors hover:bg-muted',
@@ -512,6 +478,13 @@ export function MediaUploader({
               <span>Choose Video</span>
             </button>
           </div>
+          <input
+            ref={videoInputRef}
+            type="file"
+            accept="video/mp4,video/quicktime,video/x-m4v"
+            className="hidden"
+            onChange={handleVideoFileChange}
+          />
         </div>
       )}
 

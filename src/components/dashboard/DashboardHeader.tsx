@@ -1,6 +1,8 @@
 'use client'
 
 import { useUser } from '@clerk/nextjs'
+import { useQuery } from 'convex/react'
+import { api } from '../../../convex/_generated/api'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Bell, MoreVertical, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -14,6 +16,10 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ onDatePickerOpen, onMenuOpen, dateLabel }: DashboardHeaderProps) {
   const { user } = useUser()
+  const convexUser = useQuery(api.users.getCurrentUser)
+
+  const avatarUrl = convexUser?.imageUrl ?? user?.imageUrl
+  const displayName = convexUser?.name ?? user?.fullName ?? 'User'
 
   const displayDate =
     dateLabel ?? new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -22,8 +28,8 @@ export function DashboardHeader({ onDatePickerOpen, onMenuOpen, dateLabel }: Das
     <header className="flex items-center justify-between px-4 py-3">
       <Link href="/dashboard/settings">
         <Avatar size="lg" className="cursor-pointer transition-opacity hover:opacity-80">
-          <AvatarImage src={user?.imageUrl} alt={user?.fullName ?? 'User'} />
-          <AvatarFallback>{user?.firstName?.charAt(0) ?? 'U'}</AvatarFallback>
+          <AvatarImage src={avatarUrl} alt={displayName} />
+          <AvatarFallback>{(convexUser?.name ?? user?.firstName)?.[0] ?? 'U'}</AvatarFallback>
         </Avatar>
       </Link>
 

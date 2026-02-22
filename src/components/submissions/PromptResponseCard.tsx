@@ -108,14 +108,20 @@ export function PromptResponseCard({
           />
         )}
 
-        {/* Media Upload Area */}
-        <MediaUploader
-          responseId={responseId}
-          onUploadComplete={handleMediaUploadComplete}
-          onUploadError={onMediaError}
-          maxMedia={maxMedia}
-          currentMediaCount={mediaCount}
-        />
+        {/* Media Upload Area — only available after a response has been saved */}
+        {typeof responseId === 'string' && !responseId.startsWith('temp-') ? (
+          <MediaUploader
+            responseId={responseId}
+            onUploadComplete={handleMediaUploadComplete}
+            onUploadError={onMediaError}
+            maxMedia={maxMedia}
+            currentMediaCount={mediaCount}
+          />
+        ) : (
+          <p className="text-center text-xs text-muted-foreground">
+            Start typing to enable photo &amp; video uploads
+          </p>
+        )}
       </CardContent>
     </Card>
   )

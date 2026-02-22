@@ -41,7 +41,6 @@ export const uploadVideoToMux = action({
         cors_origin: '*', // Configure based on your domain in production
         new_asset_settings: {
           playback_policy: ['public'],
-          mp4_support: 'standard',
         },
       })
 
