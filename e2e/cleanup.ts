@@ -51,6 +51,8 @@ async function main() {
     console.log(`  Videos:           ${result.deleted.videos}`)
     console.log(`  Newsletter Reads: ${result.deleted.newsletterReads}`)
     console.log(`  Newsletters:      ${result.deleted.newsletters}`)
+    console.log(`  Admin Reminders:  ${result.deleted.adminReminders}`)
+    console.log(`  Notif. Prefs:     ${result.deleted.notificationPreferences}`)
 
     console.log(`\nCircles matched:`)
     for (const name of result.matchedCircles) {

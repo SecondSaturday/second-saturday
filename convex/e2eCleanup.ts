@@ -67,6 +67,8 @@ export const cleanupE2EData = mutation({
       videos: 0,
       newsletterReads: 0,
       newsletters: 0,
+      notificationPreferences: 0,
+      adminReminders: 0,
     }
 
     for (const circle of e2eCircles) {
@@ -162,6 +164,39 @@ export const cleanupE2EData = mutation({
       for (const vid of videos) {
         if (!dryRun) await ctx.db.delete(vid._id)
         stats.videos++
+      }
+
+      // Delete admin reminders for this circle
+      const adminReminders = await ctx.db
+        .query('adminReminders')
+        .withIndex('by_circle_cycle', (q) => q.eq('circleId', circle._id))
+        .collect()
+      for (const ar of adminReminders) {
+        if (!dryRun) await ctx.db.delete(ar._id)
+        stats.adminReminders++
+      }
+
+      // Delete notification preferences ONLY for users whose memberships
+      // are exclusively in E2E circles (to avoid wiping real users' prefs).
+      const e2eCircleIds = new Set(e2eCircles.map((c) => c._id as string))
+      for (const m of memberships) {
+        const allUserMemberships = await ctx.db
+          .query('memberships')
+          .withIndex('by_user', (q) => q.eq('userId', m.userId))
+          .collect()
+        const hasRealCircle = allUserMemberships.some(
+          (um) => !e2eCircleIds.has(um.circleId as string) && !um.leftAt
+        )
+        if (hasRealCircle) continue // skip — user has real circle memberships
+
+        const prefs = await ctx.db
+          .query('notificationPreferences')
+          .withIndex('by_user', (q) => q.eq('userId', m.userId))
+          .collect()
+        for (const p of prefs) {
+          if (!dryRun) await ctx.db.delete(p._id)
+          stats.notificationPreferences++
+        }
       }
 
       // Delete storage blobs for circle images
