@@ -9,6 +9,7 @@ export default defineSchema({
     imageUrl: v.optional(v.string()),
     avatarStorageId: v.optional(v.id('_storage')),
     timezone: v.optional(v.string()),
+    oneSignalPlayerId: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -132,4 +133,22 @@ export default defineSchema({
   })
     .index('by_response', ['responseId'])
     .index('by_response_order', ['responseId', 'order']),
+
+  notificationPreferences: defineTable({
+    userId: v.id('users'),
+    submissionReminders: v.boolean(),
+    newsletterReady: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index('by_user', ['userId']),
+
+  adminReminders: defineTable({
+    circleId: v.id('circles'),
+    adminUserId: v.id('users'),
+    targetUserId: v.optional(v.id('users')),
+    cycleId: v.string(), // Format: YYYY-MM
+    sentAt: v.number(),
+  })
+    .index('by_circle_cycle', ['circleId', 'cycleId'])
+    .index('by_admin_circle_cycle', ['adminUserId', 'circleId', 'cycleId']),
 })
