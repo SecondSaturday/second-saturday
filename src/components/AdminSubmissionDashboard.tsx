@@ -1,14 +1,15 @@
 'use client'
 
-import { useQuery } from 'convex/react'
+import { useMutation, useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Send } from 'lucide-react'
+import { Loader2, Send } from 'lucide-react'
 import { toast } from 'sonner'
-import { useMemo } from 'react'
+import { trackEvent } from '@/lib/analytics'
+import { useMemo, useState } from 'react'
 
 /** Compute second Saturday deadline in UTC (fallback when backend hasn't loaded) */
 function getDeadlineTimestamp(): number {
@@ -47,6 +48,23 @@ export function AdminSubmissionDashboard({ circleId }: { circleId: Id<'circles'>
     [data?.deadline]
   )
 
+  // Derive cycleId (YYYY-MM) from the deadline timestamp
+  const cycleId = useMemo(() => {
+    const d = new Date(deadlineTimestamp)
+    const y = d.getUTCFullYear()
+    const m = String(d.getUTCMonth() + 1).padStart(2, '0')
+    return `${y}-${m}`
+  }, [deadlineTimestamp])
+
+  const sendAdminReminder = useMutation(api.notifications.sendAdminReminder)
+  const sendBulkAdminReminder = useMutation(api.notifications.sendBulkAdminReminder)
+  const reminderCount = useQuery(api.notifications.getAdminReminderCount, { circleId, cycleId })
+
+  const [sendingReminder, setSendingReminder] = useState<string | null>(null)
+
+  const remindersUsed = reminderCount ?? 0
+  const remindersRemaining = 3 - remindersUsed
+
   if (data === undefined) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -55,14 +73,63 @@ export function AdminSubmissionDashboard({ circleId }: { circleId: Id<'circles'>
     )
   }
 
-  const handleSendReminder = () => {
-    toast.info('Reminders coming soon')
+  const handleSendReminder = async (targetUserId: Id<'users'>) => {
+    if (remindersRemaining <= 0) return
+    setSendingReminder(targetUserId)
+    try {
+      await sendAdminReminder({ circleId, targetUserId, cycleId })
+      trackEvent('admin_manual_reminder_sent', {
+        target: 'individual',
+        circle_id: circleId,
+        reminders_remaining: remindersRemaining - 1,
+      })
+      toast.success('Reminder sent!')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to send reminder')
+    } finally {
+      setSendingReminder(null)
+    }
+  }
+
+  const handleBulkReminder = async () => {
+    if (remindersRemaining <= 0) return
+    setSendingReminder('bulk')
+    try {
+      await sendBulkAdminReminder({ circleId, cycleId })
+      trackEvent('admin_manual_reminder_sent', {
+        target: 'all',
+        circle_id: circleId,
+        reminders_remaining: remindersRemaining - 1,
+      })
+      toast.success('Reminders sent to all non-submitters!')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to send reminders')
+    } finally {
+      setSendingReminder(null)
+    }
   }
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Reminder count */}
-      <p className="text-xs text-muted-foreground">3 of 3 reminders remaining</p>
+      {/* Reminder header */}
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          {remindersRemaining} of 3 reminders remaining
+        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={remindersRemaining <= 0 || sendingReminder !== null}
+          onClick={handleBulkReminder}
+        >
+          {sendingReminder === 'bulk' ? (
+            <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+          ) : (
+            <Send className="mr-1.5 size-3.5" />
+          )}
+          Remind All Non-submitters
+        </Button>
+      </div>
 
       {/* Member list */}
       <div className="flex flex-col gap-2">
@@ -93,10 +160,15 @@ export function AdminSubmissionDashboard({ circleId }: { circleId: Id<'circles'>
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={handleSendReminder}
+                disabled={remindersRemaining <= 0 || sendingReminder !== null}
+                onClick={() => handleSendReminder(member.userId)}
                 title="Send reminder"
               >
-                <Send className="size-3.5" />
+                {sendingReminder === member.userId ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Send className="size-3.5" />
+                )}
               </Button>
             )}
           </div>
