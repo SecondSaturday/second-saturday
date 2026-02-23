@@ -294,16 +294,16 @@ export function MultiCircleSubmissionScreen({
   const isLoading = submissionData === undefined || promptsData === undefined
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex min-h-0 flex-1 flex-col">
       {/* Header */}
-      <div className="flex items-center justify-end gap-3 px-4 py-2 border-b border-border/50">
+      <div className="flex shrink-0 items-center justify-end gap-3 px-4 py-2 border-b border-border/50">
         <AutoSaveIndicator status={saveStatus} lastSaved={lastSaved} />
         <DeadlineCountdown deadlineTimestamp={deadlineTimestamp} />
       </div>
 
       {/* Late submission info note */}
       {deadlineIsPast && (
-        <div className="flex items-center gap-2 bg-muted/50 border-b border-border px-4 py-2.5">
+        <div className="flex shrink-0 items-center gap-2 bg-muted/50 border-b border-border px-4 py-2.5">
           <Lock className="size-4 text-muted-foreground shrink-0" />
           <p className="text-sm text-muted-foreground font-medium">
             The deadline for this cycle has passed. Your submission will be included in next
@@ -312,61 +312,63 @@ export function MultiCircleSubmissionScreen({
         </div>
       )}
 
-      {/* Tabs */}
-      <CircleSubmissionTabs
-        circles={circlesWithProgress}
-        activeCircleId={activeCircleId}
-        onCircleChange={setActiveCircleId}
-      >
-        {isLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="size-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : submissionData === null && promptsData !== undefined && promptsData.length === 0 ? (
-          <div className="flex items-center justify-center py-16 text-muted-foreground text-sm">
-            No prompts available for this circle.
-          </div>
-        ) : (
-          <div className="flex flex-col gap-4 p-4">
-            {(promptsData ?? []).map((prompt) => {
-              const serverResponse = submissionData?.responses.find(
-                (r) => r.promptId === prompt._id
-              )
-              const responseId =
-                serverResponse?._id ?? (`temp-${prompt._id}` as unknown as Id<'responses'>)
-              const draftValue =
-                draftTexts.get(activeCircleId)?.get(prompt._id) ?? serverResponse?.text ?? ''
-              const existingMedia = (serverResponse?.media ?? [])
-                .filter((m) => m.url !== null)
-                .map((m) => ({
-                  _id: m._id,
-                  type: m.type as 'image' | 'video',
-                  url: m.url as string,
-                  thumbnailUrl: m.thumbnailUrl,
-                }))
+      {/* Tabs - scrollable area */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+        <CircleSubmissionTabs
+          circles={circlesWithProgress}
+          activeCircleId={activeCircleId}
+          onCircleChange={setActiveCircleId}
+        >
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="size-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : submissionData === null && promptsData !== undefined && promptsData.length === 0 ? (
+            <div className="flex items-center justify-center py-16 text-muted-foreground text-sm">
+              No prompts available for this circle.
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4 p-4">
+              {(promptsData ?? []).map((prompt) => {
+                const serverResponse = submissionData?.responses.find(
+                  (r) => r.promptId === prompt._id
+                )
+                const responseId =
+                  serverResponse?._id ?? (`temp-${prompt._id}` as unknown as Id<'responses'>)
+                const draftValue =
+                  draftTexts.get(activeCircleId)?.get(prompt._id) ?? serverResponse?.text ?? ''
+                const existingMedia = (serverResponse?.media ?? [])
+                  .filter((m) => m.url !== null)
+                  .map((m) => ({
+                    _id: m._id,
+                    type: m.type as 'image' | 'video',
+                    url: m.url as string,
+                    thumbnailUrl: m.thumbnailUrl,
+                  }))
 
-              return (
-                <PromptResponseCard
-                  key={prompt._id}
-                  promptId={prompt._id}
-                  promptText={prompt.text}
-                  responseId={responseId}
-                  initialValue={draftValue}
-                  existingMedia={existingMedia}
-                  onValueChange={(value) => handleValueChange(activeCircleId, prompt._id, value)}
-                  onMediaUpload={handleMediaUpload}
-                  onMediaRemove={isDisabled ? undefined : handleMediaRemove}
-                  disabled={isDisabled}
-                />
-              )
-            })}
-          </div>
-        )}
-      </CircleSubmissionTabs>
+                return (
+                  <PromptResponseCard
+                    key={prompt._id}
+                    promptId={prompt._id}
+                    promptText={prompt.text}
+                    responseId={responseId}
+                    initialValue={draftValue}
+                    existingMedia={existingMedia}
+                    onValueChange={(value) => handleValueChange(activeCircleId, prompt._id, value)}
+                    onMediaUpload={handleMediaUpload}
+                    onMediaRemove={isDisabled ? undefined : handleMediaRemove}
+                    disabled={isDisabled}
+                  />
+                )
+              })}
+            </div>
+          )}
+        </CircleSubmissionTabs>
+      </div>
 
-      {/* Submit footer */}
+      {/* Submit footer - outside scroll area, always visible */}
       {!isLoading && (
-        <div className="sticky bottom-0 border-t border-border bg-background px-4 py-3">
+        <div className="shrink-0 border-t border-border bg-background px-4 py-3 safe-area-bottom">
           {activeCircle?.status === 'submitted' ? (
             <div className="flex items-center justify-center gap-2 text-sm font-medium text-green-600">
               <Check className="size-4" />

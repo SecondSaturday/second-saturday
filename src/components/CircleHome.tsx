@@ -46,7 +46,7 @@ export function CircleHome({ circleId, onBack }: { circleId: Id<'circles'>; onBa
   const isAdmin = circle.role === 'admin'
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       {onBack && (
         <header className="flex shrink-0 items-center gap-3 border-b border-border bg-background px-4 py-3">
           <button onClick={onBack}>

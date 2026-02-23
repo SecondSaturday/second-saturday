@@ -50,7 +50,7 @@ export default function DashboardPage() {
   return (
     <div className="safe-area-top flex h-dvh bg-background">
       {/* Sidebar (full-screen on mobile, fixed-width on desktop) */}
-      <div className="flex w-full flex-col md:w-[380px] md:border-r md:border-border">
+      <div className="flex min-h-0 w-full flex-col md:w-[380px] md:border-r md:border-border">
         <DashboardHeader
           dateLabel={formatShortDate(selectedDate)}
           onDatePickerOpen={() => setDatePickerOpen(true)}
@@ -60,7 +60,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Content area (desktop only) */}
-      <div className="hidden flex-1 flex-col md:flex">
+      <div className="hidden min-h-0 flex-1 flex-col md:flex">
         {selectedCircleId ? (
           <CircleHome
             circleId={selectedCircleId as Id<'circles'>}

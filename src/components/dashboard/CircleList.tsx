@@ -15,7 +15,7 @@ export function CircleList({ onCircleSelect }: CircleListProps) {
 
   if (circles === undefined) {
     return (
-      <div className="flex flex-1 flex-col gap-2 px-4 py-6">
+      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-4 py-6">
         {[1, 2, 3].map((i) => (
           <div key={i} className="flex animate-pulse items-center gap-4 py-4">
             <div className="size-14 rounded-full bg-muted" />
