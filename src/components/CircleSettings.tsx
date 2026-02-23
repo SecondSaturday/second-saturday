@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { useUser } from '@clerk/nextjs'
+import { useRouter } from 'next/navigation'
 import { api } from '../../convex/_generated/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,10 +28,10 @@ import { LeaveCircleModal } from '@/components/LeaveCircleModal'
 
 interface CircleSettingsProps {
   circleId: Id<'circles'>
-  onClose?: () => void
 }
 
-export function CircleSettings({ circleId, onClose }: CircleSettingsProps) {
+export function CircleSettings({ circleId }: CircleSettingsProps) {
+  const router = useRouter()
   const { user } = useUser()
 
   const circle = useQuery(api.circles.getCircle, { circleId })
@@ -112,10 +113,6 @@ export function CircleSettings({ circleId, onClose }: CircleSettingsProps) {
       // Reset local state
       setName(null)
       setDescription(null)
-
-      if (onClose) {
-        onClose()
-      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to save')
     } finally {
@@ -254,7 +251,6 @@ export function CircleSettings({ circleId, onClose }: CircleSettingsProps) {
         <Link
           href={`/dashboard/circles/${circleId}/prompts`}
           className="flex items-center gap-3 rounded-lg border border-border p-4 transition-colors hover:bg-muted/30"
-          onClick={onClose}
         >
           <Settings className="size-5 text-muted-foreground" />
           <div>
@@ -290,7 +286,7 @@ export function CircleSettings({ circleId, onClose }: CircleSettingsProps) {
         isAdmin={isAdmin}
         open={showLeaveDialog}
         onOpenChange={setShowLeaveDialog}
-        onSuccess={onClose}
+        onSuccess={() => router.push('/dashboard')}
       />
     </div>
   )

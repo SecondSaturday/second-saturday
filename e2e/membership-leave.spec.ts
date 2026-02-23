@@ -15,13 +15,16 @@ test.describe('Leave Circle Flow', () => {
       await circleCards.first().click()
       await page.waitForURL(/\/dashboard(\/(circles\/)|(\?.*circle=))/)
 
-      // Open settings drawer
-      const settingsBtn = page
-        .locator('button')
-        .filter({ has: page.locator('svg.lucide-settings') })
-        .first()
-      if (await settingsBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-        await settingsBtn.click()
+      // Extract circle ID and navigate to settings page
+      const match = page.url().match(/\/circles\/([^/]+)/)
+      const circleId = match?.[1]
+      if (circleId) {
+        await page.goto(`/dashboard/circles/${circleId}/settings`, {
+          waitUntil: 'domcontentloaded',
+        })
+        await page.waitForFunction(() => !document.querySelector('.animate-spin'), {
+          timeout: 15000,
+        })
         const leaveButton = page.locator('button:has-text("Leave this circle")')
         const isVisible = await leaveButton.isVisible()
         // Only non-admins see this option; admins won't
@@ -75,14 +78,9 @@ test.describe('Leave Circle Flow', () => {
     const circleId = match?.[1]
     if (!circleId) return
 
-    await page.goto(`/dashboard/circles/${circleId}`, { waitUntil: 'domcontentloaded' })
-
-    // Open settings drawer
-    await page
-      .locator('button')
-      .filter({ has: page.locator('svg.lucide-settings') })
-      .first()
-      .click()
+    // Navigate to settings page
+    await page.goto(`/dashboard/circles/${circleId}/settings`, { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     // Admin should see "Leave this circle" button
     const leaveButton = page.locator('button:has-text("Leave this circle")')
@@ -115,35 +113,8 @@ test.describe('Leave Circle Flow', () => {
     const circleId = match?.[1]
     if (!circleId) return
 
-    // Navigate to circle page via dashboard to ensure auth is established
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
-    await page.waitForTimeout(500)
-    await page.goto(`/dashboard/circles/${circleId}`, { waitUntil: 'domcontentloaded' })
-
-    // Wait for page hydration and Convex data
-    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
-
-    // Wait for settings button to be visible
-    const settingsBtn = page
-      .locator('button')
-      .filter({ has: page.locator('svg.lucide-settings') })
-      .first()
-    await settingsBtn.waitFor({ state: 'visible', timeout: 15000 })
-
-    // Ensure React hydration so click handler is attached
-    await page.waitForFunction(
-      () => {
-        const btn = document.querySelector('button svg.lucide-settings')?.closest('button')
-        return btn && Object.keys(btn).some((k) => k.startsWith('__reactFiber'))
-      },
-      { timeout: 10000 }
-    )
-
-    // Open settings and get invite code
-    await settingsBtn.click()
-
-    // Wait for CircleSettings component to finish loading
+    // Navigate to settings page to get invite code
+    await page.goto(`/dashboard/circles/${circleId}/settings`, { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     // Wait for the invite link to render (Convex data must load)

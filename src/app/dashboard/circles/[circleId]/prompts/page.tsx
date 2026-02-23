@@ -200,8 +200,8 @@ export default function PromptsPage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
-      <header className="flex items-center gap-3 border-b border-border px-4 py-3">
+    <div className="safe-area-top flex h-dvh flex-col bg-background">
+      <header className="flex shrink-0 items-center gap-3 border-b border-border bg-background px-4 py-3">
         <Link href="/dashboard">
           <ArrowLeft className="size-5 text-foreground" />
         </Link>
@@ -276,7 +276,7 @@ export default function PromptsPage() {
         {error && <p className="text-sm text-destructive">{error}</p>}
       </div>
 
-      <div className="border-t border-border px-4 py-4">
+      <div className="safe-area-bottom border-t border-border px-4 py-4">
         <Button
           onClick={handleSave}
           className="w-full"

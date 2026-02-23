@@ -52,7 +52,7 @@ const config: CapacitorConfig = {
     },
   },
   ios: {
-    contentInset: 'automatic',
+    contentInset: 'never', // Let CSS env(safe-area-inset-*) handle safe areas
     scheme: 'Second Saturday',
     // No custom User-Agent - let Clerk see standard browser UA
   },

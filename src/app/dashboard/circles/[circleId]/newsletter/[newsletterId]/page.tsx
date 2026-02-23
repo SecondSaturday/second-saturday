@@ -86,8 +86,8 @@ export default function NewsletterPage() {
   // Loading state
   if (newsletter === undefined) {
     return (
-      <div className="flex min-h-dvh flex-col bg-background">
-        <header className="flex items-center gap-3 border-b border-border px-4 py-3">
+      <div className="safe-area-top flex h-dvh flex-col bg-background">
+        <header className="flex shrink-0 items-center gap-3 border-b border-border bg-background px-4 py-3">
           <Link href={`/dashboard/circles/${circleId}`}>
             <ArrowLeft className="size-5 text-foreground" />
           </Link>
@@ -103,8 +103,8 @@ export default function NewsletterPage() {
   // Not found state
   if (!newsletter) {
     return (
-      <div className="flex min-h-dvh flex-col bg-background">
-        <header className="flex items-center gap-3 border-b border-border px-4 py-3">
+      <div className="safe-area-top flex h-dvh flex-col bg-background">
+        <header className="flex shrink-0 items-center gap-3 border-b border-border bg-background px-4 py-3">
           <Link href={`/dashboard/circles/${circleId}`}>
             <ArrowLeft className="size-5 text-foreground" />
           </Link>
@@ -135,8 +135,8 @@ export default function NewsletterPage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
-      <header className="flex items-center gap-3 border-b border-border px-4 py-3">
+    <div className="safe-area-top flex h-dvh flex-col bg-background">
+      <header className="flex shrink-0 items-center gap-3 border-b border-border bg-background px-4 py-3">
         <Link href={`/dashboard/circles/${circleId}`}>
           <ArrowLeft className="size-5 text-foreground" />
         </Link>
@@ -145,7 +145,7 @@ export default function NewsletterPage() {
         </h1>
       </header>
 
-      <main className="flex-1 overflow-y-auto">
+      <main className="safe-area-bottom flex-1 overflow-y-auto">
         <NewsletterView
           circle={circle}
           issueNumber={newsletter.issueNumber}

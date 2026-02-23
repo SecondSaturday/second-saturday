@@ -52,15 +52,15 @@ export default function SubmissionsPage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
-      <header className="flex items-center gap-3 border-b border-border px-4 py-3">
+    <div className="safe-area-top flex h-dvh flex-col bg-background">
+      <header className="flex shrink-0 items-center gap-3 border-b border-border bg-background px-4 py-3">
         <Link href={`/dashboard?circle=${circleId}`}>
           <ArrowLeft className="size-5 text-foreground" />
         </Link>
         <h1 className="text-lg font-semibold text-foreground">Submission Status</h1>
       </header>
 
-      <div className="flex flex-1 flex-col px-6 py-6 gap-4">
+      <div className="safe-area-bottom flex flex-1 flex-col gap-4 overflow-y-auto px-6 py-6">
         <DeadlineCountdown deadlineTimestamp={deadlineTimestamp} />
         <AdminSubmissionDashboard circleId={circleId} />
       </div>

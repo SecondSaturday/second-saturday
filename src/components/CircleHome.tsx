@@ -9,15 +9,7 @@ import { trackEvent } from '@/lib/analytics'
 import Link from 'next/link'
 import { NewsletterArchive } from './newsletter/NewsletterArchive'
 
-export function CircleHome({
-  circleId,
-  onBack,
-  onSettingsClick,
-}: {
-  circleId: Id<'circles'>
-  onBack?: () => void
-  onSettingsClick?: () => void
-}) {
+export function CircleHome({ circleId, onBack }: { circleId: Id<'circles'>; onBack?: () => void }) {
   const circle = useQuery(api.circles.getCircle, { circleId })
   const prompts = useQuery(api.prompts.getCirclePrompts, { circleId })
 
@@ -56,19 +48,17 @@ export function CircleHome({
   return (
     <div className="flex flex-1 flex-col">
       {onBack && (
-        <header className="flex items-center gap-3 border-b border-border px-4 py-3">
+        <header className="flex shrink-0 items-center gap-3 border-b border-border bg-background px-4 py-3">
           <button onClick={onBack}>
             <ArrowLeft className="size-5 text-foreground" />
           </button>
           <h1 className="flex-1 truncate text-lg font-semibold text-foreground">{circle.name}</h1>
-          {onSettingsClick && (
-            <button onClick={onSettingsClick}>
-              <Settings className="size-5 text-muted-foreground" />
-            </button>
-          )}
+          <Link href={`/dashboard/circles/${circleId}/settings`}>
+            <Settings className="size-5 text-muted-foreground" />
+          </Link>
         </header>
       )}
-      <div className="flex flex-1 flex-col gap-6 px-6 py-6">
+      <div className="safe-area-bottom flex flex-1 flex-col gap-6 overflow-y-auto px-6 py-6">
         {/* Circle info */}
         <div className="flex gap-6 rounded-lg border border-border bg-card p-4">
           <div>

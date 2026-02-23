@@ -25,7 +25,7 @@ export function DashboardHeader({ onDatePickerOpen, onMenuOpen, dateLabel }: Das
     dateLabel ?? new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 
   return (
-    <header className="flex items-center justify-between px-4 py-3">
+    <header className="flex shrink-0 items-center justify-between bg-background px-4 py-3">
       <Link href="/dashboard/settings">
         <Avatar size="lg" className="cursor-pointer transition-opacity hover:opacity-80">
           <AvatarImage src={avatarUrl} alt={displayName} />

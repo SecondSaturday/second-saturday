@@ -25,36 +25,9 @@ test.describe('Rejoin Circle Flow', () => {
       const circleId = match?.[1]
       if (!circleId) return
 
-      await page.goto(`/dashboard/circles/${circleId}`, { waitUntil: 'domcontentloaded' })
-
-      // Wait for page hydration and Convex data
-      await page.waitForFunction(() => !document.querySelector('.animate-spin'), {
-        timeout: 15000,
-      })
-
-      // Wait for settings button to be visible
-      const settingsBtn = page
-        .locator('button')
-        .filter({ has: page.locator('svg.lucide-settings') })
-        .first()
-      await settingsBtn.waitFor({ state: 'visible', timeout: 15000 })
-
-      // Ensure React hydration so click handler is attached
-      await page.waitForFunction(
-        () => {
-          const btn = document.querySelector('button svg.lucide-settings')?.closest('button')
-          return btn && Object.keys(btn).some((k) => k.startsWith('__reactFiber'))
-        },
-        { timeout: 10000 }
-      )
-
-      // Get invite code from settings
-      await settingsBtn.click()
-
-      // Wait for CircleSettings component to finish loading
-      await page.waitForFunction(() => !document.querySelector('.animate-spin'), {
-        timeout: 15000,
-      })
+      // Navigate to settings page to get invite code
+      await page.goto(`/dashboard/circles/${circleId}/settings`, { waitUntil: 'domcontentloaded' })
+      await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
       // Wait for the invite link to render (Convex data must load)
       await page.waitForFunction(

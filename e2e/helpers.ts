@@ -81,34 +81,13 @@ export async function createCircle(
 }
 
 /**
- * Gets the invite code for a circle by opening its settings drawer.
+ * Gets the invite code for a circle by navigating to its settings page.
  */
 export async function getInviteCode(page: Page, circleId: string): Promise<string> {
-  await page.goto(`/dashboard/circles/${circleId}`, {
+  // Navigate directly to the settings page
+  await page.goto(`/dashboard/circles/${circleId}/settings`, {
     waitUntil: 'domcontentloaded',
   })
-
-  // Wait for page to hydrate (Convex data loaded, spinner gone)
-  await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
-
-  // Wait for settings button to be visible
-  const settingsBtn = page
-    .locator('button')
-    .filter({ has: page.locator('svg.lucide-settings') })
-    .first()
-  await settingsBtn.waitFor({ state: 'visible', timeout: 15000 })
-
-  // Ensure React hydration so click handler is attached
-  await page.waitForFunction(
-    () => {
-      const btn = document.querySelector('button svg.lucide-settings')?.closest('button')
-      return btn && Object.keys(btn).some((k) => k.startsWith('__reactFiber'))
-    },
-    { timeout: 10000 }
-  )
-
-  // Open settings drawer via the settings icon button
-  await settingsBtn.click()
 
   // Wait for CircleSettings component to finish loading
   await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })

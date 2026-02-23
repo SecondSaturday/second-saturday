@@ -46,7 +46,7 @@ export default function SetupCompletePage() {
   const membersNeeded = 3 - (memberCount ?? 1)
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
+    <div className="safe-area-top flex min-h-dvh flex-col bg-background">
       <div className="flex flex-1 flex-col items-center justify-center gap-8 px-6 py-12">
         <div className="text-center">
           <h1 className="text-2xl font-semibold text-foreground">{circle.name} is ready!</h1>
@@ -76,7 +76,7 @@ export default function SetupCompletePage() {
         </div>
       </div>
 
-      <div className="border-t border-border px-4 py-4">
+      <div className="safe-area-bottom border-t border-border px-4 py-4">
         <Link href="/dashboard">
           <Button variant="ghost" className="w-full">
             Go to Dashboard

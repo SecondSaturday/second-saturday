@@ -59,15 +59,18 @@ export default function CreateCirclePage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
-      <header className="flex items-center gap-3 border-b border-border px-4 py-3">
+    <div className="safe-area-top flex h-dvh flex-col bg-background">
+      <header className="flex shrink-0 items-center gap-3 border-b border-border bg-background px-4 py-3">
         <Link href="/dashboard">
           <ArrowLeft className="size-5 text-foreground" />
         </Link>
         <h1 className="text-lg font-semibold text-foreground">Create Circle</h1>
       </header>
 
-      <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-6 px-6 py-6">
+      <form
+        onSubmit={handleSubmit}
+        className="safe-area-bottom flex flex-1 flex-col gap-6 overflow-y-auto px-6 py-6"
+      >
         {/* Images */}
         <div className="flex flex-col items-center gap-4">
           <ImageUpload shape="circle" label="Icon" onUpload={setIconImageId} />

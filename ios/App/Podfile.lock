@@ -1,18 +1,26 @@
 PODS:
   - Capacitor (8.0.2):
     - CapacitorCordova
+  - CapacitorApp (8.0.1):
+    - Capacitor
   - CapacitorCamera (8.0.0):
     - Capacitor
   - CapacitorCordova (8.0.2)
   - CapacitorFilesystem (8.1.0):
     - Capacitor
     - IONFilesystemLib (~> 1.1.0)
+  - CapacitorPluginSafeArea (5.0.0):
+    - Capacitor
   - CapacitorPushNotifications (8.0.0):
+    - Capacitor
+  - CapacitorStatusBar (8.0.1):
     - Capacitor
   - CordovaPluginsStatic (8.0.2):
     - CapacitorCordova
     - OneSignalXCFramework (= 5.4.1)
   - IONFilesystemLib (1.1.1)
+  - NotnotsamuelCapacitorSwipeBack (3.0.2):
+    - Capacitor
   - OneSignalXCFramework (5.4.1):
     - OneSignalXCFramework/OneSignalComplete (= 5.4.1)
   - OneSignalXCFramework/OneSignal (5.4.1):
@@ -62,11 +70,15 @@ PODS:
 
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/.pnpm/@capacitor+ios@8.0.2_@capacitor+core@8.0.2/node_modules/@capacitor/ios`)"
+  - "CapacitorApp (from `../../node_modules/.pnpm/@capacitor+app@8.0.1_@capacitor+core@8.0.2/node_modules/@capacitor/app`)"
   - "CapacitorCamera (from `../../node_modules/.pnpm/@capacitor+camera@8.0.0_@capacitor+core@8.0.2/node_modules/@capacitor/camera`)"
   - "CapacitorCordova (from `../../node_modules/.pnpm/@capacitor+ios@8.0.2_@capacitor+core@8.0.2/node_modules/@capacitor/ios`)"
   - "CapacitorFilesystem (from `../../node_modules/.pnpm/@capacitor+filesystem@8.1.0_@capacitor+core@8.0.2/node_modules/@capacitor/filesystem`)"
+  - "CapacitorPluginSafeArea (from `../../node_modules/.pnpm/capacitor-plugin-safe-area@5.0.0_@capacitor+core@8.0.2/node_modules/capacitor-plugin-safe-area`)"
   - "CapacitorPushNotifications (from `../../node_modules/.pnpm/@capacitor+push-notifications@8.0.0_@capacitor+core@8.0.2/node_modules/@capacitor/push-notifications`)"
+  - "CapacitorStatusBar (from `../../node_modules/.pnpm/@capacitor+status-bar@8.0.1_@capacitor+core@8.0.2/node_modules/@capacitor/status-bar`)"
   - CordovaPluginsStatic (from `../capacitor-cordova-ios-plugins`)
+  - "NotnotsamuelCapacitorSwipeBack (from `../../node_modules/.pnpm/@notnotsamuel+capacitor-swipe-back@3.0.2_@capacitor+core@8.0.2/node_modules/@notnotsamuel/capacitor-swipe-back`)"
   - OneSignalXCFramework (< 6.0.0, >= 5.0.0)
 
 SPEC REPOS:
@@ -77,27 +89,39 @@ SPEC REPOS:
 EXTERNAL SOURCES:
   Capacitor:
     :path: "../../node_modules/.pnpm/@capacitor+ios@8.0.2_@capacitor+core@8.0.2/node_modules/@capacitor/ios"
+  CapacitorApp:
+    :path: "../../node_modules/.pnpm/@capacitor+app@8.0.1_@capacitor+core@8.0.2/node_modules/@capacitor/app"
   CapacitorCamera:
     :path: "../../node_modules/.pnpm/@capacitor+camera@8.0.0_@capacitor+core@8.0.2/node_modules/@capacitor/camera"
   CapacitorCordova:
     :path: "../../node_modules/.pnpm/@capacitor+ios@8.0.2_@capacitor+core@8.0.2/node_modules/@capacitor/ios"
   CapacitorFilesystem:
     :path: "../../node_modules/.pnpm/@capacitor+filesystem@8.1.0_@capacitor+core@8.0.2/node_modules/@capacitor/filesystem"
+  CapacitorPluginSafeArea:
+    :path: "../../node_modules/.pnpm/capacitor-plugin-safe-area@5.0.0_@capacitor+core@8.0.2/node_modules/capacitor-plugin-safe-area"
   CapacitorPushNotifications:
     :path: "../../node_modules/.pnpm/@capacitor+push-notifications@8.0.0_@capacitor+core@8.0.2/node_modules/@capacitor/push-notifications"
+  CapacitorStatusBar:
+    :path: "../../node_modules/.pnpm/@capacitor+status-bar@8.0.1_@capacitor+core@8.0.2/node_modules/@capacitor/status-bar"
   CordovaPluginsStatic:
     :path: "../capacitor-cordova-ios-plugins"
+  NotnotsamuelCapacitorSwipeBack:
+    :path: "../../node_modules/.pnpm/@notnotsamuel+capacitor-swipe-back@3.0.2_@capacitor+core@8.0.2/node_modules/@notnotsamuel/capacitor-swipe-back"
 
 SPEC CHECKSUMS:
   Capacitor: 2b79172ad27f3be2d103cce88b8eb9803fdcc744
+  CapacitorApp: 942306cd1acf7774a00e89a3986af3a67c8cad7a
   CapacitorCamera: 592acb7ab9fb748e2d8571eb03af30ec4e1ace12
   CapacitorCordova: 921bdb690ebe82421b24fce45552fd3dea2ae43a
   CapacitorFilesystem: a957d4a4b6860844c4eba5bf441607a5166f92a7
+  CapacitorPluginSafeArea: 9d0682951c011bf0b36e513a89103c5fbff7ac49
   CapacitorPushNotifications: 722c1528eabbefd355f47e373a4c6235d01e85e9
+  CapacitorStatusBar: 32206abd53b14f339763da26f71286deaa891e16
   CordovaPluginsStatic: fbb89c15aa320448886c34928ea16eabe2af123e
   IONFilesystemLib: dfa8706539ac9ab77ccfd6e5b3830ce9b5e57f6c
+  NotnotsamuelCapacitorSwipeBack: b3a00145209b368cdfe21816d7919484c3fe654e
   OneSignalXCFramework: 0b85a8d949247f80809a9d5598200cc263591129
 
-PODFILE CHECKSUM: ad54210d7f00de88cf9e18d4df70b6ce86b6e5ba
+PODFILE CHECKSUM: cd2bee0f0f9e49fe0fa8041101d5391bb5ba0a38
 
 COCOAPODS: 1.16.2

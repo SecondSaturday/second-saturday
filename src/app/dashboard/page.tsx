@@ -7,11 +7,9 @@ import { CircleList } from '@/components/dashboard/CircleList'
 import { CreateCircleFAB } from '@/components/dashboard/CreateCircleFAB'
 import { DatePicker } from '@/components/dashboard/DatePicker'
 import { CircleHome } from '@/components/CircleHome'
-import { CircleSettings } from '@/components/CircleSettings'
 import { getNextSecondSaturday, formatShortDate } from '@/lib/dates'
 import { trackEvent } from '@/lib/analytics'
 import type { Id } from '../../../convex/_generated/dataModel'
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -21,7 +19,6 @@ export default function DashboardPage() {
   )
   const [selectedDate, setSelectedDate] = useState(() => getNextSecondSaturday())
   const [datePickerOpen, setDatePickerOpen] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
 
   const handleCircleSelect = useCallback(
     (id: string) => {
@@ -51,7 +48,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex h-dvh bg-background">
+    <div className="safe-area-top flex h-dvh bg-background">
       {/* Sidebar (full-screen on mobile, fixed-width on desktop) */}
       <div className="flex w-full flex-col md:w-[380px] md:border-r md:border-border">
         <DashboardHeader
@@ -71,7 +68,6 @@ export default function DashboardPage() {
               setSelectedCircleId(null)
               router.replace('/dashboard')
             }}
-            onSettingsClick={() => setShowSettings(true)}
           />
         ) : (
           <div className="flex flex-1 items-center justify-center">
@@ -86,22 +82,6 @@ export default function DashboardPage() {
         selectedDate={selectedDate}
         onSelect={handleDateSelect}
       />
-
-      <Sheet open={showSettings} onOpenChange={setShowSettings}>
-        <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
-          <SheetHeader>
-            <SheetTitle>Circle Settings</SheetTitle>
-          </SheetHeader>
-          {selectedCircleId && (
-            <div className="mt-6">
-              <CircleSettings
-                circleId={selectedCircleId as Id<'circles'>}
-                onClose={() => setShowSettings(false)}
-              />
-            </div>
-          )}
-        </SheetContent>
-      </Sheet>
     </div>
   )
 }

@@ -200,326 +200,331 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-6">
-      <div className="mb-6 flex items-center gap-3">
+    <div className="safe-area-top flex h-dvh flex-col bg-background">
+      <header className="flex shrink-0 items-center gap-3 border-b border-border bg-background px-4 py-3">
         <Link href="/dashboard">
-          <Button variant="ghost" size="icon" className="size-9">
-            <ArrowLeft className="size-5" />
-          </Button>
+          <ArrowLeft className="size-5 text-foreground" />
         </Link>
-        <h1 className="text-xl font-semibold">Settings</h1>
-      </div>
+        <h1 className="text-lg font-semibold text-foreground">Settings</h1>
+      </header>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Profile</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex justify-center">
-            <ImageUpload
-              shape="circle"
-              label="Photo"
-              previewUrl={convexUser.imageUrl}
-              onUpload={(storageId) => setAvatarStorageId(storageId)}
-            />
-          </div>
+      <div className="safe-area-bottom flex-1 overflow-y-auto px-4 pb-6 pt-4">
+        <div className="mx-auto max-w-lg space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Profile</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex justify-center">
+                <ImageUpload
+                  shape="circle"
+                  label="Photo"
+                  previewUrl={convexUser.imageUrl}
+                  onUpload={(storageId) => setAvatarStorageId(storageId)}
+                />
+              </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Display Name</label>
-            <Input
-              value={displayName}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
-            />
-          </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Display Name</label>
+                <Input
+                  value={displayName}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your name"
+                />
+              </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Email</label>
-            <div className="flex gap-2">
-              <Input
-                value={clerkUser?.primaryEmailAddress?.emailAddress ?? ''}
-                disabled
-                className="text-muted-foreground"
-              />
-              {!emailEditing && (
-                <Button variant="outline" size="sm" onClick={() => setEmailEditing(true)}>
-                  Change
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Email</label>
+                <div className="flex gap-2">
+                  <Input
+                    value={clerkUser?.primaryEmailAddress?.emailAddress ?? ''}
+                    disabled
+                    className="text-muted-foreground"
+                  />
+                  {!emailEditing && (
+                    <Button variant="outline" size="sm" onClick={() => setEmailEditing(true)}>
+                      Change
+                    </Button>
+                  )}
+                </div>
+                {emailEditing && !emailVerifying && (
+                  <div className="space-y-2 pt-2">
+                    <Input
+                      value={newEmail}
+                      onChange={(e) => setNewEmail(e.target.value)}
+                      placeholder="New email address"
+                      type="email"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={handleChangeEmail}
+                        disabled={!newEmail.trim() || emailSaving}
+                      >
+                        {emailSaving ? 'Sending...' : 'Send Verification'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setEmailEditing(false)
+                          setNewEmail('')
+                          setEmailError(null)
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                {emailVerifying && (
+                  <div className="space-y-2 pt-2">
+                    <p className="text-sm text-muted-foreground">
+                      Enter the verification code sent to <strong>{newEmail}</strong>
+                    </p>
+                    <Input
+                      value={emailCode}
+                      onChange={(e) => setEmailCode(e.target.value)}
+                      placeholder="Verification code"
+                      autoFocus
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={handleVerifyEmailCode}
+                        disabled={!emailCode.trim() || emailSaving}
+                      >
+                        {emailSaving ? 'Verifying...' : 'Verify'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setEmailVerifying(false)
+                          setEmailEditing(false)
+                          setNewEmail('')
+                          setEmailCode('')
+                          setPendingEmailResource(null)
+                          setEmailError(null)
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                {emailError && <p className="text-sm text-destructive">{emailError}</p>}
+                {emailSuccess && (
+                  <p className="text-sm text-green-600">Email updated successfully.</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Timezone</label>
+                <Input
+                  value={convexUser.timezone ?? 'Not detected'}
+                  disabled
+                  className="text-muted-foreground"
+                />
+              </div>
+
+              <Button onClick={handleSave} disabled={!hasChanges || saving} className="w-full">
+                {saving ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <NotificationPreferences />
+
+          {clerkUser?.passwordEnabled && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Change Password</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Current Password</label>
+                  <Input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Current password"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">New Password</label>
+                  <Input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="New password (min 8 characters)"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Confirm New Password</label>
+                  <Input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                  />
+                </div>
+                {newPassword.length > 0 && newPassword.length < 8 && (
+                  <p className="text-sm text-destructive">Password must be at least 8 characters</p>
+                )}
+                {confirmPassword.length > 0 && newPassword !== confirmPassword && (
+                  <p className="text-sm text-destructive">Passwords do not match</p>
+                )}
+                {newPassword.length > 0 && newPassword === currentPassword && (
+                  <p className="text-sm text-destructive">
+                    New password must be different from current password
+                  </p>
+                )}
+                {passwordError && <p className="text-sm text-destructive">{passwordError}</p>}
+                {passwordSuccess && (
+                  <p className="text-sm text-green-600">Password changed successfully</p>
+                )}
+                <Button
+                  onClick={handleChangePassword}
+                  disabled={!passwordValid || passwordSaving}
+                  className="w-full"
+                >
+                  {passwordSaving ? 'Changing...' : 'Change Password'}
                 </Button>
-              )}
-            </div>
-            {emailEditing && !emailVerifying && (
-              <div className="space-y-2 pt-2">
-                <Input
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                  placeholder="New email address"
-                  type="email"
-                />
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={handleChangeEmail}
-                    disabled={!newEmail.trim() || emailSaving}
-                  >
-                    {emailSaving ? 'Sending...' : 'Send Verification'}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setEmailEditing(false)
-                      setNewEmail('')
-                      setEmailError(null)
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            )}
-            {emailVerifying && (
-              <div className="space-y-2 pt-2">
-                <p className="text-sm text-muted-foreground">
-                  Enter the verification code sent to <strong>{newEmail}</strong>
-                </p>
-                <Input
-                  value={emailCode}
-                  onChange={(e) => setEmailCode(e.target.value)}
-                  placeholder="Verification code"
-                  autoFocus
-                />
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={handleVerifyEmailCode}
-                    disabled={!emailCode.trim() || emailSaving}
-                  >
-                    {emailSaving ? 'Verifying...' : 'Verify'}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setEmailVerifying(false)
-                      setEmailEditing(false)
-                      setNewEmail('')
-                      setEmailCode('')
-                      setPendingEmailResource(null)
-                      setEmailError(null)
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            )}
-            {emailError && <p className="text-sm text-destructive">{emailError}</p>}
-            {emailSuccess && <p className="text-sm text-green-600">Email updated successfully.</p>}
-          </div>
+              </CardContent>
+            </Card>
+          )}
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Timezone</label>
-            <Input
-              value={convexUser.timezone ?? 'Not detected'}
-              disabled
-              className="text-muted-foreground"
-            />
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Account</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => signOut({ redirectUrl: '/sign-in' })}
+              >
+                <LogOut className="mr-2 size-4" />
+                Log Out
+              </Button>
+            </CardContent>
+          </Card>
 
-          <Button onClick={handleSave} disabled={!hasChanges || saving} className="w-full">
-            {saving ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </CardContent>
-      </Card>
-
-      <div className="mt-6">
-        <NotificationPreferences />
-      </div>
-
-      {clerkUser?.passwordEnabled && (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Change Password</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Current Password</label>
-              <Input
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="Current password"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">New Password</label>
-              <Input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="New password (min 8 characters)"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Confirm New Password</label>
-              <Input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm new password"
-              />
-            </div>
-            {newPassword.length > 0 && newPassword.length < 8 && (
-              <p className="text-sm text-destructive">Password must be at least 8 characters</p>
-            )}
-            {confirmPassword.length > 0 && newPassword !== confirmPassword && (
-              <p className="text-sm text-destructive">Passwords do not match</p>
-            )}
-            {newPassword.length > 0 && newPassword === currentPassword && (
-              <p className="text-sm text-destructive">
-                New password must be different from current password
+          <Card className="border-destructive/50">
+            <CardHeader>
+              <CardTitle className="text-destructive">Danger Zone</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4 text-sm text-muted-foreground">
+                Permanently delete your account and all associated data. This action cannot be
+                undone.
               </p>
-            )}
-            {passwordError && <p className="text-sm text-destructive">{passwordError}</p>}
-            {passwordSuccess && (
-              <p className="text-sm text-green-600">Password changed successfully</p>
-            )}
-            <Button
-              onClick={handleChangePassword}
-              disabled={!passwordValid || passwordSaving}
-              className="w-full"
-            >
-              {passwordSaving ? 'Changing...' : 'Change Password'}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Account</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={() => signOut({ redirectUrl: '/sign-in' })}
-          >
-            <LogOut className="mr-2 size-4" />
-            Log Out
-          </Button>
-        </CardContent>
-      </Card>
-
-      <Card className="mt-6 border-destructive/50">
-        <CardHeader>
-          <CardTitle className="text-destructive">Danger Zone</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="mb-4 text-sm text-muted-foreground">
-            Permanently delete your account and all associated data. This action cannot be undone.
-          </p>
-          <Dialog
-            open={deleteOpen}
-            onOpenChange={(open) => {
-              setDeleteOpen(open)
-              if (!open) {
-                setDeleteConfirm('')
-                setDeleteReauthPassword('')
-                setDeleteReauthError(null)
-                setDeleteReauthVerified(false)
-              }
-            }}
-          >
-            <DialogTrigger asChild>
-              <Button variant="destructive">Delete Account</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Delete Account</DialogTitle>
-                <DialogDescription>
-                  This will permanently delete your account, leave all circles, and remove your
-                  data. This cannot be undone.
-                </DialogDescription>
-              </DialogHeader>
-              {!deleteReauthVerified ? (
-                <div className="space-y-4">
-                  {clerkUser?.passwordEnabled ? (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Enter your password to continue</label>
-                      <Input
-                        type="password"
-                        value={deleteReauthPassword}
-                        onChange={(e) => setDeleteReauthPassword(e.target.value)}
-                        placeholder="Current password"
-                      />
+              <Dialog
+                open={deleteOpen}
+                onOpenChange={(open) => {
+                  setDeleteOpen(open)
+                  if (!open) {
+                    setDeleteConfirm('')
+                    setDeleteReauthPassword('')
+                    setDeleteReauthError(null)
+                    setDeleteReauthVerified(false)
+                  }
+                }}
+              >
+                <DialogTrigger asChild>
+                  <Button variant="destructive">Delete Account</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Delete Account</DialogTitle>
+                    <DialogDescription>
+                      This will permanently delete your account, leave all circles, and remove your
+                      data. This cannot be undone.
+                    </DialogDescription>
+                  </DialogHeader>
+                  {!deleteReauthVerified ? (
+                    <div className="space-y-4">
+                      {clerkUser?.passwordEnabled ? (
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">
+                            Enter your password to continue
+                          </label>
+                          <Input
+                            type="password"
+                            value={deleteReauthPassword}
+                            onChange={(e) => setDeleteReauthPassword(e.target.value)}
+                            placeholder="Current password"
+                          />
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <p className="text-sm text-muted-foreground">
+                            You signed in with an external provider. Confirm your email to continue.
+                          </p>
+                          <Input
+                            value={clerkUser?.primaryEmailAddress?.emailAddress ?? ''}
+                            disabled
+                            className="text-muted-foreground"
+                          />
+                        </div>
+                      )}
+                      {deleteReauthError && (
+                        <p className="text-sm text-destructive">{deleteReauthError}</p>
+                      )}
+                      <DialogFooter>
+                        <Button variant="ghost" onClick={() => setDeleteOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          disabled={
+                            clerkUser?.passwordEnabled
+                              ? !deleteReauthPassword || deleteReauthing
+                              : deleteReauthing
+                          }
+                          onClick={
+                            clerkUser?.passwordEnabled
+                              ? handleReauthForDelete
+                              : () => setDeleteReauthVerified(true)
+                          }
+                        >
+                          {deleteReauthing ? 'Verifying...' : 'Verify Identity'}
+                        </Button>
+                      </DialogFooter>
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      <p className="text-sm text-muted-foreground">
-                        You signed in with an external provider. Confirm your email to continue.
-                      </p>
-                      <Input
-                        value={clerkUser?.primaryEmailAddress?.emailAddress ?? ''}
-                        disabled
-                        className="text-muted-foreground"
-                      />
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                          Type <span className="font-mono font-bold">DELETE</span> to confirm
+                        </label>
+                        <Input
+                          value={deleteConfirm}
+                          onChange={(e) => setDeleteConfirm(e.target.value)}
+                          placeholder="DELETE"
+                        />
+                      </div>
+                      <DialogFooter>
+                        <Button variant="ghost" onClick={() => setDeleteOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          disabled={deleteConfirm !== 'DELETE' || deleting}
+                          onClick={handleDeleteAccount}
+                        >
+                          {deleting ? 'Deleting...' : 'Delete Account'}
+                        </Button>
+                      </DialogFooter>
                     </div>
                   )}
-                  {deleteReauthError && (
-                    <p className="text-sm text-destructive">{deleteReauthError}</p>
-                  )}
-                  <DialogFooter>
-                    <Button variant="ghost" onClick={() => setDeleteOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      disabled={
-                        clerkUser?.passwordEnabled
-                          ? !deleteReauthPassword || deleteReauthing
-                          : deleteReauthing
-                      }
-                      onClick={
-                        clerkUser?.passwordEnabled
-                          ? handleReauthForDelete
-                          : () => setDeleteReauthVerified(true)
-                      }
-                    >
-                      {deleteReauthing ? 'Verifying...' : 'Verify Identity'}
-                    </Button>
-                  </DialogFooter>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">
-                      Type <span className="font-mono font-bold">DELETE</span> to confirm
-                    </label>
-                    <Input
-                      value={deleteConfirm}
-                      onChange={(e) => setDeleteConfirm(e.target.value)}
-                      placeholder="DELETE"
-                    />
-                  </div>
-                  <DialogFooter>
-                    <Button variant="ghost" onClick={() => setDeleteOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      disabled={deleteConfirm !== 'DELETE' || deleting}
-                      onClick={handleDeleteAccount}
-                    >
-                      {deleting ? 'Deleting...' : 'Delete Account'}
-                    </Button>
-                  </DialogFooter>
-                </div>
-              )}
-            </DialogContent>
-          </Dialog>
-        </CardContent>
-      </Card>
+                </DialogContent>
+              </Dialog>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   )
 }
