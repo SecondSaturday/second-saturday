@@ -1,5 +1,6 @@
-// OneSignal SDK initialization and helpers for Capacitor native builds
+// OneSignal SDK v5 initialization and helpers for Capacitor native builds
 // Note: This only works in Capacitor native context, not in web browsers
+// Uses onesignal-cordova-plugin v5.x API (not the @awesome-cordova-plugins wrapper)
 
 import { Capacitor } from '@capacitor/core'
 
@@ -8,6 +9,34 @@ const ONESIGNAL_APP_ID = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID
 export interface NotificationClickPayload {
   type: 'submission_reminder' | 'newsletter_ready'
   circleId: string
+}
+
+// OneSignal SDK v5 types (from cordova plugin)
+interface OneSignalPlugin {
+  initialize(appId: string): void
+  Notifications: {
+    requestPermission(fallbackToSettings: boolean): Promise<boolean>
+    addEventListener(
+      event: 'foregroundWillDisplay' | 'click',
+      handler: (event: NotificationEvent) => void
+    ): void
+  }
+  User: {
+    pushSubscription: {
+      id: string | null
+      token: string | null
+      optedIn: boolean
+      addEventListener(event: 'change', handler: (event: unknown) => void): void
+    }
+  }
+}
+
+interface NotificationEvent {
+  notification: {
+    title: string
+    body: string
+    additionalData?: Record<string, string>
+  }
 }
 
 /**
@@ -22,23 +51,23 @@ function isNative(): boolean {
 }
 
 /**
- * Get the OneSignal plugin instance. Only available in native context.
+ * Get the OneSignal plugin instance (SDK v5). Only available in native context.
  */
-async function getOneSignalPlugin() {
+function getOneSignalPlugin(): OneSignalPlugin | null {
   if (!isNative()) return null
-  try {
-    const { OneSignal } = await import('@awesome-cordova-plugins/onesignal')
-    return OneSignal
-  } catch (err) {
-    console.warn('OneSignal plugin not available:', err)
+  // OneSignal v5 Cordova plugin exposes itself at window.plugins.OneSignal
+  const plugins = (window as unknown as { plugins?: { OneSignal?: OneSignalPlugin } }).plugins
+  if (!plugins?.OneSignal) {
+    console.warn('OneSignal plugin not available at window.plugins.OneSignal')
     return null
   }
+  return plugins.OneSignal
 }
 
 /**
- * Initialize OneSignal SDK using Capacitor plugin.
+ * Initialize OneSignal SDK v5 using Capacitor plugin.
  * Only works in Capacitor native context (not web browser).
- * Returns player ID on success, null otherwise.
+ * Returns subscription ID on success, null otherwise.
  */
 export async function initOneSignal(): Promise<string | null> {
   if (!isNative()) {
@@ -51,23 +80,28 @@ export async function initOneSignal(): Promise<string | null> {
     return null
   }
 
-  const OneSignal = await getOneSignalPlugin()
+  const OneSignal = getOneSignalPlugin()
   if (!OneSignal) return null
 
   try {
-    OneSignal.startInit(ONESIGNAL_APP_ID)
-    OneSignal.inFocusDisplaying(2) // OSDisplayType.Notification
-    OneSignal.endInit()
+    // Initialize SDK v5
+    OneSignal.initialize(ONESIGNAL_APP_ID)
+    console.log('OneSignal: initialized with app ID', ONESIGNAL_APP_ID)
 
-    // Request notification permission
-    const accepted = await OneSignal.promptForPushNotificationsWithUserResponse()
+    // Request notification permission (will show prompt on iOS, Android 13+)
+    const accepted = await OneSignal.Notifications.requestPermission(true)
     if (!accepted) {
       console.warn('OneSignal: user declined notification permission')
+    } else {
+      console.log('OneSignal: notification permission granted')
     }
 
-    // Get player ID
-    const ids = await OneSignal.getIds()
-    return ids?.userId ?? null
+    // Get subscription ID (may take a moment after permission granted)
+    // Wait briefly for subscription to register
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    const subscriptionId = OneSignal.User.pushSubscription.id
+    console.log('OneSignal: subscription ID', subscriptionId)
+    return subscriptionId
   } catch (err) {
     console.error('OneSignal: initialization failed:', err)
     return null
@@ -75,20 +109,19 @@ export async function initOneSignal(): Promise<string | null> {
 }
 
 /**
- * Get current player/subscription ID.
+ * Get current subscription ID.
  * Returns null if not in native context or not initialized.
  */
 export async function getOneSignalPlayerId(): Promise<string | null> {
   if (!isNative()) return null
 
-  const OneSignal = await getOneSignalPlugin()
+  const OneSignal = getOneSignalPlugin()
   if (!OneSignal) return null
 
   try {
-    const ids = await OneSignal.getIds()
-    return ids?.userId ?? null
+    return OneSignal.User.pushSubscription.id
   } catch (err) {
-    console.error('OneSignal: failed to get player ID:', err)
+    console.error('OneSignal: failed to get subscription ID:', err)
     return null
   }
 }
@@ -102,15 +135,15 @@ export async function onNotificationReceived(
 ): Promise<void> {
   if (!isNative()) return
 
-  const OneSignal = await getOneSignalPlugin()
+  const OneSignal = getOneSignalPlugin()
   if (!OneSignal) return
 
   try {
-    OneSignal.handleNotificationReceived().subscribe((notification) => {
+    OneSignal.Notifications.addEventListener('foregroundWillDisplay', (event) => {
       callback({
-        title: notification.payload?.title ?? '',
-        body: notification.payload?.body ?? '',
-        data: notification.payload?.additionalData,
+        title: event.notification.title ?? '',
+        body: event.notification.body ?? '',
+        data: event.notification.additionalData,
       })
     })
   } catch (err) {
@@ -127,12 +160,12 @@ export async function onNotificationClicked(
 ): Promise<void> {
   if (!isNative()) return
 
-  const OneSignal = await getOneSignalPlugin()
+  const OneSignal = getOneSignalPlugin()
   if (!OneSignal) return
 
   try {
-    OneSignal.handleNotificationOpened().subscribe((result) => {
-      const data = result.notification?.payload?.additionalData
+    OneSignal.Notifications.addEventListener('click', (event) => {
+      const data = event.notification.additionalData
       if (data?.type && data?.circleId) {
         callback({ type: data.type, circleId: data.circleId })
       } else {
