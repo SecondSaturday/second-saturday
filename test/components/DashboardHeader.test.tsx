@@ -50,10 +50,10 @@ describe('DashboardHeader', () => {
     expect(onDatePickerOpen).toHaveBeenCalledOnce()
   })
 
-  it('renders notification bell button', () => {
+  it('renders menu button', () => {
     render(<DashboardHeader />)
     const buttons = screen.getAllByRole('button')
-    // Should have date picker + bell + menu = at least 3 buttons
+    // Should have date picker + menu = at least 2 buttons
     expect(buttons.length).toBeGreaterThanOrEqual(2)
   })
 

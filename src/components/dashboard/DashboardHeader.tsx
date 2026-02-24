@@ -4,17 +4,22 @@ import { useUser } from '@clerk/nextjs'
 import { useQuery } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
-import { Bell, MoreVertical, ChevronDown } from 'lucide-react'
+import { MoreVertical, ChevronDown, PlusCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import Link from 'next/link'
 
 interface DashboardHeaderProps {
   onDatePickerOpen?: () => void
-  onMenuOpen?: () => void
   dateLabel?: string
 }
 
-export function DashboardHeader({ onDatePickerOpen, onMenuOpen, dateLabel }: DashboardHeaderProps) {
+export function DashboardHeader({ onDatePickerOpen, dateLabel }: DashboardHeaderProps) {
   const { user } = useUser()
   const convexUser = useQuery(api.users.getCurrentUser)
 
@@ -41,14 +46,21 @@ export function DashboardHeader({ onDatePickerOpen, onMenuOpen, dateLabel }: Das
         <ChevronDown className="size-4 text-muted-foreground" />
       </button>
 
-      <div className="flex items-center gap-1">
-        <Button variant="ghost" size="icon" className="size-9">
-          <Bell className="size-5" />
-        </Button>
-        <Button variant="ghost" size="icon" className="size-9" onClick={onMenuOpen}>
-          <MoreVertical className="size-5" />
-        </Button>
-      </div>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="size-9">
+            <MoreVertical className="size-5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem asChild>
+            <Link href="/dashboard/create" className="flex items-center gap-2">
+              <PlusCircle className="size-4" />
+              Create a circle
+            </Link>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </header>
   )
 }
