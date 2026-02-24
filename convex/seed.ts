@@ -5,14 +5,14 @@ const TEST_RESPONSES = [
   "Things have been really good this month! Spent a lot of time outdoors and finally got back into reading. Feels like I'm finding a rhythm again.",
   "Honestly it's been a whirlwind — between work and trying to see family more, I feel like February just flew by. But in the best way.",
   "Had some big moments this month. Started something new that I'm excited about but also terrified of. More on that soon.",
-  "Quiet month for me, and I needed it. Focused on the small things — good coffee, long walks, less screen time. Highly recommend.",
-  "Lots of travel this month which was exhausting but also really grounding in a weird way. Reminded me how much I love coming home.",
+  'Quiet month for me, and I needed it. Focused on the small things — good coffee, long walks, less screen time. Highly recommend.',
+  'Lots of travel this month which was exhausting but also really grounding in a weird way. Reminded me how much I love coming home.',
 ]
 
 const TEST_RESPONSES_2 = [
   "Finally finished a project I'd been putting off for months. The relief is real. Now I don't know what to do with myself.",
   "Been cooking more at home and honestly it's been the highlight of my week every week. Discovered I actually enjoy it.",
-  "Reconnected with an old friend out of the blue this month — one of those conversations that goes for three hours and you forget to eat.",
+  'Reconnected with an old friend out of the blue this month — one of those conversations that goes for three hours and you forget to eat.',
   "Work is intense right now but I'm learning a lot. Trying to remember that discomfort usually means growth.",
   "Started a new habit I've been meaning to build for years. Day 18. Still going. Quietly proud of myself.",
 ]
@@ -31,11 +31,10 @@ export const createTestNewsletter = mutation({
     // Check for existing newsletter for this cycle
     const existing = await ctx.db
       .query('newsletters')
-      .withIndex('by_circle_cycle', (q) =>
-        q.eq('circleId', args.circleId).eq('cycleId', cycleId)
-      )
+      .withIndex('by_circle_cycle', (q) => q.eq('circleId', args.circleId).eq('cycleId', cycleId))
       .first()
-    if (existing) throw new Error(`Newsletter already exists for cycle ${cycleId} (id: ${existing._id})`)
+    if (existing)
+      throw new Error(`Newsletter already exists for cycle ${cycleId} (id: ${existing._id})`)
 
     // Get active prompts sorted by order
     const allPrompts = await ctx.db
@@ -63,7 +62,7 @@ export const createTestNewsletter = mutation({
     const effectivePrompts =
       prompts.length > 0
         ? prompts.map((p) => p.text)
-        : ["What's been on your mind this month?", "What are you looking forward to?"]
+        : ["What's been on your mind this month?", 'What are you looking forward to?']
 
     const sections = effectivePrompts.map((promptTitle, promptIndex) => ({
       promptTitle,
@@ -87,8 +86,18 @@ export const createTestNewsletter = mutation({
     // Title
     const [year, month] = cycleId.split('-')
     const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ]
     const monthName = monthNames[parseInt(month!, 10) - 1] ?? month
     const title = `${circle.name} - ${monthName} ${year}`
