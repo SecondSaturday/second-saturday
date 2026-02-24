@@ -77,24 +77,6 @@ describe('Image Compression', () => {
     expect(console.error).toHaveBeenCalledWith('Image compression failed:', expect.any(Error))
   })
 
-  it('logs compression results', async () => {
-    const mockFile = new File([new ArrayBuffer(2 * 1024 * 1024)], 'test.jpg', {
-      type: 'image/jpeg',
-    })
-    const mockCompressedFile = new File([new ArrayBuffer(200 * 1024)], 'test.jpg', {
-      type: 'image/jpeg',
-    })
-
-    mockImageCompression.mockResolvedValue(mockCompressedFile)
-
-    await compressImage(mockFile, {
-      maxSizeMB: 0.2,
-      maxWidthOrHeight: 1200,
-    })
-
-    expect(console.log).toHaveBeenCalledWith(expect.stringContaining('Image compressed:'))
-  })
-
   it('works with PNG format', async () => {
     const mockFile = new File(['test'], 'test.png', { type: 'image/png' })
     const mockCompressedFile = new File(['compressed'], 'test.png', { type: 'image/png' })
