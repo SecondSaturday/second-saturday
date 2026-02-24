@@ -332,7 +332,6 @@ export function MediaUploader({
 
       // Get upload URL from Mux
       const { uploadUrl, videoId } = await uploadVideoToMux({
-        userId: user.id,
         title: `Video ${Date.now()}`,
       })
 

@@ -21,7 +21,6 @@ const getMuxClient = () => {
 // Upload video to Mux - Returns direct upload URL
 export const uploadVideoToMux = action({
   args: {
-    userId: v.string(),
     title: v.optional(v.string()),
     circleId: v.optional(v.id('circles')),
   },
@@ -47,7 +46,6 @@ export const uploadVideoToMux = action({
       // Create video record in database
       const videoId: Id<'videos'> = await ctx.runMutation(api.videos.createVideo, {
         uploadId: upload.id,
-        userId: args.userId,
         title: args.title,
         circleId: args.circleId,
       })
