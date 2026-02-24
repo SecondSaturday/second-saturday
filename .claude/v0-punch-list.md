@@ -18,7 +18,25 @@ Do NOT fix these inline — they go here so the flow stays organized.
 
 ## Found During Epic 2 (v0-navigation) Validation
 
-*(empty — epic not yet executed)*
+### PL2 — ProfileHeaderImageLayout not integrated into any page [P2]
+**Current:** `src/components/ProfileHeaderImageLayout.tsx` exists with edit/display modes but is not imported or used anywhere in the app. CircleSettings still uses two separate `ImageUpload` components (lines 226-237). The invite page and newsletter view also don't use it.
+**Desired:** Integrate into CircleSettings Details tab (edit mode), CreateCircle page (edit mode), invite page (display mode), and newsletter view header (display mode). This is expected to happen in Epic 3 (G9) and Epic 4 (M1).
+**Files:** `src/components/ProfileHeaderImageLayout.tsx`, `src/components/CircleSettings.tsx`, `src/app/dashboard/create/page.tsx`, `src/app/invite/[inviteCode]/page.tsx`, `src/components/newsletter/NewsletterView.tsx`
+
+### PL3 — ProfileHeaderImageLayout interface mismatch with ImageUpload [P1]
+**Current:** `ProfileHeaderImageLayout` accepts `onCoverUpload?: (file: File) => void` and `onIconUpload?: (file: File) => void` — passing raw `File` objects. But the existing `ImageUpload` component's `onUpload` callback passes a Convex `Id<'_storage'>` (storage ID after upload). These are different interfaces.
+**Desired:** When integrating the component into CircleSettings, either: (a) adapt `ProfileHeaderImageLayout` to handle the full upload-to-storage flow internally (accept storage IDs), or (b) wrap the raw File in upload logic at the call site. Must resolve before G9 integration.
+**Files:** `src/components/ProfileHeaderImageLayout.tsx`
+
+### PL4 — Newsletter view passes null for circle icon and cover URLs [P1]
+**Current:** In `src/app/dashboard/page.tsx` (line 120) and `src/app/dashboard/circles/[circleId]/page.tsx` (line 94), the `NewsletterView` is rendered with `iconUrl: null` and `coverUrl: null` hardcoded, even though the circle data from the query includes `circle.iconUrl` and `circle.coverUrl`. Newsletter headers will never show the circle's actual icon or cover image.
+**Desired:** Pass the actual circle image URLs through to `NewsletterView` so the header can display them. This is prerequisite for the K2 newsletter header redesign in Epic 3.
+**Files:** `src/app/dashboard/page.tsx`, `src/app/dashboard/circles/[circleId]/page.tsx`
+
+### PL5 — FAB component naming is misleading after repurpose [P2]
+**Current:** The FAB component is still named `CreateCircleFAB` (`src/components/dashboard/CreateCircleFAB.tsx`) and its `data-testid` is still `"create-circle-button"` (line 18), even though it now navigates to `/dashboard/submit` for submissions, not circle creation.
+**Desired:** Rename component to `SubmitFAB` (or similar), update the file name, update the test ID to `"submit-button"`, and update all imports.
+**Files:** `src/components/dashboard/CreateCircleFAB.tsx`, `src/app/dashboard/page.tsx`, any test files referencing the old name
 
 ---
 
