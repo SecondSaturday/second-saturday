@@ -181,7 +181,7 @@ http.route({
       }
 
       case 'video.asset.errored': {
-        // Asset processing failed
+        // Asset processing failed - mark video as errored to prevent orphaned media records
         const assetId = payload.data.id
         const errorMessages = payload.data.errors?.messages?.join(', ')
         if (assetId) {
