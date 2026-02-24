@@ -162,7 +162,7 @@ export async function onNotificationClicked(
     OneSignal.Notifications.addEventListener('click', (event) => {
       const data = event.notification.additionalData
       if (data?.type && data?.circleId) {
-        callback({ type: data.type, circleId: data.circleId })
+        callback({ type: data.type as NotificationClickPayload['type'], circleId: data.circleId })
       } else {
         callback(null)
       }
