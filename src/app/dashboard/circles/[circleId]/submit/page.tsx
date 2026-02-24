@@ -40,9 +40,11 @@ export default function SubmitPage() {
 
   const status: Circle['status'] = submission?.submittedAt
     ? 'submitted'
-    : submission
-      ? 'in-progress'
-      : 'not-started'
+    : submission?.lockedAt
+      ? 'locked'
+      : submission
+        ? 'in-progress'
+        : 'not-started'
 
   const circles: Circle[] = [
     {
