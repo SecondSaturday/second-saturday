@@ -172,6 +172,20 @@ export const compileNewsletter = internalMutation({
   handler: async (ctx, args) => {
     const { circleId, cycleId } = args
 
+    // Idempotency guard: check if newsletter already exists for this circle + cycle
+    const existing = await ctx.db
+      .query('newsletters')
+      .withIndex('by_circle_cycle', (q) => q.eq('circleId', circleId).eq('cycleId', cycleId))
+      .first()
+    if (existing) {
+      return {
+        newsletterId: existing._id,
+        submissionCount: existing.submissionCount ?? 0,
+        memberCount: existing.memberCount ?? 0,
+        missedMonth: (existing.submissionCount ?? 0) === 0,
+      }
+    }
+
     // Get circle for title
     const circle = await ctx.db.get(circleId)
     if (!circle) throw new Error('Circle not found')
