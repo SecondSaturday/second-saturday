@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMutation } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
 import { compressImage, cropImage } from '@/lib/image'
@@ -36,6 +36,13 @@ export function ImageUpload({
   const [cropUrl, setCropUrl] = useState<string | null>(null)
   const generateUploadUrl = useMutation(api.files.generateUploadUrl)
 
+  // Cleanup ObjectURL on unmount
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview)
+    }
+  }, [preview])
+
   const uploadFile = async (file: File) => {
     setUploading(true)
     try {
@@ -69,6 +76,8 @@ export function ImageUpload({
       setCropFile(file)
       setCropUrl(url)
     } else {
+      // Revoke previous preview before creating new one
+      if (preview) URL.revokeObjectURL(preview)
       setPreview(URL.createObjectURL(file))
       await uploadFile(file)
     }
@@ -88,6 +97,9 @@ export function ImageUpload({
     }
 
     const cropped = await cropImage(cropFile, pixelCrop)
+
+    // Revoke previous preview before creating new one
+    if (preview) URL.revokeObjectURL(preview)
     setPreview(URL.createObjectURL(cropped))
 
     // Clean up crop state
