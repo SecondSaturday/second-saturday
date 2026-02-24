@@ -67,7 +67,7 @@ export default function CompleteProfilePage() {
       <div className="flex flex-col items-center gap-8">
         <Image src="/icon.svg" alt="Second Saturday" width={48} height={48} />
         <div className="w-full space-y-2">
-          <h1 className="text-2xl font-semibold text-center">Set up your profile</h1>
+          <h1 className="font-serif text-3xl text-center">Set up your profile!</h1>
           <p className="text-sm text-muted-foreground text-center">
             This is how you&apos;ll appear to other members.
           </p>
@@ -79,7 +79,6 @@ export default function CompleteProfilePage() {
               label="Add photo"
               onUpload={(id) => setAvatarStorageId(id)}
             />
-            <p className="text-xs text-muted-foreground">Optional</p>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium" htmlFor="display-name">

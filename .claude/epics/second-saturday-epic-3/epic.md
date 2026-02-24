@@ -6,7 +6,7 @@ updated: 2026-02-11T11:35:08Z
 progress: 100%
 completed: 2026-02-11T11:35:08Z
 prd: .claude/prds/second-saturday-epic-3.md
-github: https://github.com/SecondSaturday/second-saturday/issues/50
+github: https://github.com/SecondSaturday/second-saturday/issues/115
 ---
 
 # Epic: Circle Membership
@@ -110,15 +110,15 @@ Implement circle membership flows: joining via invite link, viewing members, lea
 - **Critical path**: Schema changes → mutations → UI pages
 
 ## Tasks Created
-- [x] #51 - Extend memberships schema and update existing queries (parallel: false) ✅
-- [x] #52 - Implement leaveCircle and removeMember mutations (parallel: false) ✅
-- [x] #53 - Add getSubmissionStatus admin query (parallel: true) ✅
-- [x] #57 - Build invite preview page (parallel: true) ✅
-- [x] #62 - Build member list page and component (parallel: true) ✅
-- [x] #63 - Build LeaveCircleModal and RemoveMemberModal (parallel: true) ✅
-- [x] #54 - Build AdminSubmissionDashboard component (parallel: true) ✅
-- [x] #55 - Add PostHog analytics events for membership flows (parallel: true) ✅
-- [x] #56 - Write tests for membership mutations and UI flows (parallel: false) ✅
+- [x] #116 - Extend memberships schema and update existing queries (parallel: false) ✅
+- [x] #117 - Implement leaveCircle and removeMember mutations (parallel: false) ✅
+- [x] #118 - Add getSubmissionStatus admin query (parallel: true) ✅
+- [x] #119 - Build invite preview page (parallel: true) ✅
+- [x] #120 - Build member list page and component (parallel: true) ✅
+- [x] #121 - Build LeaveCircleModal and RemoveMemberModal (parallel: true) ✅
+- [x] #122 - Build AdminSubmissionDashboard component (parallel: true) ✅
+- [x] #123 - Add PostHog analytics events for membership flows (parallel: true) ✅
+- [x] #124 - Write tests for membership mutations and UI flows (parallel: false) ✅
 
 Total tasks: 9
 Parallel tasks: 6

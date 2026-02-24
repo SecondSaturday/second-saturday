@@ -71,7 +71,7 @@ export default function DashboardPage() {
           />
         ) : (
           <div className="flex flex-1 items-center justify-center">
-            <p className="text-muted-foreground">Select a circle to view details</p>
+            <p className="text-muted-foreground">Select a circle</p>
           </div>
         )}
       </div>

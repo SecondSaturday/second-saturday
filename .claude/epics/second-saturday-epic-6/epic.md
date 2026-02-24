@@ -1,10 +1,12 @@
 ---
 name: second-saturday-epic-6
-status: backlog
+status: complete
 created: 2026-02-22T05:51:36Z
-progress: 0%
+updated: 2026-02-23T00:00:00Z
+progress: 100%
+completed: 2026-02-23T00:00:00Z
 prd: .claude/prds/second-saturday-epic-6.md
-github: https://github.com/SecondSaturday/second-saturday/issues/101
+github: https://github.com/SecondSaturday/second-saturday/issues/144
 ---
 
 # Epic: Notifications & Reminders
@@ -63,15 +65,15 @@ Implement push notifications and reminders for the Second Saturday app using One
 
 ## Task Breakdown Preview
 
-- [ ] Task 1: Add notification schema tables and indexes (notificationPreferences, adminReminders, oneSignalPlayerId on users)
-- [ ] Task 2: Implement notification Convex functions (queries, mutations, actions for preferences, push sending, admin reminders)
-- [ ] Task 3: Add submission reminder cron job and newsletter-ready notification trigger
-- [ ] Task 4: Integrate OneSignal SDK (Capacitor init, player ID registration, push handlers)
-- [ ] Task 5: Wire admin manual reminders in AdminSubmissionDashboard (individual + bulk + count tracking)
-- [ ] Task 6: Build NotificationPreferences UI screen with global toggles
-- [ ] Task 7: Implement deep linking from push notifications (reminder → submit, newsletter → view)
-- [ ] Task 8: Add PostHog analytics events for notifications
-- [ ] Task 9: Write unit, integration, and E2E tests for notification flows
+- [x] Task 1: Add notification schema tables and indexes (notificationPreferences, adminReminders, oneSignalPlayerId on users)
+- [x] Task 2: Implement notification Convex functions (queries, mutations, actions for preferences, push sending, admin reminders)
+- [x] Task 3: Add submission reminder cron job and newsletter-ready notification trigger
+- [x] Task 4: Integrate OneSignal SDK (Capacitor init, player ID registration, push handlers)
+- [x] Task 5: Wire admin manual reminders in AdminSubmissionDashboard (individual + bulk + count tracking)
+- [x] Task 6: Build NotificationPreferences UI screen with global toggles
+- [x] Task 7: Implement deep linking from push notifications (reminder → submit, newsletter → view)
+- [x] Task 8: Add PostHog analytics events for notifications
+- [x] Task 9: Write unit, integration, and E2E tests for notification flows
 
 ## Dependencies
 
@@ -110,15 +112,15 @@ Implement push notifications and reminders for the Second Saturday app using One
 
 ## Tasks Created
 
-- [ ] #102 - Add notification schema tables and indexes (parallel: true)
-- [ ] #103 - Implement notification Convex functions (parallel: false, depends: #102)
-- [ ] #104 - Add submission reminder cron and newsletter-ready trigger (parallel: false, depends: #103)
-- [ ] #105 - Integrate OneSignal SDK with Capacitor (parallel: true, depends: #102)
-- [ ] #106 - Wire admin manual reminders in AdminSubmissionDashboard (parallel: true, depends: #103)
-- [ ] #107 - Build NotificationPreferences UI screen (parallel: true, depends: #103)
-- [ ] #108 - Implement deep linking from push notifications (parallel: false, depends: #105)
-- [ ] #109 - Add PostHog analytics events for notifications (parallel: true, depends: #103, #106, #107)
-- [ ] #110 - Write unit, integration, and E2E tests for notifications (parallel: false, depends: #103, #104, #106, #107, #108)
+- [x] #145 - Add notification schema tables and indexes (parallel: true) ✅
+- [x] #146 - Implement notification Convex functions (parallel: false, depends: #145) ✅
+- [x] #147 - Add submission reminder cron and newsletter-ready trigger (parallel: false, depends: #146) ✅
+- [x] #148 - Integrate OneSignal SDK with Capacitor (parallel: true, depends: #145) ✅
+- [x] #149 - Wire admin manual reminders in AdminSubmissionDashboard (parallel: true, depends: #146) ✅
+- [x] #150 - Build NotificationPreferences UI screen (parallel: true, depends: #146) ✅
+- [x] #151 - Implement deep linking from push notifications (parallel: false, depends: #148) ✅
+- [x] #152 - Add PostHog analytics events for notifications (parallel: true, depends: #146, #149, #150) ✅
+- [x] #153 - Write unit, integration, and E2E tests for notifications (parallel: false, depends: #146, #147, #149, #150, #151) ✅
 
 Total tasks: 9
 Parallel tasks: 5

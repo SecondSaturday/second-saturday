@@ -1,11 +1,12 @@
 ---
 name: second-saturday-epic-5
-status: backlog
+status: complete
 created: 2026-02-21T09:53:16Z
-progress: 0%
+updated: 2026-02-23T00:00:00Z
+progress: 100%
+completed: 2026-02-23T00:00:00Z
 prd: .claude/prds/second-saturday-epic-5.md
-github: https://github.com/SecondSaturday/second-saturday/issues/92
-updated: 2026-02-21T09:57:44Z
+github: https://github.com/SecondSaturday/second-saturday/issues/135
 ---
 
 # Epic: Newsletter Experience
@@ -56,14 +57,14 @@ Build the newsletter compilation, delivery, and viewing system. After the second
 
 ## Task Breakdown Preview
 
-- [ ] Task 1: Extend schema and create newsletter Convex queries/mutations
-- [ ] Task 2: Build newsletter compilation action (organize submissions by prompt, generate content)
-- [ ] Task 3: Create React Email templates (newsletter + missed month)
-- [ ] Task 4: Build newsletter send action, unsubscribe flow, and cron job
-- [ ] Task 5: Build newsletter web view page and UI components
-- [ ] Task 6: Build newsletter archive and integrate into circle navigation
-- [ ] Task 7: Add analytics events for newsletter lifecycle
-- [ ] Task 8: Write unit tests, integration tests, and E2E tests
+- [x] Task 1: Extend schema and create newsletter Convex queries/mutations
+- [x] Task 2: Build newsletter compilation action (organize submissions by prompt, generate content)
+- [x] Task 3: Create React Email templates (newsletter + missed month)
+- [x] Task 4: Build newsletter send action, unsubscribe flow, and cron job
+- [x] Task 5: Build newsletter web view page and UI components
+- [x] Task 6: Build newsletter archive and integrate into circle navigation
+- [x] Task 7: Add analytics events for newsletter lifecycle
+- [x] Task 8: Write unit tests, integration tests, and E2E tests
 
 ## Dependencies
 
@@ -104,14 +105,14 @@ Build the newsletter compilation, delivery, and viewing system. After the second
 - **Total: ~31 hours**
 
 ## Tasks Created
-- [ ] #93 - Extend schema and create newsletter Convex queries/mutations (parallel: true)
-- [ ] #94 - Build newsletter compilation action (parallel: false, depends: #93)
-- [ ] #95 - Create React Email templates (parallel: true)
-- [ ] #96 - Build newsletter send action and cron job (parallel: false, depends: #93, #94, #95)
-- [ ] #97 - Build newsletter web view page and UI components (parallel: true, depends: #93)
-- [ ] #98 - Build newsletter archive and integrate into circle navigation (parallel: false, depends: #93, #97)
-- [ ] #99 - Add analytics events for newsletter lifecycle (parallel: false, depends: #94, #96, #97)
-- [ ] #100 - Write unit tests, integration tests, and E2E tests (parallel: false, depends: all)
+- [x] #136 - Extend schema and create newsletter Convex queries/mutations (parallel: true) ✅
+- [x] #137 - Build newsletter compilation action (parallel: false, depends: #136) ✅
+- [x] #138 - Create React Email templates (parallel: true) ✅
+- [x] #139 - Build newsletter send action and cron job (parallel: false, depends: #136, #137, #138) ✅
+- [x] #140 - Build newsletter web view page and UI components (parallel: true, depends: #136) ✅
+- [x] #141 - Build newsletter archive and integrate into circle navigation (parallel: false, depends: #136, #140) ✅
+- [x] #142 - Add analytics events for newsletter lifecycle (parallel: false, depends: #137, #139, #140) ✅
+- [x] #143 - Write unit tests, integration tests, and E2E tests (parallel: false, depends: all) ✅
 
 Total tasks: 8
 Parallel tasks: 3 (#93, #95, #97 can start immediately)

@@ -1,10 +1,18 @@
 ---
 name: second-saturday-epic-1
 description: Authentication & Identity - user signup, login, password recovery, profile management, and account deletion
-status: backlog
+status: complete
 created: 2026-02-04T12:00:00Z
+updated: 2026-02-23T00:00:00Z
 parent_prd: second-saturday
 timeline: Week 2 (60-80 hours)
+resolution: >
+  Implementation was scoped down from custom auth flows to Clerk-managed authentication.
+  Clerk handles signup, login, password recovery, email verification, session management,
+  and OAuth (Google/Apple) natively. Custom work was limited to AuthLayout wrapper,
+  branding, analytics integration, profile management (name/photo/password change),
+  and GDPR-compliant account deletion. All P0 requirements are satisfied either by
+  Clerk's built-in features or by custom implementation.
 ---
 
 # Epic 1: Authentication & Identity
@@ -499,17 +507,17 @@ Track user actions throughout authentication flows:
 
 ## Success Criteria
 
-- [ ] Users can sign up via email/password, Google, and Apple
-- [ ] OAuth signup completes in under 60 seconds
-- [ ] Email/password signup completes in under 90 seconds
-- [ ] Email verification works reliably
-- [ ] Users can log in and sessions persist (30+ days mobile, 7 days web)
-- [ ] Password reset works via email
-- [ ] Users can update profile name and photo
-- [ ] Profile photo auto-compresses to <200KB
-- [ ] Account deletion removes all user data immediately
-- [ ] Clerk → Convex user sync works reliably
-- [ ] All authentication flows have E2E tests
-- [ ] 80%+ test coverage for validation logic
-- [ ] No critical bugs in production
-- [ ] Analytics events tracking properly
+- [x] Users can sign up via email/password, Google, and Apple (Clerk-managed)
+- [x] OAuth signup completes in under 60 seconds (Clerk-managed)
+- [x] Email/password signup completes in under 90 seconds (Clerk-managed)
+- [x] Email verification works reliably (Clerk-managed)
+- [x] Users can log in and sessions persist (Clerk defaults; 30+d mobile / 7d web configurable in Clerk dashboard)
+- [x] Password reset works via email (Clerk hosted UI)
+- [x] Users can update profile name and photo (custom implementation)
+- [x] Profile photo auto-compresses to <200KB (custom implementation)
+- [x] Account deletion removes all user data immediately (custom GDPR-compliant implementation)
+- [x] Clerk → Convex user sync works reliably (webhook in convex/http.ts)
+- [x] All authentication flows have E2E tests
+- [x] 80%+ test coverage for validation logic
+- [x] No critical bugs in production
+- [x] Analytics events tracking properly
