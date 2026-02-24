@@ -9,38 +9,8 @@ import { useSearchParams } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { NewsletterView } from '@/components/newsletter/NewsletterView'
+import { parseNewsletterContent } from '@/lib/newsletter'
 import { trackEvent } from '@/lib/analytics'
-
-interface MediaItem {
-  type: 'image' | 'video'
-  url: string
-  thumbnailUrl?: string | null
-}
-
-interface Response {
-  memberName: string
-  text: string
-  media?: MediaItem[]
-}
-
-interface Section {
-  promptTitle: string
-  responses: Response[]
-}
-
-interface ParsedContent {
-  sections: Section[]
-}
-
-function parseNewsletterContent(htmlContent?: string | null): Section[] {
-  if (!htmlContent) return []
-  try {
-    const parsed: ParsedContent = JSON.parse(htmlContent)
-    return parsed.sections ?? []
-  } catch {
-    return []
-  }
-}
 
 export default function NewsletterPage() {
   const params = useParams()
