@@ -31,7 +31,7 @@ describe('CreateCircleFAB', () => {
     render(<CreateCircleFAB />)
     const link = screen.getByRole('link')
     expect(link).toBeInTheDocument()
-    expect(link).toHaveAttribute('href', '/dashboard/create')
+    expect(link).toHaveAttribute('href', '/dashboard/submit')
   })
 
   it('shows the next deadline date', () => {
