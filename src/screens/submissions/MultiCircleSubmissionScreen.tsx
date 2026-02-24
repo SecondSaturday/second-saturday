@@ -16,6 +16,7 @@ import { useDebounce } from '@/hooks/useDebounce'
 import { useDeadlineCountdown } from '@/hooks/useDeadlineCountdown'
 import { getNextSecondSaturday } from '@/lib/dates'
 import { trackEvent } from '@/lib/analytics'
+import { toast } from 'sonner'
 
 interface MultiCircleSubmissionScreenProps {
   circles: Circle[]
@@ -79,6 +80,8 @@ export function MultiCircleSubmissionScreen({
       try {
         trackEvent('submission_locked', { circle_id: activeCircleId, cycle_id: cycleId })
       } catch {}
+    } catch (err) {
+      toast.error('Failed to submit. Please try again.')
     } finally {
       setIsSubmitting(false)
     }

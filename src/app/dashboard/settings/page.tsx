@@ -22,6 +22,7 @@ import Link from 'next/link'
 import { trackEvent } from '@/lib/analytics'
 import { NotificationPreferences } from '@/components/NotificationPreferences'
 import type { Id } from '../../../../convex/_generated/dataModel'
+import { toast } from 'sonner'
 
 export default function SettingsPage() {
   const { user: clerkUser } = useUser()
@@ -76,6 +77,7 @@ export default function SettingsPage() {
       setAvatarStorageId(null)
     } catch (err) {
       console.error('Failed to save profile:', err)
+      toast.error('Failed to save profile.')
     } finally {
       setSaving(false)
     }
@@ -187,6 +189,7 @@ export default function SettingsPage() {
       await signOut({ redirectUrl: '/' })
     } catch (err) {
       console.error('Failed to delete account:', err)
+      toast.error('Failed to delete account.')
       setDeleting(false)
     }
   }

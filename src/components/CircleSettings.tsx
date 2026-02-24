@@ -70,13 +70,17 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
   const inviteLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/invite/${circle.inviteCode}`
 
   const handleCopyLink = async () => {
-    const userName = user?.firstName ?? user?.fullName ?? 'Someone'
-    const shareText = `${userName} invited you to ${circle.name} - ${inviteLink}`
-    await navigator.clipboard.writeText(shareText)
-    setCopied(true)
-    toast.success('Invite link copied!')
-    trackEvent('invite_link_copied', { circleId })
-    setTimeout(() => setCopied(false), 2000)
+    try {
+      const userName = user?.firstName ?? user?.fullName ?? 'Someone'
+      const shareText = `${userName} invited you to ${circle.name} - ${inviteLink}`
+      await navigator.clipboard.writeText(shareText)
+      setCopied(true)
+      toast.success('Invite link copied!')
+      trackEvent('invite_link_copied', { circleId })
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      toast.error('Failed to copy link.')
+    }
   }
 
   const handleRegenerate = async () => {
@@ -120,6 +124,18 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
     }
   }
 
+  const handleImageUpload = async (storageId: Id<'_storage'>, field: 'icon' | 'cover') => {
+    try {
+      if (field === 'icon') {
+        await updateCircle({ circleId, iconImageId: storageId })
+      } else {
+        await updateCircle({ circleId, coverImageId: storageId })
+      }
+    } catch (err) {
+      toast.error('Failed to upload image.')
+    }
+  }
+
   const hasChanges =
     (name !== null && name !== circle.name) ||
     (description !== null && description !== (circle.description ?? ''))
@@ -133,13 +149,13 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
             shape="circle"
             label="Icon"
             previewUrl={circle.iconUrl}
-            onUpload={(storageId) => updateCircle({ circleId, iconImageId: storageId })}
+            onUpload={(storageId) => handleImageUpload(storageId, 'icon')}
           />
           <ImageUpload
             shape="rectangle"
             label="Cover"
             previewUrl={circle.coverUrl}
-            onUpload={(storageId) => updateCircle({ circleId, coverImageId: storageId })}
+            onUpload={(storageId) => handleImageUpload(storageId, 'cover')}
           />
         </div>
       )}
