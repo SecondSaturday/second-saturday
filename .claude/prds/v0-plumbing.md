@@ -1,7 +1,7 @@
 ---
 name: v0-plumbing
 description: Backend bug fixes, security hardening, error handling, validation, and cleanup for V0 launch
-status: backlog
+status: completed
 created: 2026-02-24T15:37:53Z
 ---
 

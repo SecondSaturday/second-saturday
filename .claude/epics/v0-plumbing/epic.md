@@ -1,8 +1,8 @@
 ---
 name: v0-plumbing
-status: backlog
+status: completed
 created: 2026-02-24T16:08:57Z
-progress: 0%
+progress: 100%
 prd: .claude/prds/v0-plumbing.md
 github: https://github.com/SecondSaturday/second-saturday/issues/154
 ---
