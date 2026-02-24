@@ -37,7 +37,6 @@ export function CapacitorProvider({ children }: { children: React.ReactNode }) {
         await StatusBar.setStyle({ style: Style.Light })
       } catch (e) {
         // Status bar plugin may not be available on all platforms
-        console.log('StatusBar configuration skipped:', e)
       }
     }
     configureStatusBar()
@@ -47,7 +46,7 @@ export function CapacitorProvider({ children }: { children: React.ReactNode }) {
       try {
         await CapacitorSwipeBackPlugin.enable()
       } catch (e) {
-        console.log('SwipeBack enable skipped:', e)
+        // SwipeBack plugin may not be available
       }
     }
     if (platform === 'ios') {
@@ -64,7 +63,7 @@ export function CapacitorProvider({ children }: { children: React.ReactNode }) {
           document.documentElement.style.setProperty(`--safe-area-inset-${key}`, `${value}px`)
         }
       } catch (e) {
-        console.log('SafeArea insets injection skipped:', e)
+        // SafeArea plugin may not be available
       }
     }
     injectSafeAreaInsets()

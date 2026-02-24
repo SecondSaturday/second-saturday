@@ -68,7 +68,7 @@ export function OneSignalProvider({ children }: { children: React.ReactNode }) {
           handlersRegisteredRef.current = true
 
           onNotificationReceived((notification) => {
-            console.log('OneSignal: notification received', notification.title)
+            // Notification received in foreground
           })
 
           onNotificationClicked((payload) => {

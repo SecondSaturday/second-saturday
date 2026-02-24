@@ -81,6 +81,18 @@ export const getCircleMembers = query({
 export const getMembershipCount = query({
   args: { circleId: v.id('circles') },
   handler: async (ctx, args) => {
+    const user = await getAuthUser(ctx)
+
+    // Verify caller is a member of the circle
+    const callerMembership = await ctx.db
+      .query('memberships')
+      .withIndex('by_user_circle', (q) => q.eq('userId', user._id).eq('circleId', args.circleId))
+      .first()
+
+    if (!callerMembership || callerMembership.leftAt) {
+      throw new Error('Not a member of this circle')
+    }
+
     const members = await ctx.db
       .query('memberships')
       .withIndex('by_circle', (q) => q.eq('circleId', args.circleId))

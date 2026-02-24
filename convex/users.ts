@@ -1,4 +1,4 @@
-import { mutation, query } from './_generated/server'
+import { mutation, query, internalQuery } from './_generated/server'
 import { v } from 'convex/values'
 import { internal } from './_generated/api'
 
@@ -52,7 +52,7 @@ export const deleteUser = mutation({
   },
 })
 
-export const getUserByClerkId = query({
+export const getUserByClerkId = internalQuery({
   args: { clerkId: v.string() },
   handler: async (ctx, args) => {
     return await ctx.db

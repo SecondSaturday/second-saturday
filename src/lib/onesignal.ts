@@ -71,7 +71,6 @@ function getOneSignalPlugin(): OneSignalPlugin | null {
  */
 export async function initOneSignal(): Promise<string | null> {
   if (!isNative()) {
-    console.log('OneSignal: skipping init (not native platform)')
     return null
   }
 
@@ -86,21 +85,17 @@ export async function initOneSignal(): Promise<string | null> {
   try {
     // Initialize SDK v5
     OneSignal.initialize(ONESIGNAL_APP_ID)
-    console.log('OneSignal: initialized with app ID', ONESIGNAL_APP_ID)
 
     // Request notification permission (will show prompt on iOS, Android 13+)
     const accepted = await OneSignal.Notifications.requestPermission(true)
     if (!accepted) {
       console.warn('OneSignal: user declined notification permission')
-    } else {
-      console.log('OneSignal: notification permission granted')
     }
 
     // Get subscription ID (may take a moment after permission granted)
     // Wait briefly for subscription to register
     await new Promise((resolve) => setTimeout(resolve, 1000))
     const subscriptionId = OneSignal.User.pushSubscription.id
-    console.log('OneSignal: subscription ID', subscriptionId)
     return subscriptionId
   } catch (err) {
     console.error('OneSignal: initialization failed:', err)
