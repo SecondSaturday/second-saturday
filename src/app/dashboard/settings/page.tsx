@@ -61,6 +61,12 @@ export default function SettingsPage() {
   const hasChanges = name !== null || avatarStorageId !== null
 
   const handleSave = async () => {
+    // Validate name
+    if (name !== null && name.trim().length < 1) {
+      toast.error('Name cannot be empty')
+      return
+    }
+
     setSaving(true)
     try {
       const args: { name?: string; avatarStorageId?: Id<'_storage'> } = {}

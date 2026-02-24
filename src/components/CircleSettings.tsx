@@ -98,6 +98,12 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
   }
 
   const handleSave = async () => {
+    // Validate name
+    if (name !== null && name.trim().length < 3) {
+      toast.error('Name must be at least 3 characters')
+      return
+    }
+
     setError(null)
     setSaving(true)
     try {
