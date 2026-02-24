@@ -37,6 +37,7 @@ export function MultiCircleSubmissionScreen({
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
   const [lastSaved, setLastSaved] = useState<Date | undefined>(undefined)
   const savedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const isLockedRef = useRef(false)
 
   const deadlineTimestamp = useMemo(() => getDeadlineTimestamp(), [])
   const { isPast: deadlineIsPast } = useDeadlineCountdown(deadlineTimestamp)
@@ -72,6 +73,7 @@ export function MultiCircleSubmissionScreen({
   const handleSubmit = useCallback(async () => {
     if (!submissionData?._id || isSubmitting) return
     setIsSubmitting(true)
+    isLockedRef.current = true
     try {
       await lockSubmission({ submissionId: submissionData._id })
       try {
@@ -141,6 +143,9 @@ export function MultiCircleSubmissionScreen({
   autoSaveCircleId.current = activeCircleId
 
   useEffect(() => {
+    // Guard against race with submission lock
+    if (isLockedRef.current) return
+
     if (!promptsData || promptsData.length === 0) return
     if (!debouncedDraftObj || Object.keys(debouncedDraftObj).length === 0) return
 
