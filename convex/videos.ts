@@ -184,6 +184,9 @@ export const getVideosByUser = query({
 export const getVideosByCircle = query({
   args: { circleId: v.id('circles') },
   handler: async (ctx, args) => {
+    const user = await getAuthUser(ctx)
+    await requireMembership(ctx, user._id, args.circleId)
+
     return await ctx.db
       .query('videos')
       .withIndex('by_circle', (q) => q.eq('circleId', args.circleId))
