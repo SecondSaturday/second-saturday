@@ -181,10 +181,10 @@ With the navigation restructured (Epic 2), the app's page shells are correct but
 
 #### Clerk + Date Picker
 
-##### FR16: Clerk UserProfile Inline (O1) [P1]
-**Current:** ~170 lines custom password change (lines 339-396) and email change (lines 113-320) in settings using low-level Clerk SDK. 15+ useState hooks. Silent error handling (B4). `any` type on line 57.
-**Change:** Replace with Clerk `<UserProfile />` component rendered inline. Theme with existing `clerkAppearance` from `providers.tsx`. Keep custom: name/avatar (Convex), notification preferences, sign-out, account deletion.
-**Files:** `src/app/dashboard/settings/page.tsx`, `src/app/providers.tsx`
+##### FR16: Clerk UserProfile Full-Page (O1) [P1]
+**Current:** ~170 lines custom password change and email change in settings using low-level Clerk SDK. 15+ useState hooks. Custom name/avatar editing inline.
+**Change:** Rewrite `/dashboard/settings` as a full-page Clerk `<UserProfile />`. Avatar tap in DashboardHeader navigates here. Clerk handles all profile editing (avatar, name, email, password, connected accounts). Add custom "Notifications" page inside UserProfile via `<UserProfile.Page>` slot API to embed `NotificationPreferences`. Sign Out and Delete Account rendered below the UserProfile component. All custom profile editing code (ImageUpload, name Input, save button, timezone) deleted.
+**Files:** `src/app/dashboard/settings/page.tsx`
 
 ##### FR17: Month Picker Functional (F5) [P1]
 **Current:** DatePicker opens modal with 12 raw Second Saturday dates. Selected date never passed to any query. Defaults to next upcoming Saturday.

@@ -163,6 +163,7 @@ export function ImageUpload({
           open={!!cropUrl}
           onClose={handleCropClose}
           onCropComplete={handleCropComplete}
+          aspect={shape === 'rectangle' ? 3 : 1}
         />
       )}
     </>

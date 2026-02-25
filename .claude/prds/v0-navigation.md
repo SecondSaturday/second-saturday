@@ -1,7 +1,7 @@
 ---
 name: v0-navigation
 description: Restructure app navigation — new submission route, newsletter as circle landing, 4-tab settings, shared components
-status: backlog
+status: completed
 created: 2026-02-24T15:39:18Z
 ---
 

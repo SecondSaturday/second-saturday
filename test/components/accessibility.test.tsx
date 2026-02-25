@@ -32,6 +32,7 @@ vi.mock('next/link', () => ({
 
 // Mock Clerk
 vi.mock('@clerk/nextjs', () => ({
+  UserButton: () => <button data-testid="clerk-user-button">User</button>,
   useUser: () => ({
     user: {
       fullName: 'Test User',
@@ -132,7 +133,7 @@ describe('DashboardHeader accessibility', () => {
     const user = userEvent.setup()
     const onOpen = vi.fn()
     render(<DashboardHeader dateLabel="Sep 13" onDatePickerOpen={onOpen} />)
-    // First tab lands on the avatar link; second tab reaches the date picker button
+    // First tab lands on the UserButton; second tab reaches the date picker button
     await user.tab()
     await user.tab()
     await user.keyboard('{Enter}')

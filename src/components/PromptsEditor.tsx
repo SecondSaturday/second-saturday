@@ -5,7 +5,8 @@ import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Plus, GripVertical, X } from 'lucide-react'
+import { Plus, GripVertical, X, ChevronRight } from 'lucide-react'
+import Link from 'next/link'
 import type { Id } from '../../convex/_generated/dataModel'
 import {
   DndContext,
@@ -24,7 +25,6 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
 interface PromptItem {
@@ -91,7 +91,6 @@ function SortablePrompt({
 
 export function PromptsEditor({ circleId, mode, onComplete }: PromptsEditorProps) {
   const existingPrompts = useQuery(api.prompts.getCirclePrompts, { circleId })
-  const promptLibrary = useQuery(api.prompts.getPromptLibrary)
   const updatePrompts = useMutation(api.prompts.updatePrompts)
 
   const [prompts, setPrompts] = useState<PromptItem[]>([])
@@ -185,11 +184,7 @@ export function PromptsEditor({ circleId, mode, onComplete }: PromptsEditorProps
     }
   }
 
-  // Check if any library prompts are still available
-  const allLibraryPrompts = promptLibrary ? Object.values(promptLibrary).flat() : []
-  const hasAvailableLibrary = allLibraryPrompts.some((lp) => !prompts.some((p) => p.text === lp))
-
-  if (existingPrompts === undefined || promptLibrary === undefined) {
+  if (existingPrompts === undefined) {
     return (
       <div className="flex flex-1 items-center justify-center">
         <div className="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -200,6 +195,11 @@ export function PromptsEditor({ circleId, mode, onComplete }: PromptsEditorProps
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 py-6">
+        {/* Section heading */}
+        <h2 className="text-sm font-medium text-muted-foreground">
+          Current Prompts {prompts.length}/8
+        </h2>
+
         {/* Sortable prompt list */}
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={prompts.map((p) => p.id)} strategy={verticalListSortingStrategy}>
@@ -228,37 +228,15 @@ export function PromptsEditor({ circleId, mode, onComplete }: PromptsEditorProps
           </button>
         )}
 
-        {/* Prompt library */}
-        {hasAvailableLibrary && promptLibrary && prompts.length < 8 && (
-          <div className="space-y-4">
-            <h2 className="text-sm font-medium text-muted-foreground">Prompt Library</h2>
-            {Object.entries(promptLibrary).map(([category, categoryPrompts]) => {
-              const available = categoryPrompts.filter((lp) => !prompts.some((p) => p.text === lp))
-              if (available.length === 0) return null
-              return (
-                <div key={category} className="space-y-2">
-                  <h3 className="text-xs font-medium capitalize text-muted-foreground/70">
-                    {category}
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {available.map((text) => (
-                      <button
-                        key={text}
-                        type="button"
-                        onClick={() => addPrompt(text)}
-                        className={cn(
-                          'rounded-full border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-accent',
-                          prompts.length >= 8 && 'pointer-events-none opacity-50'
-                        )}
-                      >
-                        + {text}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+        {/* Browse prompt library */}
+        {prompts.length < 8 && (
+          <Link
+            href={`/dashboard/circles/${circleId}/prompts/library`}
+            className="flex items-center justify-between rounded-lg border border-border bg-card p-3 text-sm text-foreground hover:bg-muted/30"
+          >
+            <span>Browse Prompt Library</span>
+            <ChevronRight className="size-4 text-muted-foreground" />
+          </Link>
         )}
 
         {error && <p className="text-sm text-destructive">{error}</p>}

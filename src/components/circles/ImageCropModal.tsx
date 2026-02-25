@@ -17,9 +17,16 @@ interface ImageCropModalProps {
   open: boolean
   onClose: () => void
   onCropComplete: (croppedArea: Area) => void
+  aspect?: number
 }
 
-export function ImageCropModal({ imageUrl, open, onClose, onCropComplete }: ImageCropModalProps) {
+export function ImageCropModal({
+  imageUrl,
+  open,
+  onClose,
+  onCropComplete,
+  aspect = 1,
+}: ImageCropModalProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null)
@@ -40,12 +47,12 @@ export function ImageCropModal({ imageUrl, open, onClose, onCropComplete }: Imag
         <DialogHeader>
           <DialogTitle>Crop Photo</DialogTitle>
         </DialogHeader>
-        <div className="relative aspect-square w-full overflow-hidden rounded-lg">
+        <div className="relative w-full overflow-hidden rounded-lg" style={{ aspectRatio: aspect }}>
           <Cropper
             image={imageUrl}
             crop={crop}
             zoom={zoom}
-            aspect={1}
+            aspect={aspect}
             onCropChange={setCrop}
             onZoomChange={setZoom}
             onCropComplete={handleCropComplete}

@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { ImageUpload } from '@/components/circles/ImageUpload'
+import { ProfileHeaderImageLayout } from '@/components/ProfileHeaderImageLayout'
+import { compressImage } from '@/lib/image'
 import {
   Dialog,
   DialogContent,
@@ -19,7 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Copy, RefreshCw, Check, AlertTriangle, Shield, Users } from 'lucide-react'
+import { Copy, RefreshCw, Check, AlertTriangle, MoreVertical } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Id } from '../../convex/_generated/dataModel'
 import { trackEvent } from '@/lib/analytics'
@@ -28,7 +29,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { PromptsEditor } from '@/components/PromptsEditor'
 import { AdminSubmissionDashboard } from '@/components/AdminSubmissionDashboard'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { RemoveMemberModal } from '@/components/RemoveMemberModal'
 
 interface CircleSettingsProps {
@@ -44,6 +50,7 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
   const currentUser = useQuery(api.users.getCurrentUser)
   const updateCircle = useMutation(api.circles.updateCircle)
   const regenerateInviteCode = useMutation(api.circles.regenerateInviteCode)
+  const generateUploadUrl = useMutation(api.files.generateUploadUrl)
 
   const [name, setName] = useState<string | null>(null)
   const [description, setDescription] = useState<string | null>(null)
@@ -152,6 +159,25 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
     }
   }
 
+  const handleFileUpload = async (file: File, field: 'icon' | 'cover') => {
+    try {
+      const compressed = await compressImage(file, {
+        maxSizeMB: 0.2,
+        maxWidthOrHeight: 800,
+      })
+      const uploadUrl = await generateUploadUrl()
+      const result = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': compressed.type },
+        body: compressed,
+      })
+      const { storageId } = await result.json()
+      await handleImageUpload(storageId, field)
+    } catch (err) {
+      toast.error('Failed to upload image.')
+    }
+  }
+
   const hasChanges =
     (name !== null && name !== circle.name) ||
     (description !== null && description !== (circle.description ?? ''))
@@ -178,24 +204,23 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
   return (
     <div className="flex flex-col gap-6">
       {/* Stats tiles (ABOVE tabs — always visible) */}
-      <div className="flex gap-6 rounded-lg border border-border bg-card p-4">
-        <div>
-          <p className="text-xs text-muted-foreground">Created</p>
-          <p className="text-sm font-medium text-foreground">
+      <div className="grid grid-cols-3 gap-3">
+        <div className="rounded-lg bg-card p-4 text-center">
+          <p className="text-2xl font-bold text-foreground">{circle.memberCount}</p>
+          <p className="text-sm text-muted-foreground">Members</p>
+        </div>
+        <div className="rounded-lg bg-card p-4 text-center">
+          <p className="text-2xl font-bold text-foreground">{circle.newsletterCount}</p>
+          <p className="text-sm text-muted-foreground">Issues Sent</p>
+        </div>
+        <div className="rounded-lg bg-card p-4 text-center">
+          <p className="text-2xl font-bold text-foreground">
             {new Date(circle.createdAt).toLocaleDateString('en-US', {
               month: 'short',
-              day: 'numeric',
               year: 'numeric',
             })}
           </p>
-        </div>
-        <div>
-          <p className="text-xs text-muted-foreground">Issues sent</p>
-          <p className="text-sm font-medium text-foreground">{circle.newsletterCount}</p>
-        </div>
-        <div>
-          <p className="text-xs text-muted-foreground">Members</p>
-          <p className="text-sm font-medium text-foreground">{circle.memberCount}</p>
+          <p className="text-sm text-muted-foreground">Created</p>
         </div>
       </div>
 
@@ -215,28 +240,20 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
         <TabsList variant="line">
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="prompts">Prompts</TabsTrigger>
-          <TabsTrigger value="members">Members</TabsTrigger>
+          <TabsTrigger value="members">Members ({members?.length ?? 0})</TabsTrigger>
           {isAdmin && <TabsTrigger value="status">Status</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="details" className="flex flex-col gap-6">
-          {/* Images (admin only) */}
-          {isAdmin && (
-            <div className="flex flex-col items-center gap-4">
-              <ImageUpload
-                shape="circle"
-                label="Icon"
-                previewUrl={circle.iconUrl}
-                onUpload={(storageId) => handleImageUpload(storageId, 'icon')}
-              />
-              <ImageUpload
-                shape="rectangle"
-                label="Cover"
-                previewUrl={circle.coverUrl}
-                onUpload={(storageId) => handleImageUpload(storageId, 'cover')}
-              />
-            </div>
-          )}
+          {/* Images */}
+          <ProfileHeaderImageLayout
+            coverImageUrl={circle.coverUrl}
+            iconUrl={circle.iconUrl}
+            editable={isAdmin}
+            onCoverUpload={(file) => handleFileUpload(file, 'cover')}
+            onIconUpload={(file) => handleFileUpload(file, 'icon')}
+            className="-mx-4 -mt-4"
+          />
 
           {/* Name (admin only) */}
           {isAdmin && (
@@ -312,15 +329,14 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
           </div>
 
           {/* Leave Circle section */}
-          <div className="space-y-2 border-t border-border pt-4">
-            <Label className="text-muted-foreground">Danger Zone</Label>
-            <button
-              type="button"
+          <div className="border-t border-border pt-4">
+            <Button
+              variant="destructive"
+              className="w-full"
               onClick={() => setShowLeaveDialog(true)}
-              className="text-sm text-destructive hover:underline"
             >
               Leave this circle
-            </button>
+            </Button>
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
@@ -356,32 +372,30 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
                 </Avatar>
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{member.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Joined{' '}
-                    {new Date(member.joinedAt).toLocaleDateString(undefined, {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {isSelf ? 'You' : member.name}
                   </p>
-                  {member.role === 'admin' && (
-                    <Badge variant="secondary" className="mt-1 gap-1">
-                      <Shield className="size-3" />
-                      Admin
-                    </Badge>
-                  )}
+                  <span className="text-xs text-muted-foreground">
+                    {member.role === 'admin' ? 'Admin' : 'Member'}
+                  </span>
                 </div>
 
                 {canRemove && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRemoveClick(member.userId, member.name)}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    Remove
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="size-8">
+                        <MoreVertical className="size-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => handleRemoveClick(member.userId, member.name)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        Remove
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
               </div>
             )

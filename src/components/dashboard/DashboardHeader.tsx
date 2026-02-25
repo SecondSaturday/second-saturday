@@ -1,10 +1,7 @@
 'use client'
 
-import { useUser } from '@clerk/nextjs'
-import { useQuery } from 'convex/react'
-import { api } from '../../../convex/_generated/api'
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
-import { MoreVertical, ChevronDown, PlusCircle } from 'lucide-react'
+import { UserButton } from '@clerk/nextjs'
+import { MoreVertical, ChevronDown, PlusCircle, Bell } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -20,23 +17,18 @@ interface DashboardHeaderProps {
 }
 
 export function DashboardHeader({ onDatePickerOpen, dateLabel }: DashboardHeaderProps) {
-  const { user } = useUser()
-  const convexUser = useQuery(api.users.getCurrentUser)
-
-  const avatarUrl = convexUser?.imageUrl ?? user?.imageUrl
-  const displayName = convexUser?.name ?? user?.fullName ?? 'User'
-
   const displayDate =
     dateLabel ?? new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 
   return (
     <header className="flex shrink-0 items-center justify-between bg-background px-4 py-3">
-      <Link href="/dashboard/settings">
-        <Avatar size="lg" className="cursor-pointer transition-opacity hover:opacity-80">
-          <AvatarImage src={avatarUrl} alt={displayName} />
-          <AvatarFallback>{(convexUser?.name ?? user?.firstName)?.[0] ?? 'U'}</AvatarFallback>
-        </Avatar>
-      </Link>
+      <UserButton
+        appearance={{
+          elements: {
+            avatarBox: 'size-10',
+          },
+        }}
+      />
 
       <button
         onClick={onDatePickerOpen}
@@ -53,6 +45,12 @@ export function DashboardHeader({ onDatePickerOpen, dateLabel }: DashboardHeader
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          <DropdownMenuItem asChild>
+            <Link href="/dashboard/notifications" className="flex items-center gap-2">
+              <Bell className="size-4" />
+              Notifications
+            </Link>
+          </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link href="/dashboard/create" className="flex items-center gap-2">
               <PlusCircle className="size-4" />

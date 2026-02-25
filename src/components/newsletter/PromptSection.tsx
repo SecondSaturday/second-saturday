@@ -8,6 +8,7 @@ interface MediaItem {
 
 interface Response {
   memberName: string
+  memberAvatarUrl?: string | null
   text: string
   media?: MediaItem[]
 }
@@ -20,14 +21,16 @@ interface PromptSectionProps {
 export function PromptSection({ promptTitle, responses }: PromptSectionProps) {
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-foreground">{promptTitle}</h3>
-      <div className="space-y-6">
+      <h3 className="font-serif text-lg font-normal text-foreground">{promptTitle}</h3>
+      <div className="space-y-4 rounded-xl bg-card p-4">
         {responses.map((response, index) => (
           <MemberResponse
             key={index}
             memberName={response.memberName}
+            memberAvatarUrl={response.memberAvatarUrl}
             text={response.text}
             media={response.media}
+            showDivider={index > 0}
           />
         ))}
       </div>
