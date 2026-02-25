@@ -17,15 +17,15 @@ Synced: 2026-02-25T03:20:00Z
 
 ## Status
 
-Completed:
+All tasks completed:
 - #172: Add auth to getVideosByCircle ✅ CLOSED
 - #173: Replace custom auth code with Clerk UserProfile ✅ CLOSED
+- #174: Newsletter header redesign with serif font ✅ CLOSED
+- #175: Newsletter month picker and response cards ✅ CLOSED
 - #176: Settings Details tab polish ✅ CLOSED
 - #177: Members tab UX redesign ✅ CLOSED
 - #178: Prompts tab and dedicated library page ✅ CLOSED
 - #179: Submission input rework ✅ CLOSED
 - #180: Date picker as functional month picker ✅ CLOSED
 
-Remaining:
-- #174: Newsletter header redesign with serif font - OPEN (design-gated)
-- #175: Newsletter month picker and response cards - OPEN (depends on #174)
+**Epic complete: 9/9 tasks (100%)**

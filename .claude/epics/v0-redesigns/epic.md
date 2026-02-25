@@ -1,9 +1,9 @@
 ---
 name: v0-redesigns
-status: in_progress
+status: completed
 created: 2026-02-25T00:07:09Z
-updated: 2026-02-25T03:20:00Z
-progress: 78%
+updated: 2026-02-25T03:25:00Z
+progress: 100%
 prd: .claude/prds/v0-redesigns.md
 github: https://github.com/SecondSaturday/second-saturday/issues/171
 ---
@@ -129,8 +129,8 @@ Tasks are grouped so each can proceed once its design gate is satisfied. The sec
 ## Tasks Created
 - [x] #172 - Add auth to getVideosByCircle (parallel: true) ✅
 - [x] #173 - Replace custom auth code with Clerk UserProfile (parallel: true) ✅
-- [ ] #174 - Newsletter header redesign with serif font (parallel: true) - design-gated
-- [ ] #175 - Newsletter month picker and response cards (parallel: false, depends on #174) - design-gated
+- [x] #174 - Newsletter header redesign with serif font (parallel: true) ✅
+- [x] #175 - Newsletter month picker and response cards (parallel: false, depends on #174) ✅
 - [x] #176 - Settings Details tab polish (parallel: true) ✅
 - [x] #177 - Members tab UX redesign (parallel: true) ✅
 - [x] #178 - Prompts tab and dedicated library page (parallel: true) ✅
@@ -138,8 +138,8 @@ Tasks are grouped so each can proceed once its design gate is satisfied. The sec
 - [x] #180 - Date picker as functional month picker (parallel: true) ✅
 
 Total tasks: 9
-Completed: 7
-Remaining: 2 (#174, #175 - design-gated)
+Completed: 9
+Status: Epic complete!
 
 ## Estimated Effort
 
