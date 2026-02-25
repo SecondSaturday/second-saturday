@@ -452,7 +452,7 @@ export function MediaUploader({
         <>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="size-8" disabled={!canUploadMore} aria-label="Add media">
+              <Button variant="ghost" size="icon" className="size-8" disabled={!canUploadMore}>
                 <Plus className="size-4" />
               </Button>
             </DropdownMenuTrigger>
