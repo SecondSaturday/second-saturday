@@ -30,17 +30,19 @@ export function DashboardHeader({ onDatePickerOpen, dateLabel }: DashboardHeader
         }}
       />
 
-      <button
-        onClick={onDatePickerOpen}
-        className="flex items-center gap-1 rounded-lg bg-muted/60 px-3 py-1.5 text-sm font-medium text-foreground"
-      >
-        {displayDate}
-        <ChevronDown className="size-4 text-muted-foreground" />
-      </button>
+      <div className="flex flex-1 justify-center">
+        <button
+          onClick={onDatePickerOpen}
+          className="flex items-center gap-1 rounded-lg bg-muted/60 px-3 py-1.5 text-sm font-medium text-foreground"
+        >
+          {displayDate}
+          <ChevronDown className="size-4 text-muted-foreground" />
+        </button>
+      </div>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="size-9">
+          <Button variant="ghost" size="icon" className="size-9" aria-label="Menu">
             <MoreVertical className="size-5" />
           </Button>
         </DropdownMenuTrigger>
