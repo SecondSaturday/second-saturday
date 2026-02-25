@@ -48,6 +48,7 @@ interface NewsletterViewProps {
   sections: Section[]
   availableNewsletters?: NewsletterOption[]
   onNewsletterSelect?: (newsletterId: string) => void
+  isLoading?: boolean
 }
 
 export function NewsletterView({
@@ -58,6 +59,7 @@ export function NewsletterView({
   sections,
   availableNewsletters,
   onNewsletterSelect,
+  isLoading = false,
 }: NewsletterViewProps) {
   const formattedDate = publishedAt
     ? new Date(publishedAt).toLocaleDateString('en-US', {
@@ -73,6 +75,28 @@ export function NewsletterView({
         month: 'long',
       })
     : 'Current Issue'
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        {/* Cover block skeleton */}
+        <div className="h-[200px] w-full animate-pulse rounded-lg bg-muted" />
+
+        {/* Heading bars skeleton */}
+        <div className="mt-4 flex flex-col items-center gap-2 px-4">
+          <div className="h-7 w-[70%] animate-pulse rounded bg-muted" />
+          <div className="h-5 w-[40%] animate-pulse rounded bg-muted" />
+        </div>
+
+        {/* Article card placeholders */}
+        <div className="space-y-4 px-4">
+          <div className="h-[160px] w-full animate-pulse rounded-lg bg-muted" />
+          <div className="h-[160px] w-full animate-pulse rounded-lg bg-muted" />
+          <div className="h-[160px] w-full animate-pulse rounded-lg bg-muted" />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
