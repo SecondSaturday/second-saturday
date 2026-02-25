@@ -8,6 +8,9 @@ import { ConvexReactClient } from 'convex/react'
 import { useAuth } from '@clerk/nextjs'
 import { ThemeProvider, useTheme } from 'next-themes'
 import { PostHogProvider } from '@/providers/posthog-provider'
+import { OneSignalProvider } from '@/providers/onesignal-provider'
+import { CapacitorProvider } from '@/providers/capacitor-provider'
+import { useTimezoneSync } from '@/hooks/useTimezoneSync'
 
 const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
@@ -39,6 +42,11 @@ const clerkDarkAppearance = {
   },
 }
 
+function TimezoneSync() {
+  useTimezoneSync()
+  return null
+}
+
 function ClerkWithTheme({ children }: { children: React.ReactNode }) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === 'dark'
@@ -46,8 +54,13 @@ function ClerkWithTheme({ children }: { children: React.ReactNode }) {
   return (
     <ClerkProvider appearance={isDark ? clerkDarkAppearance : clerkAppearance}>
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+        <TimezoneSync />
         <Suspense fallback={null}>
-          <PostHogProvider>{children}</PostHogProvider>
+          <PostHogProvider>
+            <OneSignalProvider>
+              <CapacitorProvider>{children}</CapacitorProvider>
+            </OneSignalProvider>
+          </PostHogProvider>
         </Suspense>
       </ConvexProviderWithClerk>
     </ClerkProvider>

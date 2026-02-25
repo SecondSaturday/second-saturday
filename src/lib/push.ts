@@ -111,34 +111,3 @@ export async function sendPushToUsers(
     data,
   })
 }
-
-// Common notification types for the app
-export async function sendCircleInviteNotification(userId: string, circleName: string) {
-  return sendPushToUser(userId, "You're invited!", `You've been invited to join ${circleName}`, {
-    type: 'circle_invite',
-    circleName,
-  })
-}
-
-export async function sendEventReminderNotification(
-  userIds: string[],
-  eventTitle: string,
-  eventDate: string
-) {
-  return sendPushToUsers(userIds, 'Event Reminder', `${eventTitle} is coming up on ${eventDate}`, {
-    type: 'event_reminder',
-    eventTitle,
-    eventDate,
-  })
-}
-
-export async function sendNewPhotoNotification(
-  userIds: string[],
-  uploaderName: string,
-  circleName: string
-) {
-  return sendPushToUsers(userIds, 'New Photo', `${uploaderName} shared a photo in ${circleName}`, {
-    type: 'new_photo',
-    circleName,
-  })
-}

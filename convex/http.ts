@@ -59,7 +59,26 @@ http.route({
 
     // Handle different event types
     switch (type) {
-      case 'user.created':
+      case 'user.created': {
+        const email = data.email_addresses?.[0]?.email_address
+        if (!email) {
+          console.error('No email found in webhook payload')
+          return new Response('No email in payload', { status: 400 })
+        }
+
+        // Don't set name here — let the user set it on /complete-profile
+        const name = [data.first_name, data.last_name].filter(Boolean).join(' ') || undefined
+
+        await ctx.runMutation(api.users.upsertUser, {
+          clerkId: data.id,
+          email,
+          imageUrl: data.image_url,
+        })
+
+        await ctx.scheduler.runAfter(0, internal.emails.sendWelcomeEmail, { email, name })
+        break
+      }
+
       case 'user.updated': {
         const email = data.email_addresses?.[0]?.email_address
         if (!email) {
@@ -162,7 +181,7 @@ http.route({
       }
 
       case 'video.asset.errored': {
-        // Asset processing failed
+        // Asset processing failed - mark video as errored to prevent orphaned media records
         const assetId = payload.data.id
         const errorMessages = payload.data.errors?.messages?.join(', ')
         if (assetId) {

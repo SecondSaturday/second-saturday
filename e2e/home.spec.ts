@@ -7,14 +7,11 @@ test.describe('Home Page (Authenticated)', () => {
     await setupClerkTestingToken({ page })
   })
 
-  test('page loads successfully', async ({ page }) => {
-    const response = await page.goto('/', { waitUntil: 'domcontentloaded' })
+  test('authenticated user is redirected to dashboard from home', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'domcontentloaded' })
 
-    // Should load without server errors
-    expect(response?.status()).toBeLessThan(500)
-
-    // Page should be visible
-    await expect(page.locator('body')).toBeVisible()
+    // Authenticated users should be redirected to /dashboard
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 })
   })
 
   test('has correct title', async ({ page }) => {

@@ -1,0 +1,29 @@
+require_relative '../../node_modules/.pnpm/@capacitor+ios@8.0.2_@capacitor+core@8.0.2/node_modules/@capacitor/ios/scripts/pods_helpers'
+
+platform :ios, '15.0'
+use_frameworks!
+
+install! 'cocoapods', :deterministic_uuids => false
+
+def capacitor_pods
+  pod 'Capacitor', :path => '../../node_modules/.pnpm/@capacitor+ios@8.0.2_@capacitor+core@8.0.2/node_modules/@capacitor/ios'
+  pod 'CapacitorCordova', :path => '../../node_modules/.pnpm/@capacitor+ios@8.0.2_@capacitor+core@8.0.2/node_modules/@capacitor/ios'
+  pod 'CapacitorApp', :path => '../../node_modules/.pnpm/@capacitor+app@8.0.1_@capacitor+core@8.0.2/node_modules/@capacitor/app'
+  pod 'CapacitorCamera', :path => '../../node_modules/.pnpm/@capacitor+camera@8.0.0_@capacitor+core@8.0.2/node_modules/@capacitor/camera'
+  pod 'CapacitorFilesystem', :path => '../../node_modules/.pnpm/@capacitor+filesystem@8.1.0_@capacitor+core@8.0.2/node_modules/@capacitor/filesystem'
+  pod 'CapacitorPushNotifications', :path => '../../node_modules/.pnpm/@capacitor+push-notifications@8.0.0_@capacitor+core@8.0.2/node_modules/@capacitor/push-notifications'
+  pod 'CapacitorStatusBar', :path => '../../node_modules/.pnpm/@capacitor+status-bar@8.0.1_@capacitor+core@8.0.2/node_modules/@capacitor/status-bar'
+  pod 'NotnotsamuelCapacitorSwipeBack', :path => '../../node_modules/.pnpm/@notnotsamuel+capacitor-swipe-back@3.0.2_@capacitor+core@8.0.2/node_modules/@notnotsamuel/capacitor-swipe-back'
+  pod 'CapacitorPluginSafeArea', :path => '../../node_modules/.pnpm/capacitor-plugin-safe-area@5.0.0_@capacitor+core@8.0.2/node_modules/capacitor-plugin-safe-area'
+  pod 'CordovaPluginsStatic', :path => '../capacitor-cordova-ios-plugins'
+end
+
+target 'App' do
+  capacitor_pods
+  # OneSignal iOS SDK
+  pod 'OneSignalXCFramework', '>= 5.0.0', '< 6.0.0'
+end
+
+post_install do |installer|
+  assertDeploymentTarget(installer)
+end

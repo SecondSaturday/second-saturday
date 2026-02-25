@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Instrument_Sans, Instrument_Serif, Courier_Prime } from 'next/font/google'
+import { Toaster } from 'sonner'
 import { Providers } from './providers'
 import './globals.css'
 
@@ -32,10 +33,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no"
+        />
+      </head>
       <body
         className={`${instrumentSans.variable} ${instrumentSerif.variable} ${courierPrime.variable} antialiased`}
       >
         <Providers>{children}</Providers>
+        <Toaster position="bottom-center" />
       </body>
     </html>
   )
