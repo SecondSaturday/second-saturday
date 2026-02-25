@@ -7,6 +7,15 @@ vi.mock('@clerk/nextjs', () => ({
   UserButton: () => <div data-testid="clerk-user-button" />,
 }))
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+vi.mock('next/link', () => ({
+  default: ({ children, href, ...props }: any) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
+}))
+
 describe('DashboardHeader', () => {
   it('renders Clerk UserButton', () => {
     render(<DashboardHeader />)

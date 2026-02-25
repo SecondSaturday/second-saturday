@@ -275,7 +275,7 @@ describe('Date formatting for newsletter display', () => {
     for (let m = 1; m <= 12; m++) {
       const cycleId = `2026-${String(m).padStart(2, '0')}`
       const title = formatNewsletterTitle('Test', cycleId)
-      expect(title).toContain(MONTH_NAMES[m - 1])
+      expect(title).toContain(MONTH_NAMES[m - 1]!)
       expect(title).toContain('2026')
     }
   })

@@ -1,3 +1,4 @@
+import type React from 'react'
 import { Resend } from 'resend'
 
 // Resend client - only available server-side
