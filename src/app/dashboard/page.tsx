@@ -6,15 +6,13 @@ import { DashboardHeader } from '@/components/dashboard/DashboardHeader'
 import { CircleList } from '@/components/dashboard/CircleList'
 import { CreateCircleFAB } from '@/components/dashboard/CreateCircleFAB'
 import { DatePicker } from '@/components/dashboard/DatePicker'
-import { getNextSecondSaturday, formatShortDate } from '@/lib/dates'
+import { getLastSecondSaturday, formatShortDate } from '@/lib/dates'
 import { trackEvent } from '@/lib/analytics'
 import type { Id } from '../../../convex/_generated/dataModel'
 import { useQuery } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
 import { NewsletterView } from '@/components/newsletter/NewsletterView'
 import { parseNewsletterContent } from '@/lib/newsletter'
-import { Settings } from 'lucide-react'
-import Link from 'next/link'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -22,7 +20,7 @@ export default function DashboardPage() {
   const [selectedCircleId, setSelectedCircleId] = useState<string | null>(() =>
     searchParams.get('circle')
   )
-  const [selectedDate, setSelectedDate] = useState(() => getNextSecondSaturday())
+  const [selectedDate, setSelectedDate] = useState(() => getLastSecondSaturday())
   const [datePickerOpen, setDatePickerOpen] = useState(false)
 
   const handleCircleSelect = useCallback(
@@ -67,7 +65,10 @@ export default function DashboardPage() {
       {/* Content area (desktop only) */}
       <div className="hidden min-h-0 flex-1 flex-col md:flex">
         {selectedCircleId ? (
-          <DesktopCircleNewsletter circleId={selectedCircleId as Id<'circles'>} />
+          <DesktopCircleNewsletter
+            circleId={selectedCircleId as Id<'circles'>}
+            selectedDate={selectedDate}
+          />
         ) : (
           <div className="flex flex-1 items-center justify-center">
             <p className="text-muted-foreground">Select a circle</p>
@@ -85,11 +86,32 @@ export default function DashboardPage() {
   )
 }
 
-function DesktopCircleNewsletter({ circleId }: { circleId: Id<'circles'> }) {
+function DesktopCircleNewsletter({
+  circleId,
+  selectedDate,
+}: {
+  circleId: Id<'circles'>
+  selectedDate: Date
+}) {
   const circle = useQuery(api.circles.getCircle, { circleId })
-  const newsletter = useQuery(api.newsletters.getLatestNewsletter, { circleId })
+  const newsletters = useQuery(api.newsletters.getNewslettersByCircle, { circleId })
 
-  if (circle === undefined || newsletter === undefined) {
+  // Find newsletter matching selected month
+  const newsletter = newsletters?.find((n) => {
+    const pubDate = new Date(n.publishedAt ?? n.createdAt)
+    return (
+      pubDate.getMonth() === selectedDate.getMonth() &&
+      pubDate.getFullYear() === selectedDate.getFullYear()
+    )
+  })
+
+  // Need full newsletter data with htmlContent
+  const fullNewsletter = useQuery(
+    api.newsletters.getNewsletterById,
+    newsletter ? { newsletterId: newsletter._id } : 'skip'
+  )
+
+  if (circle === undefined || newsletters === undefined) {
     return (
       <div className="flex flex-1 items-center justify-center">
         <div className="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -105,29 +127,37 @@ function DesktopCircleNewsletter({ circleId }: { circleId: Id<'circles'> }) {
     )
   }
 
+  // Loading full newsletter content
+  if (newsletter && fullNewsletter === undefined) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <div className="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    )
+  }
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <header className="flex shrink-0 items-center gap-3 border-b border-border px-4 py-3">
-        <h1 className="flex-1 truncate text-lg font-semibold text-foreground">{circle.name}</h1>
-        <Link href={`/dashboard/circles/${circleId}/settings`}>
-          <Settings className="size-5 text-muted-foreground" />
-        </Link>
-      </header>
-
-      {newsletter ? (
+      {fullNewsletter ? (
         <main className="flex-1 overflow-y-auto">
           <NewsletterView
-            circle={{ name: circle.name, iconUrl: null, coverUrl: null, timezone: 'UTC' }}
-            issueNumber={newsletter.issueNumber}
-            publishedAt={newsletter.publishedAt}
-            sections={parseNewsletterContent(newsletter.htmlContent)}
+            circle={{
+              name: circle.name,
+              iconUrl: circle.iconUrl ?? null,
+              coverUrl: circle.coverUrl ?? null,
+              timezone: 'UTC',
+            }}
+            circleId={circleId}
+            issueNumber={fullNewsletter.issueNumber}
+            publishedAt={fullNewsletter.publishedAt}
+            sections={parseNewsletterContent(fullNewsletter.htmlContent)}
           />
         </main>
       ) : (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 text-center">
-          <p className="text-lg font-medium text-foreground">No newsletters yet</p>
+          <p className="text-lg font-medium text-foreground">No newsletter for this month</p>
           <p className="text-sm text-muted-foreground">
-            Submissions are open — newsletters will appear here after the deadline.
+            Try selecting a different month from the date picker.
           </p>
         </div>
       )}

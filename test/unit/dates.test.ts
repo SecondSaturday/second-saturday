@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { getSecondSaturday, getNextSecondSaturday, formatShortDate } from '@/lib/dates'
+import {
+  getSecondSaturday,
+  getNextSecondSaturday,
+  getLastSecondSaturday,
+  formatShortDate,
+} from '@/lib/dates'
 
 describe('getSecondSaturday', () => {
   it('returns the second Saturday of January 2026', () => {
@@ -78,6 +83,41 @@ describe('getNextSecondSaturday', () => {
     expect(result.getFullYear()).toBe(2026)
     expect(result.getMonth()).toBe(0)
     expect(result.getDate()).toBe(10)
+  })
+})
+
+describe('getLastSecondSaturday', () => {
+  it('returns this months second Saturday if on or after it', () => {
+    // Feb 14, 2026 IS the second Saturday
+    const from = new Date(2026, 1, 14)
+    const result = getLastSecondSaturday(from)
+    expect(result.getMonth()).toBe(1)
+    expect(result.getDate()).toBe(14)
+  })
+
+  it('returns this months second Saturday if after it', () => {
+    // Feb 20, 2026 (after second Saturday) → Feb 14
+    const from = new Date(2026, 1, 20)
+    const result = getLastSecondSaturday(from)
+    expect(result.getMonth()).toBe(1)
+    expect(result.getDate()).toBe(14)
+  })
+
+  it('returns last months second Saturday if before this months', () => {
+    // Feb 1, 2026 (before Feb 14) → Jan 10
+    const from = new Date(2026, 1, 1)
+    const result = getLastSecondSaturday(from)
+    expect(result.getMonth()).toBe(0)
+    expect(result.getDate()).toBe(10)
+  })
+
+  it('handles January → December rollback', () => {
+    // Jan 5, 2026 (before Jan 10) → Dec 13, 2025
+    const from = new Date(2026, 0, 5)
+    const result = getLastSecondSaturday(from)
+    expect(result.getFullYear()).toBe(2025)
+    expect(result.getMonth()).toBe(11)
+    expect(result.getDate()).toBe(13)
   })
 })
 

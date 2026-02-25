@@ -11,43 +11,39 @@ interface DatePickerProps {
   onSelect: (date: Date) => void
 }
 
-function generatePastDates(count: number): Date[] {
+function generateMonths(count: number): Date[] {
   const now = new Date()
-  const dates: Date[] = []
+  const months: Date[] = []
   let year = now.getFullYear()
   let month = now.getMonth()
 
   for (let i = 0; i < count; i++) {
-    dates.push(getSecondSaturday(year, month))
+    months.push(getSecondSaturday(year, month))
     month--
     if (month < 0) {
       month = 11
       year--
     }
   }
-  return dates
+  return months
 }
 
-function isSameDate(a: Date, b: Date): boolean {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  )
+function isSameMonth(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth()
 }
 
 export function DatePicker({ open, onOpenChange, selectedDate, onSelect }: DatePickerProps) {
-  const dates = generatePastDates(12)
+  const months = generateMonths(12)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[70dvh] max-w-sm overflow-hidden p-0">
+      <DialogContent className="max-w-sm p-0">
         <DialogHeader className="px-4 pt-4">
-          <DialogTitle>Select Issue</DialogTitle>
+          <DialogTitle>Select Month</DialogTitle>
         </DialogHeader>
-        <div className="overflow-y-auto px-2 pb-2">
-          {dates.map((date) => {
-            const selected = isSameDate(date, selectedDate)
+        <div className="grid grid-cols-3 gap-2 p-4">
+          {months.map((date) => {
+            const selected = isSameMonth(date, selectedDate)
             return (
               <button
                 key={date.toISOString()}
@@ -56,17 +52,11 @@ export function DatePicker({ open, onOpenChange, selectedDate, onSelect }: DateP
                   onOpenChange(false)
                 }}
                 className={cn(
-                  'flex w-full items-center rounded-lg px-3 py-3 text-left text-sm transition-colors',
-                  selected
-                    ? 'bg-primary/10 font-semibold text-primary'
-                    : 'text-foreground hover:bg-muted/50'
+                  'rounded-lg px-3 py-2 text-sm transition-colors',
+                  selected ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted'
                 )}
               >
-                {date.toLocaleDateString('en-US', {
-                  month: 'long',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
+                {date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
               </button>
             )
           })}

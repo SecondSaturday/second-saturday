@@ -28,6 +28,26 @@ export function getNextSecondSaturday(from: Date = new Date()): Date {
 }
 
 /**
+ * Get the most recent past second Saturday from a given date.
+ * If today IS the second Saturday, returns today.
+ * If before this month's second Saturday, returns last month's.
+ */
+export function getLastSecondSaturday(from: Date = new Date()): Date {
+  const year = from.getFullYear()
+  const month = from.getMonth()
+
+  const thisMonth = getSecondSaturday(year, month)
+
+  // If today is on or after this month's second Saturday, use it
+  if (from >= thisMonth) {
+    return thisMonth
+  }
+
+  // Otherwise, get last month's
+  return getSecondSaturday(year, month - 1)
+}
+
+/**
  * Format a date as "Mon DD" (e.g., "Oct 11").
  */
 export function formatShortDate(date: Date): string {
