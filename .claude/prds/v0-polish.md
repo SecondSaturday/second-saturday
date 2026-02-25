@@ -1,8 +1,9 @@
 ---
 name: v0-polish
 description: Final polish pass — circle creation flow, onboarding, invite page, accessibility, dead code cleanup
-status: backlog
+status: complete
 created: 2026-02-24T21:54:14Z
+completed: 2026-02-25T04:42:55Z
 ---
 
 # PRD: v0-polish

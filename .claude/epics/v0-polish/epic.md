@@ -1,8 +1,10 @@
 ---
 name: v0-polish
-status: backlog
+status: completed
 created: 2026-02-25T03:25:20Z
-progress: 0%
+updated: 2026-02-25T04:42:55Z
+completed: 2026-02-25T04:42:55Z
+progress: 100%
 prd: .claude/prds/v0-polish.md
 github: https://github.com/SecondSaturday/second-saturday/issues/181
 ---
@@ -97,11 +99,11 @@ No deployment or infrastructure changes required.
 
 ## Tasks Created
 
-- [ ] #182 - Autonomous Cleanup — FAB rename, dead code, data integrity, accessibility, nav fixes (parallel: true)
-- [ ] #183 - Loading Skeletons — members list and newsletter view (parallel: true)
-- [ ] #184 - Invite Page — ProfileHeaderImageLayout and warm copy (parallel: true)
-- [ ] #185 - Onboarding — SSO pre-population, first/last name fields, floating labels, mobile-only logo (parallel: true)
-- [ ] #186 - Circle Creation Flow — intro splash, step indicator, max-width containers, fixed CTAs, warmer copy (parallel: false)
+- [x] #182 - Autonomous Cleanup — FAB rename, dead code, data integrity, accessibility, nav fixes (parallel: true)
+- [x] #183 - Loading Skeletons — members list and newsletter view (parallel: true)
+- [x] #184 - Invite Page — ProfileHeaderImageLayout and warm copy (parallel: true)
+- [x] #185 - Onboarding — SSO pre-population, first/last name fields, floating labels, mobile-only logo (parallel: true)
+- [x] #186 - Circle Creation Flow — intro splash, step indicator, max-width containers, fixed CTAs, warmer copy (parallel: false)
 
 Total tasks: 5
 Parallel tasks: 4 (001, 002, 003, 004)
