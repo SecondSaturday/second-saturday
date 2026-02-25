@@ -3,7 +3,6 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 // Mock Clerk
-const mockUpdatePassword = vi.fn()
 const mockDelete = vi.fn()
 let mockPasswordEnabled = true
 
@@ -15,17 +14,13 @@ vi.mock('@clerk/nextjs', () => ({
       primaryEmailAddress: { emailAddress: 'test@example.com' },
       imageUrl: 'https://example.com/avatar.jpg',
       passwordEnabled: mockPasswordEnabled,
-      updatePassword: mockUpdatePassword,
       delete: mockDelete,
-      createEmailAddress: vi.fn(),
     },
   }),
   useClerk: () => ({
     signOut: vi.fn(),
   }),
-  useSignIn: () => ({
-    signIn: { create: vi.fn() },
-  }),
+  UserProfile: () => <div data-testid="clerk-user-profile" />,
 }))
 
 // Mock Convex
@@ -80,18 +75,9 @@ describe('SettingsPage', () => {
     vi.clearAllMocks()
   })
 
-  it('renders profile section with name and email', () => {
+  it('renders profile section with name', () => {
     render(<SettingsPage />)
     expect(screen.getByDisplayValue('Test User')).toBeInTheDocument()
-    expect(screen.getByDisplayValue('test@example.com')).toBeInTheDocument()
-  })
-
-  it('email field is displayed with change option', () => {
-    render(<SettingsPage />)
-    const emailInput = screen.getByDisplayValue('test@example.com')
-    expect(emailInput).toBeDisabled()
-    // "Change" button for email (not "Change Password")
-    expect(screen.getByRole('button', { name: /^change$/i })).toBeInTheDocument()
   })
 
   it('save button disabled when no changes', () => {
@@ -100,54 +86,9 @@ describe('SettingsPage', () => {
     expect(saveButton).toBeDisabled()
   })
 
-  it('password section visible when passwordEnabled is true', () => {
+  it('renders Clerk UserProfile component', () => {
     render(<SettingsPage />)
-    expect(screen.getAllByText('Change Password').length).toBeGreaterThan(0)
-  })
-
-  it('password section hidden for OAuth-only users', () => {
-    mockPasswordEnabled = false
-    render(<SettingsPage />)
-    expect(screen.queryByText('Change Password')).not.toBeInTheDocument()
-  })
-
-  it('password change validates minimum length', () => {
-    render(<SettingsPage />)
-    const newPasswordInput = screen.getByPlaceholderText('New password (min 8 characters)')
-    fireEvent.change(newPasswordInput, { target: { value: 'short' } })
-    expect(screen.getByText('Password must be at least 8 characters')).toBeInTheDocument()
-  })
-
-  it('password change validates matching passwords', () => {
-    render(<SettingsPage />)
-    const newPasswordInput = screen.getByPlaceholderText('New password (min 8 characters)')
-    const confirmInput = screen.getByPlaceholderText('Confirm new password')
-    fireEvent.change(newPasswordInput, { target: { value: 'newpassword123' } })
-    fireEvent.change(confirmInput, { target: { value: 'different' } })
-    expect(screen.getByText('Passwords do not match')).toBeInTheDocument()
-  })
-
-  it('password change rejects same password as current', () => {
-    render(<SettingsPage />)
-    const currentPasswordInput = screen.getByPlaceholderText('Current password')
-    const newPasswordInput = screen.getByPlaceholderText('New password (min 8 characters)')
-    fireEvent.change(currentPasswordInput, { target: { value: 'mypassword123' } })
-    fireEvent.change(newPasswordInput, { target: { value: 'mypassword123' } })
-    expect(
-      screen.getByText('New password must be different from current password')
-    ).toBeInTheDocument()
-  })
-
-  it('change password button disabled when new matches current', () => {
-    render(<SettingsPage />)
-    const currentPasswordInput = screen.getByPlaceholderText('Current password')
-    const newPasswordInput = screen.getByPlaceholderText('New password (min 8 characters)')
-    const confirmInput = screen.getByPlaceholderText('Confirm new password')
-    fireEvent.change(currentPasswordInput, { target: { value: 'mypassword123' } })
-    fireEvent.change(newPasswordInput, { target: { value: 'mypassword123' } })
-    fireEvent.change(confirmInput, { target: { value: 'mypassword123' } })
-    const changeButton = screen.getByRole('button', { name: /change password/i })
-    expect(changeButton).toBeDisabled()
+    expect(screen.getByTestId('clerk-user-profile')).toBeInTheDocument()
   })
 
   it('renders a log out button', () => {
@@ -159,7 +100,6 @@ describe('SettingsPage', () => {
     const user = userEvent.setup()
     render(<SettingsPage />)
     await user.click(screen.getByRole('button', { name: /delete account/i }))
-    // Dialog opens with re-auth step, not DELETE input
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /verify identity/i })).toBeInTheDocument()
     })
@@ -168,9 +108,8 @@ describe('SettingsPage', () => {
   it('delete re-auth requires password for password users', () => {
     render(<SettingsPage />)
     fireEvent.click(screen.getByRole('button', { name: /delete account/i }))
-    // Both the password change section and re-auth dialog have "Current password" inputs
-    const passwordInputs = screen.getAllByPlaceholderText('Current password')
-    expect(passwordInputs.length).toBeGreaterThanOrEqual(2)
+    const passwordInput = screen.getByPlaceholderText('Current password')
+    expect(passwordInput).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /verify identity/i })).toBeInTheDocument()
   })
 })

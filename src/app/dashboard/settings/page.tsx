@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useUser, useClerk } from '@clerk/nextjs'
+import { useUser, useClerk, UserProfile } from '@clerk/nextjs'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../../../convex/_generated/api'
 import { ImageUpload } from '@/components/circles/ImageUpload'
@@ -41,27 +41,11 @@ export default function SettingsPage() {
   const [deleteReauthError, setDeleteReauthError] = useState<string | null>(null)
   const [deleteReauthVerified, setDeleteReauthVerified] = useState(false)
   const [deleteReauthing, setDeleteReauthing] = useState(false)
-  const [currentPassword, setCurrentPassword] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [passwordSaving, setPasswordSaving] = useState(false)
-  const [passwordError, setPasswordError] = useState<string | null>(null)
-  const [passwordSuccess, setPasswordSuccess] = useState(false)
-  const [emailEditing, setEmailEditing] = useState(false)
-  const [newEmail, setNewEmail] = useState('')
-  const [emailSaving, setEmailSaving] = useState(false)
-  const [emailError, setEmailError] = useState<string | null>(null)
-  const [emailSuccess, setEmailSuccess] = useState(false)
-  const [emailVerifying, setEmailVerifying] = useState(false)
-  const [emailCode, setEmailCode] = useState('')
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [pendingEmailResource, setPendingEmailResource] = useState<any>(null)
 
   const displayName = name ?? convexUser?.name ?? ''
   const hasChanges = name !== null || avatarStorageId !== null
 
   const handleSave = async () => {
-    // Validate name
     if (name !== null && name.trim().length < 1) {
       toast.error('Name cannot be empty')
       return
@@ -78,7 +62,6 @@ export default function SettingsPage() {
       if (name !== null) trackEvent('profile_updated', { field: 'name' })
       if (avatarStorageId !== null) trackEvent('profile_updated', { field: 'photo' })
 
-      // Reset dirty state
       setName(null)
       setAvatarStorageId(null)
     } catch (err) {
@@ -86,78 +69,6 @@ export default function SettingsPage() {
       toast.error('Failed to save profile.')
     } finally {
       setSaving(false)
-    }
-  }
-
-  const passwordValid =
-    newPassword.length >= 8 &&
-    newPassword === confirmPassword &&
-    currentPassword.length > 0 &&
-    newPassword !== currentPassword
-
-  const handleChangePassword = async () => {
-    setPasswordError(null)
-    setPasswordSuccess(false)
-    setPasswordSaving(true)
-    try {
-      await clerkUser?.updatePassword({
-        currentPassword,
-        newPassword,
-      })
-      setCurrentPassword('')
-      setNewPassword('')
-      setConfirmPassword('')
-      setPasswordSuccess(true)
-      trackEvent('user_reset_password', { method: 'email' })
-      // Force re-authentication after password change
-      setTimeout(() => signOut({ redirectUrl: '/sign-in' }), 1500)
-    } catch (err) {
-      setPasswordError(err instanceof Error ? err.message : 'Failed to change password')
-    } finally {
-      setPasswordSaving(false)
-    }
-  }
-
-  const handleChangeEmail = async () => {
-    if (!newEmail.trim() || !clerkUser) return
-    setEmailError(null)
-    setEmailSuccess(false)
-    setEmailSaving(true)
-    try {
-      const emailAddress = await clerkUser.createEmailAddress({ email: newEmail.trim() })
-      await emailAddress.prepareVerification({ strategy: 'email_code' })
-      setPendingEmailResource(emailAddress)
-      setEmailVerifying(true)
-    } catch (err) {
-      setEmailError(err instanceof Error ? err.message : 'Failed to update email')
-    } finally {
-      setEmailSaving(false)
-    }
-  }
-
-  const handleVerifyEmailCode = async () => {
-    if (!pendingEmailResource || !emailCode.trim() || !clerkUser) return
-    setEmailError(null)
-    setEmailSaving(true)
-    try {
-      const verified = await pendingEmailResource.attemptVerification({ code: emailCode.trim() })
-      if (verified.verification?.status === 'verified') {
-        // Set the new email as primary
-        await clerkUser.update({ primaryEmailAddressId: verified.id })
-        setEmailSuccess(true)
-        setEmailVerifying(false)
-        setEmailEditing(false)
-        setNewEmail('')
-        setEmailCode('')
-        setPendingEmailResource(null)
-        trackEvent('email_changed')
-      } else {
-        setEmailError('Verification failed. Please try again.')
-      }
-    } catch (err) {
-      setEmailError(err instanceof Error ? err.message : 'Invalid verification code')
-    } finally {
-      setEmailSaving(false)
     }
   }
 
@@ -243,92 +154,6 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Email</label>
-                <div className="flex gap-2">
-                  <Input
-                    value={clerkUser?.primaryEmailAddress?.emailAddress ?? ''}
-                    disabled
-                    className="text-muted-foreground"
-                  />
-                  {!emailEditing && (
-                    <Button variant="outline" size="sm" onClick={() => setEmailEditing(true)}>
-                      Change
-                    </Button>
-                  )}
-                </div>
-                {emailEditing && !emailVerifying && (
-                  <div className="space-y-2 pt-2">
-                    <Input
-                      value={newEmail}
-                      onChange={(e) => setNewEmail(e.target.value)}
-                      placeholder="New email address"
-                      type="email"
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={handleChangeEmail}
-                        disabled={!newEmail.trim() || emailSaving}
-                      >
-                        {emailSaving ? 'Sending...' : 'Send Verification'}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setEmailEditing(false)
-                          setNewEmail('')
-                          setEmailError(null)
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                )}
-                {emailVerifying && (
-                  <div className="space-y-2 pt-2">
-                    <p className="text-sm text-muted-foreground">
-                      Enter the verification code sent to <strong>{newEmail}</strong>
-                    </p>
-                    <Input
-                      value={emailCode}
-                      onChange={(e) => setEmailCode(e.target.value)}
-                      placeholder="Verification code"
-                      autoFocus
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={handleVerifyEmailCode}
-                        disabled={!emailCode.trim() || emailSaving}
-                      >
-                        {emailSaving ? 'Verifying...' : 'Verify'}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setEmailVerifying(false)
-                          setEmailEditing(false)
-                          setNewEmail('')
-                          setEmailCode('')
-                          setPendingEmailResource(null)
-                          setEmailError(null)
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                )}
-                {emailError && <p className="text-sm text-destructive">{emailError}</p>}
-                {emailSuccess && (
-                  <p className="text-sm text-green-600">Email updated successfully.</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
                 <label className="text-sm font-medium">Timezone</label>
                 <Input
                   value={convexUser.timezone ?? 'Not detected'}
@@ -345,64 +170,28 @@ export default function SettingsPage() {
 
           <NotificationPreferences />
 
-          {clerkUser?.passwordEnabled && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Change Password</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Current Password</label>
-                  <Input
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="Current password"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">New Password</label>
-                  <Input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="New password (min 8 characters)"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Confirm New Password</label>
-                  <Input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm new password"
-                  />
-                </div>
-                {newPassword.length > 0 && newPassword.length < 8 && (
-                  <p className="text-sm text-destructive">Password must be at least 8 characters</p>
-                )}
-                {confirmPassword.length > 0 && newPassword !== confirmPassword && (
-                  <p className="text-sm text-destructive">Passwords do not match</p>
-                )}
-                {newPassword.length > 0 && newPassword === currentPassword && (
-                  <p className="text-sm text-destructive">
-                    New password must be different from current password
-                  </p>
-                )}
-                {passwordError && <p className="text-sm text-destructive">{passwordError}</p>}
-                {passwordSuccess && (
-                  <p className="text-sm text-green-600">Password changed successfully</p>
-                )}
-                <Button
-                  onClick={handleChangePassword}
-                  disabled={!passwordValid || passwordSaving}
-                  className="w-full"
-                >
-                  {passwordSaving ? 'Changing...' : 'Change Password'}
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+          <Card>
+            <CardHeader>
+              <CardTitle>Email & Password</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <UserProfile
+                routing="hash"
+                appearance={{
+                  elements: {
+                    rootBox: 'w-full',
+                    cardBox: 'shadow-none w-full',
+                    card: 'shadow-none w-full',
+                    navbar: 'hidden',
+                    navbarMobileMenuButton: 'hidden',
+                    headerTitle: 'hidden',
+                    headerSubtitle: 'hidden',
+                    profileSectionPrimaryButton: 'text-primary',
+                  },
+                }}
+              />
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader>
