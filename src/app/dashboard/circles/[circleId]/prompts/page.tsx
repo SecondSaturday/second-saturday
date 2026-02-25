@@ -5,6 +5,7 @@ import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import type { Id } from '../../../../../../convex/_generated/dataModel'
 import { PromptsEditor } from '@/components/PromptsEditor'
+import { StepProgressIndicator } from '@/components/ui/StepProgressIndicator'
 
 export default function PromptsPage() {
   const params = useParams()
@@ -29,6 +30,11 @@ export default function PromptsPage() {
         mode={isSetup ? 'setup' : 'settings'}
         onComplete={() =>
           router.push(isSetup ? `/dashboard/circles/${circleId}/setup-complete` : '/dashboard')
+        }
+        stepIndicator={
+          isSetup ? (
+            <StepProgressIndicator steps={['Basic Info', 'Prompts', 'Members']} currentStep={2} />
+          ) : undefined
         }
       />
     </div>
