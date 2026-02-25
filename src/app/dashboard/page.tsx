@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader'
 import { CircleList } from '@/components/dashboard/CircleList'
-import { CreateCircleFAB } from '@/components/dashboard/CreateCircleFAB'
+import { SubmitFAB } from '@/components/dashboard/SubmitFAB'
 import { DatePicker } from '@/components/dashboard/DatePicker'
 import { getLastSecondSaturday, formatShortDate } from '@/lib/dates'
 import { trackEvent } from '@/lib/analytics'
@@ -59,7 +59,7 @@ export default function DashboardPage() {
           onDatePickerOpen={() => setDatePickerOpen(true)}
         />
         <CircleList onCircleSelect={handleCircleSelect} />
-        <CreateCircleFAB />
+        <SubmitFAB />
       </div>
 
       {/* Content area (desktop only) */}
