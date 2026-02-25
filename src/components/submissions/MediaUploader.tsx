@@ -12,16 +12,25 @@ import {
   Video as VideoIcon,
   X,
   Loader2,
+  Plus,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Id } from '../../../convex/_generated/dataModel'
 import { BlockingModal } from '../ui/blocking-modal'
 import { useBlockingUpload } from '@/hooks/useBlockingUpload'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface MediaUploaderProps {
-  responseId: Id<'responses'>
+  responseId?: Id<'responses'>
   onUploadComplete?: (mediaId: Id<'media'>, type: 'image' | 'video') => void
   onUploadError?: (error: string) => void
+  onEnsureResponse?: () => Promise<void>
   maxMedia?: number
   currentMediaCount?: number
   className?: string
@@ -34,6 +43,7 @@ export function MediaUploader({
   responseId,
   onUploadComplete,
   onUploadError,
+  onEnsureResponse,
   maxMedia = 3,
   currentMediaCount = 0,
   className,
@@ -99,6 +109,9 @@ export function MediaUploader({
     }
 
     try {
+      // Ensure response exists before starting upload
+      await onEnsureResponse?.()
+
       setStage('selecting')
       setError(null)
       setProgress(0)
@@ -253,11 +266,13 @@ export function MediaUploader({
     }
   }
 
-  const handleVideoSelect = () => {
+  const handleVideoSelect = async () => {
     if (!canUploadMore) {
       handleError(`Maximum ${maxMedia} media items allowed per response`)
       return
     }
+    // Ensure response exists before starting upload
+    await onEnsureResponse?.()
     videoInputRef.current?.click()
   }
 
@@ -434,49 +449,25 @@ export function MediaUploader({
     <div className={cn('space-y-2', className)}>
       {/* Upload Controls */}
       {!isUploading && !error && (
-        <div className="space-y-2">
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => handlePhotoCapture(CameraSource.Camera)}
-              disabled={!canUploadMore}
-              className={cn(
-                'flex flex-1 items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/50 px-4 py-3 text-sm font-medium transition-colors hover:bg-muted',
-                !canUploadMore && 'cursor-not-allowed opacity-50'
-              )}
-            >
-              <CameraIcon className="size-5" />
-              <span>Take Photo</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handlePhotoCapture(CameraSource.Photos)}
-              disabled={!canUploadMore}
-              className={cn(
-                'flex flex-1 items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/50 px-4 py-3 text-sm font-medium transition-colors hover:bg-muted',
-                !canUploadMore && 'cursor-not-allowed opacity-50'
-              )}
-            >
-              <ImageIcon className="size-5" />
-              <span>Choose Photo</span>
-            </button>
-          </div>
-
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={handleVideoSelect}
-              disabled={!canUploadMore}
-              className={cn(
-                'flex flex-1 items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/50 px-4 py-3 text-sm font-medium transition-colors hover:bg-muted',
-                !canUploadMore && 'cursor-not-allowed opacity-50'
-              )}
-            >
-              <VideoIcon className="size-5" />
-              <span>Choose Video</span>
-            </button>
-          </div>
+        <>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="size-8" disabled={!canUploadMore}>
+                <Plus className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem onClick={() => handlePhotoCapture(CameraSource.Camera)}>
+                <CameraIcon className="mr-2 size-4" /> Take Photo
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handlePhotoCapture(CameraSource.Photos)}>
+                <ImageIcon className="mr-2 size-4" /> Choose Photo
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleVideoSelect}>
+                <VideoIcon className="mr-2 size-4" /> Choose Video
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <input
             ref={videoInputRef}
             type="file"
@@ -484,7 +475,7 @@ export function MediaUploader({
             className="hidden"
             onChange={handleVideoFileChange}
           />
-        </div>
+        </>
       )}
 
       {/* Blocking Modal for Video Upload */}

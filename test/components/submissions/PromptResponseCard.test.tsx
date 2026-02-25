@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { PromptResponseCard } from '@/components/submissions/PromptResponseCard'
 import type { MediaItem } from '@/components/submissions/MediaGrid'
@@ -52,10 +52,10 @@ describe('PromptResponseCard', () => {
     expect(screen.getByText('What did you learn today?')).toBeInTheDocument()
   })
 
-  it('renders a textarea with placeholder text', () => {
+  it('renders a textarea with new placeholder text', () => {
     render(<PromptResponseCard promptId="p1" promptText="Prompt" responseId={RESPONSE_ID} />)
 
-    expect(screen.getByPlaceholderText('Share your thoughts...')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Add text or tap + for photos...')).toBeInTheDocument()
   })
 
   it('renders initialValue inside the textarea', () => {
@@ -71,8 +71,18 @@ describe('PromptResponseCard', () => {
     expect(screen.getByDisplayValue('Hello world')).toBeInTheDocument()
   })
 
-  it('shows character counter "0/500" by default', () => {
+  it('hides character counter by default (only shows on focus)', () => {
     render(<PromptResponseCard promptId="p1" promptText="Prompt" responseId={RESPONSE_ID} />)
+
+    // Counter should not be visible when not focused
+    expect(screen.queryByText('0/500')).not.toBeInTheDocument()
+  })
+
+  it('shows character counter when textarea is focused', () => {
+    render(<PromptResponseCard promptId="p1" promptText="Prompt" responseId={RESPONSE_ID} />)
+
+    const textarea = screen.getByPlaceholderText('Add text or tap + for photos...')
+    fireEvent.focus(textarea)
 
     expect(screen.getByText('0/500')).toBeInTheDocument()
   })
@@ -81,7 +91,8 @@ describe('PromptResponseCard', () => {
     const user = userEvent.setup()
     render(<PromptResponseCard promptId="p1" promptText="Prompt" responseId={RESPONSE_ID} />)
 
-    const textarea = screen.getByPlaceholderText('Share your thoughts...')
+    const textarea = screen.getByPlaceholderText('Add text or tap + for photos...')
+    await user.click(textarea)
     await user.type(textarea, 'Hello')
 
     expect(screen.getByText('5/500')).toBeInTheDocument()
@@ -99,7 +110,7 @@ describe('PromptResponseCard', () => {
       />
     )
 
-    const textarea = screen.getByPlaceholderText('Share your thoughts...')
+    const textarea = screen.getByPlaceholderText('Add text or tap + for photos...')
     await user.type(textarea, 'Hi')
 
     expect(onValueChange).toHaveBeenCalledWith('H')
@@ -123,6 +134,8 @@ describe('PromptResponseCard', () => {
     await user.type(textarea, 'xyz')
 
     // Only 2 extra chars should be accepted ("xy" brings it to 5; "z" is rejected)
+    // Focus the textarea to see the counter
+    fireEvent.focus(textarea)
     expect(screen.getByText('5/5')).toBeInTheDocument()
   })
 
@@ -131,7 +144,7 @@ describe('PromptResponseCard', () => {
       <PromptResponseCard promptId="p1" promptText="Prompt" responseId={RESPONSE_ID} disabled />
     )
 
-    expect(screen.getByPlaceholderText('Share your thoughts...')).toBeDisabled()
+    expect(screen.getByPlaceholderText('Add text or tap + for photos...')).toBeDisabled()
   })
 
   it('applies custom maxLength to character counter', () => {
@@ -143,6 +156,9 @@ describe('PromptResponseCard', () => {
         maxLength={200}
       />
     )
+
+    const textarea = screen.getByPlaceholderText('Add text or tap + for photos...')
+    fireEvent.focus(textarea)
 
     expect(screen.getByText('0/200')).toBeInTheDocument()
   })
@@ -157,6 +173,9 @@ describe('PromptResponseCard', () => {
         maxLength={5}
       />
     )
+
+    const textarea = screen.getByPlaceholderText('Add text or tap + for photos...')
+    fireEvent.focus(textarea)
 
     const counter = screen.getByText('5/5')
     expect(counter.className).toMatch(/text-destructive/)
@@ -173,6 +192,9 @@ describe('PromptResponseCard', () => {
         maxLength={10}
       />
     )
+
+    const textarea = screen.getByPlaceholderText('Add text or tap + for photos...')
+    fireEvent.focus(textarea)
 
     const counter = screen.getByText('9/10')
     expect(counter.className).toMatch(/text-amber-600/)
@@ -266,15 +288,14 @@ describe('PromptResponseCard', () => {
     expect(screen.getByTestId('media-uploader')).toHaveAttribute('data-max', '5')
   })
 
-  it('hides MediaUploader when responseId is a temp ID', () => {
-    const tempId = 'temp-some-prompt-id' as unknown as Id<'responses'>
-    render(<PromptResponseCard promptId="p1" promptText="Prompt" responseId={tempId} />)
+  it('always shows MediaUploader even without responseId', () => {
+    render(<PromptResponseCard promptId="p1" promptText="Prompt" />)
 
-    expect(screen.queryByTestId('media-uploader')).not.toBeInTheDocument()
-    expect(screen.getByText(/start typing to enable photo/i)).toBeInTheDocument()
+    // MediaUploader should always be visible now (text is optional)
+    expect(screen.getByTestId('media-uploader')).toBeInTheDocument()
   })
 
-  it('shows MediaUploader when responseId is a real ID', () => {
+  it('shows MediaUploader when responseId is provided', () => {
     render(<PromptResponseCard promptId="p1" promptText="Prompt" responseId={RESPONSE_ID} />)
 
     expect(screen.getByTestId('media-uploader')).toBeInTheDocument()

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import { MediaUploader } from './MediaUploader'
@@ -12,13 +11,14 @@ import type { Id } from '../../../convex/_generated/dataModel'
 interface PromptResponseCardProps {
   promptId: string
   promptText: string
-  responseId: Id<'responses'>
+  responseId?: Id<'responses'>
   initialValue?: string
   existingMedia?: MediaItem[]
   onValueChange?: (value: string) => void
   onMediaUpload?: (mediaId: Id<'media'>, type: 'image' | 'video') => void
   onMediaRemove?: (mediaId: Id<'media'>) => void
   onMediaError?: (error: string) => void
+  onEnsureResponse?: () => Promise<void>
   disabled?: boolean
   maxLength?: number
   maxMedia?: number
@@ -34,12 +34,14 @@ export function PromptResponseCard({
   onMediaUpload,
   onMediaRemove,
   onMediaError,
+  onEnsureResponse,
   disabled = false,
   maxLength = 500,
   maxMedia = 3,
 }: PromptResponseCardProps) {
   const [value, setValue] = useState(initialValue)
   const [mediaCount, setMediaCount] = useState(existingMedia.length)
+  const [isFocused, setIsFocused] = useState(false)
   const charCount = value.length
 
   useEffect(() => {
@@ -71,24 +73,50 @@ export function PromptResponseCard({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base font-medium">{promptText}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Text Input Area */}
-        <div className="relative">
-          <Textarea
-            id={`prompt-${promptId}`}
-            value={value}
-            onChange={handleChange}
-            disabled={disabled}
-            placeholder="Share your thoughts..."
-            className={cn('min-h-[120px] resize-none', disabled && 'cursor-not-allowed opacity-60')}
-            maxLength={maxLength}
-          />
+    <div className="space-y-2">
+      {/* Prompt title */}
+      <h3 className="font-serif text-lg font-semibold text-foreground">{promptText}</h3>
 
-          {/* Character Counter */}
+      {/* Media Grid - above textarea */}
+      {existingMedia.length > 0 && (
+        <MediaGrid
+          media={existingMedia}
+          onRemove={disabled ? undefined : onMediaRemove}
+          disabled={disabled}
+        />
+      )}
+
+      {/* Text Input Area with embedded "+" button */}
+      <div className="relative rounded-xl border border-border bg-card">
+        <Textarea
+          id={`prompt-${promptId}`}
+          value={value}
+          onChange={handleChange}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          disabled={disabled}
+          placeholder="Add text or tap + for photos..."
+          className={cn(
+            'min-h-[80px] resize-none border-0 bg-transparent pb-10 pr-16 shadow-none focus-visible:ring-0',
+            disabled && 'cursor-not-allowed opacity-60'
+          )}
+          maxLength={maxLength}
+        />
+
+        {/* "+" button at bottom-left */}
+        <div className="absolute bottom-2 left-2">
+          <MediaUploader
+            responseId={responseId}
+            onUploadComplete={handleMediaUploadComplete}
+            onUploadError={onMediaError}
+            onEnsureResponse={onEnsureResponse}
+            maxMedia={maxMedia}
+            currentMediaCount={mediaCount}
+          />
+        </div>
+
+        {/* Character Counter - only visible on focus */}
+        {isFocused && (
           <div
             className={cn(
               'absolute bottom-3 right-3 text-xs font-medium transition-colors',
@@ -97,32 +125,8 @@ export function PromptResponseCard({
           >
             {charCount}/{maxLength}
           </div>
-        </div>
-
-        {/* Existing Media Preview */}
-        {existingMedia.length > 0 && (
-          <MediaGrid
-            media={existingMedia}
-            onRemove={disabled ? undefined : onMediaRemove}
-            disabled={disabled}
-          />
         )}
-
-        {/* Media Upload Area — only available after a response has been saved */}
-        {typeof responseId === 'string' && !responseId.startsWith('temp-') ? (
-          <MediaUploader
-            responseId={responseId}
-            onUploadComplete={handleMediaUploadComplete}
-            onUploadError={onMediaError}
-            maxMedia={maxMedia}
-            currentMediaCount={mediaCount}
-          />
-        ) : (
-          <p className="text-center text-xs text-muted-foreground">
-            Start typing to enable photo &amp; video uploads
-          </p>
-        )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

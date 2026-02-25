@@ -64,21 +64,33 @@ describe('MediaUploader', () => {
     mutationCallCount = 0
   })
 
-  it('renders camera and gallery buttons', () => {
+  it('renders plus button dropdown trigger', () => {
     render(<MediaUploader {...defaultProps} />)
 
-    expect(screen.getByRole('button', { name: /take photo/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /choose photo/i })).toBeInTheDocument()
+    // Find the dropdown trigger button (it has aria-haspopup="menu")
+    const dropdownTrigger = screen.getByRole('button', { expanded: false })
+    expect(dropdownTrigger).toBeInTheDocument()
+    expect(dropdownTrigger).toHaveAttribute('aria-haspopup', 'menu')
   })
 
-  it('disables buttons when max media count reached', () => {
+  it('opens dropdown with upload options when clicked', async () => {
+    const user = userEvent.setup()
+    render(<MediaUploader {...defaultProps} />)
+
+    const dropdownTrigger = screen.getByRole('button', { expanded: false })
+    await user.click(dropdownTrigger)
+
+    // Dropdown menu items should be visible
+    expect(screen.getByRole('menuitem', { name: /take photo/i })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: /choose photo/i })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: /choose video/i })).toBeInTheDocument()
+  })
+
+  it('disables plus button when max media count reached', () => {
     render(<MediaUploader {...defaultProps} currentMediaCount={3} maxMedia={3} />)
 
-    const cameraButton = screen.getByRole('button', { name: /take photo/i })
-    const galleryButton = screen.getByRole('button', { name: /choose photo/i })
-
-    expect(cameraButton).toBeDisabled()
-    expect(galleryButton).toBeDisabled()
+    const dropdownTrigger = screen.getByRole('button')
+    expect(dropdownTrigger).toBeDisabled()
     expect(screen.getByText(/maximum 3 media items reached/i)).toBeInTheDocument()
   })
 
@@ -111,8 +123,11 @@ describe('MediaUploader', () => {
 
     render(<MediaUploader {...defaultProps} />)
 
-    const cameraButton = screen.getByRole('button', { name: /take photo/i })
-    await user.click(cameraButton)
+    // Open dropdown and click Take Photo
+    const dropdownTrigger = screen.getByRole('button', { expanded: false })
+    await user.click(dropdownTrigger)
+    const takePhotoItem = screen.getByRole('menuitem', { name: /take photo/i })
+    await user.click(takePhotoItem)
 
     await waitFor(() => {
       expect(mockGetPhoto).toHaveBeenCalledWith(
@@ -160,8 +175,11 @@ describe('MediaUploader', () => {
 
     render(<MediaUploader {...defaultProps} />)
 
-    const galleryButton = screen.getByRole('button', { name: /choose photo/i })
-    await user.click(galleryButton)
+    // Open dropdown and click Choose Photo
+    const dropdownTrigger = screen.getByRole('button', { expanded: false })
+    await user.click(dropdownTrigger)
+    const choosePhotoItem = screen.getByRole('menuitem', { name: /choose photo/i })
+    await user.click(choosePhotoItem)
 
     await waitFor(() => {
       expect(mockGetPhoto).toHaveBeenCalledWith(
@@ -187,8 +205,10 @@ describe('MediaUploader', () => {
 
     render(<MediaUploader {...defaultProps} />)
 
-    const cameraButton = screen.getByRole('button', { name: /take photo/i })
-    await user.click(cameraButton)
+    const dropdownTrigger = screen.getByRole('button', { expanded: false })
+    await user.click(dropdownTrigger)
+    const takePhotoItem = screen.getByRole('menuitem', { name: /take photo/i })
+    await user.click(takePhotoItem)
 
     await waitFor(() => {
       expect(mockGetPhoto).toHaveBeenCalled()
@@ -206,8 +226,10 @@ describe('MediaUploader', () => {
 
     render(<MediaUploader {...defaultProps} />)
 
-    const cameraButton = screen.getByRole('button', { name: /take photo/i })
-    await user.click(cameraButton)
+    const dropdownTrigger = screen.getByRole('button', { expanded: false })
+    await user.click(dropdownTrigger)
+    const takePhotoItem = screen.getByRole('menuitem', { name: /take photo/i })
+    await user.click(takePhotoItem)
 
     await waitFor(() => {
       expect(
@@ -246,8 +268,10 @@ describe('MediaUploader', () => {
 
     render(<MediaUploader {...defaultProps} />)
 
-    const cameraButton = screen.getByRole('button', { name: /take photo/i })
-    await user.click(cameraButton)
+    const dropdownTrigger = screen.getByRole('button', { expanded: false })
+    await user.click(dropdownTrigger)
+    const takePhotoItem = screen.getByRole('menuitem', { name: /take photo/i })
+    await user.click(takePhotoItem)
 
     await waitFor(() => {
       expect(screen.getByText(/upload failed/i)).toBeInTheDocument()
@@ -281,8 +305,10 @@ describe('MediaUploader', () => {
 
     render(<MediaUploader {...defaultProps} />)
 
-    const cameraButton = screen.getByRole('button', { name: /take photo/i })
-    await user.click(cameraButton)
+    const dropdownTrigger = screen.getByRole('button', { expanded: false })
+    await user.click(dropdownTrigger)
+    const takePhotoItem = screen.getByRole('menuitem', { name: /take photo/i })
+    await user.click(takePhotoItem)
 
     await waitFor(() => {
       expect(screen.getByText(/network error.*check your connection/i)).toBeInTheDocument()
@@ -323,8 +349,10 @@ describe('MediaUploader', () => {
 
     render(<MediaUploader {...defaultProps} />)
 
-    const cameraButton = screen.getByRole('button', { name: /take photo/i })
-    await user.click(cameraButton)
+    const dropdownTrigger = screen.getByRole('button', { expanded: false })
+    await user.click(dropdownTrigger)
+    const takePhotoItem = screen.getByRole('menuitem', { name: /take photo/i })
+    await user.click(takePhotoItem)
 
     // Wait for upload to start
     await waitFor(() => {
@@ -338,7 +366,7 @@ describe('MediaUploader', () => {
     // Should reset to initial state
     await waitFor(() => {
       expect(screen.queryByText(/uploading/i)).not.toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /take photo/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { expanded: false })).toBeInTheDocument()
     })
 
     // Clean up
@@ -377,8 +405,10 @@ describe('MediaUploader', () => {
 
     render(<MediaUploader {...defaultProps} />)
 
-    const cameraButton = screen.getByRole('button', { name: /take photo/i })
-    await user.click(cameraButton)
+    const dropdownTrigger = screen.getByRole('button', { expanded: false })
+    await user.click(dropdownTrigger)
+    const takePhotoItem = screen.getByRole('menuitem', { name: /take photo/i })
+    await user.click(takePhotoItem)
 
     // Should show compressing stage
     await waitFor(() => {
@@ -419,8 +449,10 @@ describe('MediaUploader', () => {
 
     render(<MediaUploader {...defaultProps} onUploadComplete={onUploadComplete} />)
 
-    const cameraButton = screen.getByRole('button', { name: /take photo/i })
-    await user.click(cameraButton)
+    const dropdownTrigger = screen.getByRole('button', { expanded: false })
+    await user.click(dropdownTrigger)
+    const takePhotoItem = screen.getByRole('menuitem', { name: /take photo/i })
+    await user.click(takePhotoItem)
 
     await waitFor(() => {
       expect(onUploadComplete).toHaveBeenCalledWith('test-media-id', 'image')
@@ -435,8 +467,10 @@ describe('MediaUploader', () => {
 
     render(<MediaUploader {...defaultProps} onUploadError={onUploadError} />)
 
-    const cameraButton = screen.getByRole('button', { name: /take photo/i })
-    await user.click(cameraButton)
+    const dropdownTrigger = screen.getByRole('button', { expanded: false })
+    await user.click(dropdownTrigger)
+    const takePhotoItem = screen.getByRole('menuitem', { name: /take photo/i })
+    await user.click(takePhotoItem)
 
     await waitFor(() => {
       expect(onUploadError).toHaveBeenCalledWith(expect.stringContaining('permission denied'))
@@ -472,8 +506,10 @@ describe('MediaUploader', () => {
 
     render(<MediaUploader {...defaultProps} />)
 
-    const cameraButton = screen.getByRole('button', { name: /take photo/i })
-    await user.click(cameraButton)
+    const dropdownTrigger = screen.getByRole('button', { expanded: false })
+    await user.click(dropdownTrigger)
+    const takePhotoItem = screen.getByRole('menuitem', { name: /take photo/i })
+    await user.click(takePhotoItem)
 
     await waitFor(() => {
       expect(screen.getByText(/maximum 3 media items reached/i)).toBeInTheDocument()
@@ -487,8 +523,10 @@ describe('MediaUploader', () => {
 
     render(<MediaUploader {...defaultProps} />)
 
-    const cameraButton = screen.getByRole('button', { name: /take photo/i })
-    await user.click(cameraButton)
+    const dropdownTrigger = screen.getByRole('button', { expanded: false })
+    await user.click(dropdownTrigger)
+    const takePhotoItem = screen.getByRole('menuitem', { name: /take photo/i })
+    await user.click(takePhotoItem)
 
     await waitFor(() => {
       expect(screen.getByText(/permission denied/i)).toBeInTheDocument()
@@ -499,7 +537,25 @@ describe('MediaUploader', () => {
 
     await waitFor(() => {
       expect(screen.queryByText(/permission denied/i)).not.toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /take photo/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { expanded: false })).toBeInTheDocument()
+    })
+  })
+
+  it('calls onEnsureResponse before starting upload', async () => {
+    const user = userEvent.setup()
+    const onEnsureResponse = vi.fn().mockResolvedValue(undefined)
+
+    mockGetPhoto.mockRejectedValue(new Error('User cancelled'))
+
+    render(<MediaUploader {...defaultProps} onEnsureResponse={onEnsureResponse} />)
+
+    const dropdownTrigger = screen.getByRole('button', { expanded: false })
+    await user.click(dropdownTrigger)
+    const takePhotoItem = screen.getByRole('menuitem', { name: /take photo/i })
+    await user.click(takePhotoItem)
+
+    await waitFor(() => {
+      expect(onEnsureResponse).toHaveBeenCalled()
     })
   })
 })
