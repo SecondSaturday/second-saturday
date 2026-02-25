@@ -85,7 +85,8 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index('by_circle', ['circleId'])
-    .index('by_circle_cycle', ['circleId', 'cycleId']),
+    .index('by_circle_cycle', ['circleId', 'cycleId'])
+    .index('by_circle_published', ['circleId', 'publishedAt']),
 
   newsletterReads: defineTable({
     userId: v.id('users'),

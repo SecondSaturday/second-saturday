@@ -24,18 +24,18 @@ vi.mock('@/lib/dates', () => ({
   formatShortDate: () => 'Feb 14',
 }))
 
-import { CreateCircleFAB } from '@/components/dashboard/CreateCircleFAB'
+import { SubmitFAB } from '@/components/dashboard/SubmitFAB'
 
-describe('CreateCircleFAB', () => {
+describe('SubmitFAB', () => {
   it('renders the FAB button', () => {
-    render(<CreateCircleFAB />)
+    render(<SubmitFAB />)
     const link = screen.getByRole('link')
     expect(link).toBeInTheDocument()
     expect(link).toHaveAttribute('href', '/dashboard/submit')
   })
 
   it('shows the next deadline date', () => {
-    render(<CreateCircleFAB />)
+    render(<SubmitFAB />)
     expect(screen.getByText(/Feb 14/)).toBeInTheDocument()
   })
 })

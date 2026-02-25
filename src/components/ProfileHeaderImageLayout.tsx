@@ -52,6 +52,7 @@ export function ProfileHeaderImageLayout({
             <button
               type="button"
               onClick={() => coverInputRef.current?.click()}
+              aria-label="Edit cover image"
               className="absolute right-3 top-3 rounded-full bg-background/80 p-1.5 shadow-sm backdrop-blur-sm transition-colors hover:bg-background"
             >
               <Pencil className="size-4 text-foreground" />
@@ -82,6 +83,7 @@ export function ProfileHeaderImageLayout({
               <button
                 type="button"
                 onClick={() => iconInputRef.current?.click()}
+                aria-label="Edit circle icon"
                 className="absolute -bottom-1 -right-1 rounded-full bg-background/80 p-1.5 shadow-sm backdrop-blur-sm transition-colors hover:bg-background"
               >
                 <Pencil className="size-3.5 text-foreground" />

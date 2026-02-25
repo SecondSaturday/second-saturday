@@ -37,6 +37,7 @@ interface PromptsEditorProps {
   circleId: Id<'circles'>
   mode: 'setup' | 'settings'
   onComplete?: () => void
+  stepIndicator?: React.ReactNode
 }
 
 function SortablePrompt({
@@ -65,6 +66,7 @@ function SortablePrompt({
     >
       <button
         type="button"
+        aria-label="Reorder prompt"
         className="shrink-0 cursor-grab touch-none text-muted-foreground active:cursor-grabbing"
         {...attributes}
         {...listeners}
@@ -81,6 +83,7 @@ function SortablePrompt({
       <button
         type="button"
         onClick={onRemove}
+        aria-label="Remove prompt"
         className="shrink-0 text-muted-foreground hover:text-destructive"
       >
         <X className="size-4" />
@@ -89,7 +92,7 @@ function SortablePrompt({
   )
 }
 
-export function PromptsEditor({ circleId, mode, onComplete }: PromptsEditorProps) {
+export function PromptsEditor({ circleId, mode, onComplete, stepIndicator }: PromptsEditorProps) {
   const existingPrompts = useQuery(api.prompts.getCirclePrompts, { circleId })
   const updatePrompts = useMutation(api.prompts.updatePrompts)
 
@@ -194,7 +197,9 @@ export function PromptsEditor({ circleId, mode, onComplete }: PromptsEditorProps
 
   return (
     <div className="flex flex-1 flex-col">
-      <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 py-6">
+      {stepIndicator}
+
+      <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 py-6 pb-24">
         {/* Section heading */}
         <h2 className="text-sm font-medium text-muted-foreground">
           Current Prompts {prompts.length}/8
@@ -242,7 +247,7 @@ export function PromptsEditor({ circleId, mode, onComplete }: PromptsEditorProps
         {error && <p className="text-sm text-destructive">{error}</p>}
       </div>
 
-      <div className="safe-area-bottom border-t border-border px-4 py-4">
+      <div className="safe-area-bottom fixed bottom-0 left-0 right-0 border-t border-border bg-background px-4 py-4">
         <Button
           onClick={handleSave}
           className="w-full"

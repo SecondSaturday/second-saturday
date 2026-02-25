@@ -46,12 +46,14 @@ export default function SubmitPage() {
     )
   }
 
-  const circles: Circle[] = userCircles.map((c) => ({
-    id: c._id,
-    name: c.name,
-    iconUrl: c.iconUrl ?? null,
-    status: 'not-started' as const,
-  }))
+  const circles: Circle[] = userCircles
+    .filter((c): c is NonNullable<typeof c> => c !== null)
+    .map((c) => ({
+      id: c._id,
+      name: c.name,
+      iconUrl: c.iconUrl ?? null,
+      status: 'not-started' as const,
+    }))
 
   return (
     <div className="safe-area-top flex h-dvh flex-col bg-background">

@@ -67,8 +67,17 @@ vi.mock('@/components/ui/avatar', () => ({
   AvatarFallback: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }))
 
-vi.mock('lucide-react', () => ({
-  Users: () => <svg data-testid="users-icon" />,
+vi.mock('@/components/ProfileHeaderImageLayout', () => ({
+  ProfileHeaderImageLayout: () => <div data-testid="profile-header" />,
+}))
+
+vi.mock('next/link', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  default: ({ children, href, ...props }: any) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
 }))
 
 describe('InvitePreviewPage', () => {
@@ -228,13 +237,13 @@ describe('InvitePreviewPage', () => {
       render(<InvitePreviewPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('Test Circle')).toBeInTheDocument()
+        expect(screen.getByText(/Test Circle/)).toBeInTheDocument()
       })
 
       expect(screen.getByText('Sign up to Join')).toBeInTheDocument()
       expect(screen.getByText('Log in to Join')).toBeInTheDocument()
-      expect(screen.getByText('5 members')).toBeInTheDocument()
-      expect(screen.getByText('Created by Admin User')).toBeInTheDocument()
+      expect(screen.getByText(/5 members/)).toBeInTheDocument()
+      expect(screen.getByText('Admin User started this circle')).toBeInTheDocument()
     })
 
     it('preserves redirect URL in auth links', async () => {
@@ -256,7 +265,7 @@ describe('InvitePreviewPage', () => {
       const { container } = render(<InvitePreviewPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('Test Circle')).toBeInTheDocument()
+        expect(screen.getByText(/Test Circle/)).toBeInTheDocument()
       })
 
       const signUpLink = container.querySelector('a[href*="sign-up"]')
@@ -463,8 +472,7 @@ describe('InvitePreviewPage', () => {
       render(<InvitePreviewPage />)
 
       await waitFor(() => {
-        const img = screen.getByAltText('Test Circle')
-        expect(img).toBeInTheDocument()
+        expect(screen.getByTestId('profile-header')).toBeInTheDocument()
       })
     })
 
@@ -487,11 +495,11 @@ describe('InvitePreviewPage', () => {
       render(<InvitePreviewPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('TC')).toBeInTheDocument() // Test Circle initials
+        expect(screen.getByTestId('profile-header')).toBeInTheDocument()
       })
     })
 
-    it('displays description when available', async () => {
+    it('displays admin name attribution', async () => {
       const mockCircle = {
         _id: 'circle-123',
         name: 'Test Circle',
@@ -510,7 +518,7 @@ describe('InvitePreviewPage', () => {
       render(<InvitePreviewPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('This is a wonderful test circle')).toBeInTheDocument()
+        expect(screen.getByText('Admin started this circle')).toBeInTheDocument()
       })
     })
 
@@ -533,7 +541,7 @@ describe('InvitePreviewPage', () => {
       render(<InvitePreviewPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('1 members')).toBeInTheDocument()
+        expect(screen.getByText('1 member sharing monthly updates')).toBeInTheDocument()
       })
     })
   })

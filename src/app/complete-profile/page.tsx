@@ -1,15 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
 import { AuthLayout } from '@/components/auth'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import Image from 'next/image'
 import { ImageUpload } from '@/components/circles/ImageUpload'
 import type { Id } from '../../../convex/_generated/dataModel'
+import { FloatingLabelInput } from '@/components/ui/FloatingLabelInput'
+import { useUser } from '@clerk/nextjs'
 
 export default function CompleteProfilePage() {
   const router = useRouter()
@@ -21,10 +22,12 @@ export default function CompleteProfilePage() {
   const currentUser = useQuery(api.users.getCurrentUser)
   const updateProfile = useMutation(api.users.updateProfile)
 
-  const [name, setName] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [avatarStorageId, setAvatarStorageId] = useState<Id<'_storage'> | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const hasPrePopulated = useRef(false)
 
   // If user already has a name, skip to destination
   useEffect(() => {
@@ -33,16 +36,30 @@ export default function CompleteProfilePage() {
     }
   }, [currentUser, router, redirectUrl])
 
+  // SSO pre-population - only run once when user data is available
+  const { user } = useUser()
+  useEffect(() => {
+    if (user && !hasPrePopulated.current) {
+      hasPrePopulated.current = true
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (user.firstName) setFirstName(user.firstName)
+
+      if (user.lastName) setLastName(user.lastName)
+    }
+  }, [user])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const trimmed = name.trim()
-    if (!trimmed) return
+    const trimmedFirst = firstName.trim()
+    const trimmedLast = lastName.trim()
+    if (!trimmedFirst) return
 
     setSaving(true)
     setError(null)
     try {
+      const fullName = [trimmedFirst, trimmedLast].filter(Boolean).join(' ')
       await updateProfile({
-        name: trimmed,
+        name: fullName,
         ...(avatarStorageId ? { avatarStorageId } : {}),
       })
       router.replace(redirectUrl || '/dashboard')
@@ -65,7 +82,7 @@ export default function CompleteProfilePage() {
   return (
     <AuthLayout>
       <div className="flex flex-col items-center gap-8">
-        <Image src="/icon.svg" alt="Second Saturday" width={48} height={48} />
+        <Image src="/icon.svg" alt="Second Saturday" width={48} height={48} className="md:hidden" />
         <div className="w-full space-y-2">
           <h1 className="font-serif text-3xl text-center">Set up your profile!</h1>
           <p className="text-sm text-muted-foreground text-center">
@@ -80,21 +97,22 @@ export default function CompleteProfilePage() {
               onUpload={(id) => setAvatarStorageId(id)}
             />
           </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="display-name">
-              Display Name
-            </label>
-            <Input
-              id="display-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
-              autoFocus
-              required
-            />
-          </div>
+          <FloatingLabelInput
+            id="first-name"
+            label="First Name"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            required
+            autoFocus
+          />
+          <FloatingLabelInput
+            id="last-name"
+            label="Last Name"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+          />
           {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button type="submit" disabled={!name.trim() || saving} className="w-full">
+          <Button type="submit" disabled={!firstName.trim() || saving} className="w-full">
             {saving ? 'Saving...' : 'Continue'}
           </Button>
         </form>

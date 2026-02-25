@@ -13,4 +13,3 @@ export type { MediaItem } from './MediaGrid'
 
 export { MediaUploader } from './MediaUploader'
 
-export { VideoThumbnail } from './VideoThumbnail'

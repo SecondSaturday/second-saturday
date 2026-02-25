@@ -287,7 +287,7 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
             <Label>Invite Link</Label>
             <div className="flex items-center gap-2 rounded-lg border border-border bg-card p-3">
               <p className="flex-1 truncate text-sm text-muted-foreground">{inviteLink}</p>
-              <Button variant="ghost" size="icon" onClick={handleCopyLink}>
+              <Button variant="ghost" size="icon" onClick={handleCopyLink} aria-label="Copy invite link">
                 {copied ? <Check className="size-4 text-green-600" /> : <Copy className="size-4" />}
               </Button>
             </div>
@@ -357,52 +357,72 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
         </TabsContent>
 
         <TabsContent value="members" className="flex flex-col gap-2">
-          {sortedMembers.map((member) => {
-            const isSelf = member.userId === currentUser._id
-            const canRemove = isAdmin && !isSelf
-
-            return (
-              <div
-                key={member.userId}
-                className="flex items-center gap-3 rounded-lg border border-border bg-card p-3"
-              >
-                <Avatar>
-                  <AvatarImage src={member.imageUrl || undefined} alt={member.name} />
-                  <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
-                </Avatar>
-
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">
-                    {isSelf ? 'You' : member.name}
-                  </p>
-                  <span className="text-xs text-muted-foreground">
-                    {member.role === 'admin' ? 'Admin' : 'Member'}
-                  </span>
+          {members === undefined ? (
+            // Loading skeleton
+            <>
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-3 rounded-lg border border-border bg-card p-3"
+                >
+                  <div className="size-10 rounded-full bg-muted animate-pulse" />
+                  <div className="flex-1 flex flex-col gap-2">
+                    <div className="h-4 w-32 rounded bg-muted animate-pulse" />
+                    <div className="h-3 w-16 rounded bg-muted animate-pulse" />
+                  </div>
                 </div>
+              ))}
+            </>
+          ) : (
+            <>
+              {sortedMembers.map((member) => {
+                const isSelf = member.userId === currentUser._id
+                const canRemove = isAdmin && !isSelf
 
-                {canRemove && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="size-8">
-                        <MoreVertical className="size-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => handleRemoveClick(member.userId, member.name)}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        Remove
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </div>
-            )
-          })}
+                return (
+                  <div
+                    key={member.userId}
+                    className="flex items-center gap-3 rounded-lg border border-border bg-card p-3"
+                  >
+                    <Avatar>
+                      <AvatarImage src={member.imageUrl || undefined} alt={member.name} />
+                      <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                    </Avatar>
 
-          {sortedMembers.length === 0 && (
-            <p className="py-8 text-center text-sm text-muted-foreground">No members yet</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {isSelf ? 'You' : member.name}
+                      </p>
+                      <span className="text-xs text-muted-foreground">
+                        {member.role === 'admin' ? 'Admin' : 'Member'}
+                      </span>
+                    </div>
+
+                    {canRemove && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="size-8" aria-label="Member actions">
+                            <MoreVertical className="size-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => handleRemoveClick(member.userId, member.name)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            Remove
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </div>
+                )
+              })}
+
+              {sortedMembers.length === 0 && (
+                <p className="py-8 text-center text-sm text-muted-foreground">No members yet</p>
+              )}
+            </>
           )}
         </TabsContent>
 

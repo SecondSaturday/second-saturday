@@ -228,7 +228,7 @@ export function MediaUploader({
 
       // Save media record to database
       const mediaId = await addMediaToResponse({
-        responseId,
+        responseId: responseId!,
         storageId,
         type: 'image',
       })
@@ -385,7 +385,7 @@ export function MediaUploader({
       // Note: muxAssetId will be updated via webhook when Mux processes the video
       // For now, we store the uploadId to track the video
       const mediaId = await addMediaToResponse({
-        responseId,
+        responseId: responseId!,
         type: 'video',
         // Asset ID will be updated via Mux webhook when video is processed
       })
@@ -452,7 +452,13 @@ export function MediaUploader({
         <>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="size-8" disabled={!canUploadMore}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8"
+                disabled={!canUploadMore}
+                aria-label="Add media"
+              >
                 <Plus className="size-4" />
               </Button>
             </DropdownMenuTrigger>

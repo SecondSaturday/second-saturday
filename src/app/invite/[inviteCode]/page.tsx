@@ -7,10 +7,10 @@ import { useAuth } from '@clerk/nextjs'
 import { api } from '../../../../convex/_generated/api'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
-import { Users } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { trackEvent } from '@/lib/analytics'
+import { ProfileHeaderImageLayout } from '@/components/ProfileHeaderImageLayout'
 
 export default function InvitePreviewPage() {
   const params = useParams()
@@ -127,31 +127,23 @@ export default function InvitePreviewPage() {
   if (alreadyMember) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-background px-6">
-        <div className="flex w-full max-w-md flex-col items-center gap-6 rounded-lg border border-border bg-card p-8 text-center">
-          {circle.iconUrl ? (
-            <Avatar size="lg">
-              <AvatarImage src={circle.iconUrl} alt={circle.name} />
-              <AvatarFallback>{getInitials(circle.name)}</AvatarFallback>
-            </Avatar>
-          ) : (
-            <Avatar size="lg">
-              <AvatarFallback>{getInitials(circle.name)}</AvatarFallback>
-            </Avatar>
-          )}
+        <div className="flex w-full max-w-md flex-col items-center gap-6 rounded-lg border border-border bg-card px-8 pb-8 text-center">
+          <ProfileHeaderImageLayout
+            coverImageUrl={null}
+            iconUrl={circle.iconUrl ?? null}
+            className="rounded-t-lg overflow-hidden"
+          />
 
-          <div className="space-y-2">
-            <h1 className="text-2xl font-semibold text-foreground">{circle.name}</h1>
-            {circle.description && (
-              <p className="text-sm text-muted-foreground">{circle.description}</p>
-            )}
-          </div>
+          <h1 className="text-2xl font-semibold text-foreground">
+            You&apos;ve been invited to join {circle.name}
+          </h1>
 
           <div className="flex flex-col items-center gap-1 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <Users className="size-4" />
-              <span>{circle.memberCount} members</span>
-            </div>
-            <span>Created by {circle.adminName}</span>
+            <span>
+              {circle.memberCount === 1 ? '1 member' : `${circle.memberCount} members`} sharing
+              monthly updates
+            </span>
+            <span>{circle.adminName} started this circle</span>
           </div>
 
           <p className="text-sm text-muted-foreground">You are already a member of this circle</p>
@@ -167,31 +159,23 @@ export default function InvitePreviewPage() {
   if (!isSignedIn) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-background px-6">
-        <div className="flex w-full max-w-md flex-col items-center gap-6 rounded-lg border border-border bg-card p-8 text-center">
-          {circle.iconUrl ? (
-            <Avatar size="lg">
-              <AvatarImage src={circle.iconUrl} alt={circle.name} />
-              <AvatarFallback>{getInitials(circle.name)}</AvatarFallback>
-            </Avatar>
-          ) : (
-            <Avatar size="lg">
-              <AvatarFallback>{getInitials(circle.name)}</AvatarFallback>
-            </Avatar>
-          )}
+        <div className="flex w-full max-w-md flex-col items-center gap-6 rounded-lg border border-border bg-card px-8 pb-8 text-center">
+          <ProfileHeaderImageLayout
+            coverImageUrl={null}
+            iconUrl={circle.iconUrl ?? null}
+            className="rounded-t-lg overflow-hidden"
+          />
 
-          <div className="space-y-2">
-            <h1 className="text-2xl font-semibold text-foreground">{circle.name}</h1>
-            {circle.description && (
-              <p className="text-sm text-muted-foreground">{circle.description}</p>
-            )}
-          </div>
+          <h1 className="text-2xl font-semibold text-foreground">
+            You&apos;ve been invited to join {circle.name}
+          </h1>
 
           <div className="flex flex-col items-center gap-1 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <Users className="size-4" />
-              <span>{circle.memberCount} members</span>
-            </div>
-            <span>Created by {circle.adminName}</span>
+            <span>
+              {circle.memberCount === 1 ? '1 member' : `${circle.memberCount} members`} sharing
+              monthly updates
+            </span>
+            <span>{circle.adminName} started this circle</span>
           </div>
 
           <div className="flex w-full flex-col gap-2">
@@ -211,31 +195,23 @@ export default function InvitePreviewPage() {
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-background px-6">
-      <div className="flex w-full max-w-md flex-col items-center gap-6 rounded-lg border border-border bg-card p-8 text-center">
-        {circle.iconUrl ? (
-          <Avatar size="lg">
-            <AvatarImage src={circle.iconUrl} alt={circle.name} />
-            <AvatarFallback>{getInitials(circle.name)}</AvatarFallback>
-          </Avatar>
-        ) : (
-          <Avatar size="lg">
-            <AvatarFallback>{getInitials(circle.name)}</AvatarFallback>
-          </Avatar>
-        )}
+      <div className="flex w-full max-w-md flex-col items-center gap-6 rounded-lg border border-border bg-card px-8 pb-8 text-center">
+        <ProfileHeaderImageLayout
+          coverImageUrl={null}
+          iconUrl={circle.iconUrl ?? null}
+          className="rounded-t-lg overflow-hidden"
+        />
 
-        <div className="space-y-2">
-          <h1 className="text-2xl font-semibold text-foreground">{circle.name}</h1>
-          {circle.description && (
-            <p className="text-sm text-muted-foreground">{circle.description}</p>
-          )}
-        </div>
+        <h1 className="text-2xl font-semibold text-foreground">
+          You&apos;ve been invited to join {circle.name}
+        </h1>
 
         <div className="flex flex-col items-center gap-1 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <Users className="size-4" />
-            <span>{circle.memberCount} members</span>
-          </div>
-          <span>Created by {circle.adminName}</span>
+          <span>
+            {circle.memberCount === 1 ? '1 member' : `${circle.memberCount} members`} sharing
+            monthly updates
+          </span>
+          <span>{circle.adminName} started this circle</span>
         </div>
 
         <Button onClick={handleJoin} className="w-full" disabled={joining}>
