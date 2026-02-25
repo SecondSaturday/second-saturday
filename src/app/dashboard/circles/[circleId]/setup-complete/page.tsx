@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Copy, Check, Users, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import type { Id } from '../../../../../../convex/_generated/dataModel'
+import { StepProgressIndicator } from '@/components/ui/StepProgressIndicator'
 
 export default function SetupCompletePage() {
   const params = useParams()
@@ -47,10 +48,14 @@ export default function SetupCompletePage() {
 
   return (
     <div className="safe-area-top flex min-h-dvh flex-col bg-background">
-      <div className="flex flex-1 flex-col items-center justify-center gap-8 px-6 py-12">
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold text-foreground">{circle.name} is ready!</h1>
-          <p className="mt-2 text-muted-foreground">Now invite your friends to join.</p>
+      <StepProgressIndicator steps={['Basic Info', 'Prompts', 'Members']} currentStep={4} />
+
+      <div className="flex flex-1 flex-col items-center justify-center gap-8 px-6 pb-8 pt-6 text-center">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">{circle.name} is live!</h1>
+          <p className="mt-2 text-muted-foreground">
+            Your circle is ready — time to invite your friends.
+          </p>
         </div>
 
         {needsMoreMembers && (
