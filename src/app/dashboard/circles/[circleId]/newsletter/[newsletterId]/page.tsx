@@ -118,6 +118,7 @@ export default function NewsletterPage() {
       <main className="safe-area-bottom flex-1 overflow-y-auto">
         <NewsletterView
           circle={circle}
+          circleId={circleId}
           issueNumber={newsletter.issueNumber}
           publishedAt={newsletter.publishedAt}
           sections={sections}

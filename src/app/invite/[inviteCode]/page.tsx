@@ -135,11 +135,14 @@ export default function InvitePreviewPage() {
           />
 
           <h1 className="text-2xl font-semibold text-foreground">
-            You've been invited to join {circle.name}
+            You&apos;ve been invited to join {circle.name}
           </h1>
 
           <div className="flex flex-col items-center gap-1 text-sm text-muted-foreground">
-            <span>{circle.memberCount === 1 ? '1 member' : `${circle.memberCount} members`} sharing monthly updates</span>
+            <span>
+              {circle.memberCount === 1 ? '1 member' : `${circle.memberCount} members`} sharing
+              monthly updates
+            </span>
             <span>{circle.adminName} started this circle</span>
           </div>
 
@@ -164,11 +167,14 @@ export default function InvitePreviewPage() {
           />
 
           <h1 className="text-2xl font-semibold text-foreground">
-            You've been invited to join {circle.name}
+            You&apos;ve been invited to join {circle.name}
           </h1>
 
           <div className="flex flex-col items-center gap-1 text-sm text-muted-foreground">
-            <span>{circle.memberCount === 1 ? '1 member' : `${circle.memberCount} members`} sharing monthly updates</span>
+            <span>
+              {circle.memberCount === 1 ? '1 member' : `${circle.memberCount} members`} sharing
+              monthly updates
+            </span>
             <span>{circle.adminName} started this circle</span>
           </div>
 
@@ -197,11 +203,14 @@ export default function InvitePreviewPage() {
         />
 
         <h1 className="text-2xl font-semibold text-foreground">
-          You've been invited to join {circle.name}
+          You&apos;ve been invited to join {circle.name}
         </h1>
 
         <div className="flex flex-col items-center gap-1 text-sm text-muted-foreground">
-          <span>{circle.memberCount === 1 ? '1 member' : `${circle.memberCount} members`} sharing monthly updates</span>
+          <span>
+            {circle.memberCount === 1 ? '1 member' : `${circle.memberCount} members`} sharing
+            monthly updates
+          </span>
           <span>{circle.adminName} started this circle</span>
         </div>
 
