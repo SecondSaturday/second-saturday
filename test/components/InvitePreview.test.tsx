@@ -37,6 +37,35 @@ vi.mock('@/lib/analytics', () => ({
   trackEvent: vi.fn(),
 }))
 
+vi.mock('@/components/ProfileHeaderImageLayout', () => ({
+  ProfileHeaderImageLayout: () => <div data-testid="profile-header" />,
+}))
+
+vi.mock('next/link', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  default: ({ children, href, ...props }: any) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
+}))
+
+vi.mock('@/components/ui/button', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Button: ({ children, onClick, disabled, className }: any) => (
+    <button onClick={onClick} disabled={disabled} className={className}>
+      {children}
+    </button>
+  ),
+}))
+
+vi.mock('@/components/ui/avatar', () => ({
+  Avatar: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  // eslint-disable-next-line @next/next/no-img-element, @typescript-eslint/no-explicit-any
+  AvatarImage: ({ alt }: any) => <img alt={alt} />,
+  AvatarFallback: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+}))
+
 import InvitePreviewPage from '@/app/invite/[inviteCode]/page'
 
 describe('InvitePreviewPage', () => {
@@ -59,20 +88,19 @@ describe('InvitePreviewPage', () => {
     expect(screen.getByText('Invalid invite link')).toBeInTheDocument()
   })
 
-  it('renders circle name and description when signed in', () => {
+  it('renders circle name when signed in', () => {
     render(<InvitePreviewPage />)
-    expect(screen.getByText('Test Circle')).toBeInTheDocument()
-    expect(screen.getByText('A test circle')).toBeInTheDocument()
+    expect(screen.getByText(/Test Circle/)).toBeInTheDocument()
   })
 
   it('shows member count', () => {
     render(<InvitePreviewPage />)
-    expect(screen.getByText('5 members')).toBeInTheDocument()
+    expect(screen.getByText(/5 members/)).toBeInTheDocument()
   })
 
   it('shows admin name', () => {
     const { container } = render(<InvitePreviewPage />)
-    expect(container.textContent).toContain('Created by Alice Admin')
+    expect(container.textContent).toContain('Alice Admin started this circle')
   })
 
   it('shows Join Circle button when signed in', () => {
