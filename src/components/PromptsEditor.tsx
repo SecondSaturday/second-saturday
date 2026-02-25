@@ -65,6 +65,7 @@ function SortablePrompt({
     >
       <button
         type="button"
+        aria-label="Reorder prompt"
         className="shrink-0 cursor-grab touch-none text-muted-foreground active:cursor-grabbing"
         {...attributes}
         {...listeners}
@@ -81,6 +82,7 @@ function SortablePrompt({
       <button
         type="button"
         onClick={onRemove}
+        aria-label="Remove prompt"
         className="shrink-0 text-muted-foreground hover:text-destructive"
       >
         <X className="size-4" />
