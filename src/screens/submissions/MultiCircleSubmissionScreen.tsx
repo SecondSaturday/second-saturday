@@ -76,6 +76,33 @@ export function MultiCircleSubmissionScreen({
     setIsSubmitting(true)
     isLockedRef.current = true
     try {
+      // Flush any pending draft text before locking
+      if (promptsData) {
+        const currentDrafts = draftTexts.get(activeCircleId)
+        if (currentDrafts) {
+          const serverResponses = submissionData.responses ?? []
+          const pendingChanges: Array<{ promptId: string; text: string }> = []
+          currentDrafts.forEach((text, promptId) => {
+            const serverText = serverResponses.find((r) => r.promptId === promptId)?.text ?? ''
+            if (text !== serverText) {
+              pendingChanges.push({ promptId, text })
+            }
+          })
+          if (pendingChanges.length > 0) {
+            setSaveStatus('saving')
+            await Promise.all(
+              pendingChanges.map(({ promptId, text }) =>
+                updateResponse({
+                  submissionId: submissionData._id,
+                  promptId: promptId as Id<'prompts'>,
+                  text,
+                })
+              )
+            )
+          }
+        }
+      }
+
       await lockSubmission({ submissionId: submissionData._id })
       try {
         trackEvent('submission_locked', { circle_id: activeCircleId, cycle_id: cycleId })
@@ -85,7 +112,16 @@ export function MultiCircleSubmissionScreen({
     } finally {
       setIsSubmitting(false)
     }
-  }, [submissionData, isSubmitting, lockSubmission, activeCircleId, cycleId])
+  }, [
+    submissionData,
+    isSubmitting,
+    lockSubmission,
+    activeCircleId,
+    cycleId,
+    promptsData,
+    draftTexts,
+    updateResponse,
+  ])
 
   // Initialise draft texts from server data when data loads
   useEffect(() => {
