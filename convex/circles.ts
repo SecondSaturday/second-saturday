@@ -218,8 +218,9 @@ export const getCirclesByUser = query({
         // Check for unread newsletters
         const latestNewsletter = await ctx.db
           .query('newsletters')
-          .withIndex('by_circle', (q) => q.eq('circleId', m.circleId))
+          .withIndex('by_circle_published', (q) => q.eq('circleId', m.circleId))
           .order('desc')
+          .filter((q) => q.eq(q.field('status'), 'published'))
           .first()
 
         let hasUnread = false
