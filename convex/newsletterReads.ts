@@ -93,8 +93,8 @@ export const getNewslettersByDate = query({
 
     if (!membership) throw new Error('Not a member of this circle')
 
-    const startOfMonth = new Date(args.year, args.month, 1).getTime()
-    const endOfMonth = new Date(args.year, args.month + 1, 0, 23, 59, 59, 999).getTime()
+    const startOfMonth = Date.UTC(args.year, args.month, 1)
+    const endOfMonth = Date.UTC(args.year, args.month + 1, 0, 23, 59, 59, 999)
 
     const newsletters = await ctx.db
       .query('newsletters')
