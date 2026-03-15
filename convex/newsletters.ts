@@ -117,11 +117,12 @@ export const getLatestNewsletter = query({
 
     const latest = await ctx.db
       .query('newsletters')
-      .withIndex('by_circle', (q) => q.eq('circleId', args.circleId))
+      .withIndex('by_circle_published', (q) => q.eq('circleId', args.circleId))
       .order('desc')
+      .filter((q) => q.eq(q.field('status'), 'published'))
       .first()
 
-    if (!latest || latest.status !== 'published') return null
+    if (!latest) return null
 
     const read = await ctx.db
       .query('newsletterReads')
