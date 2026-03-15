@@ -82,7 +82,7 @@ export const getCirclePrompts = query({
       .withIndex('by_user_circle', (q) => q.eq('userId', user._id).eq('circleId', args.circleId))
       .first()
 
-    if (!membership) throw new Error('Not a member of this circle')
+    if (!membership || membership.leftAt) throw new Error('Not a member of this circle')
 
     const prompts = await ctx.db
       .query('prompts')
