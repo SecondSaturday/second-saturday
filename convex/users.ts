@@ -220,6 +220,24 @@ export const deleteAccount = mutation({
       await ctx.db.delete(read._id)
     }
 
+    // Clean up notification preferences
+    const notifPrefs = await ctx.db
+      .query('notificationPreferences')
+      .withIndex('by_user', (q) => q.eq('userId', user._id))
+      .collect()
+    for (const pref of notifPrefs) {
+      await ctx.db.delete(pref._id)
+    }
+
+    // Clean up admin reminders (as sender)
+    const adminReminders = await ctx.db
+      .query('adminReminders')
+      .withIndex('by_admin_circle_cycle', (q) => q.eq('adminUserId', user._id))
+      .collect()
+    for (const reminder of adminReminders) {
+      await ctx.db.delete(reminder._id)
+    }
+
     // Send deletion confirmation email
     await ctx.scheduler.runAfter(0, internal.emails.sendAccountDeletionEmail, {
       email: user.email,
