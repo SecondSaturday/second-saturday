@@ -49,10 +49,10 @@ test.describe('Member List Display', () => {
     await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
     await waitForCreateFormHydration(page)
     await page.locator('#name').fill('E2E Member List Test')
-    await expect(page.getByRole('button', { name: /create circle/i })).toBeEnabled({
+    await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeEnabled({
       timeout: 5000,
     })
-    await page.getByRole('button', { name: /create circle/i }).click()
+    await page.getByRole('button', { name: 'Next', exact: true }).click()
     await page.waitForURL(/\/circles\/[^/]+\/prompts/, { timeout: 15000 })
 
     const match = page.url().match(/\/circles\/([^/]+)\/prompts/)
@@ -189,10 +189,10 @@ test.describe('Member List Display', () => {
     await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
     await waitForCreateFormHydration(page)
     await page.locator('#name').fill('E2E Remove Button Test')
-    await expect(page.getByRole('button', { name: /create circle/i })).toBeEnabled({
+    await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeEnabled({
       timeout: 5000,
     })
-    await page.getByRole('button', { name: /create circle/i }).click()
+    await page.getByRole('button', { name: 'Next', exact: true }).click()
     await page.waitForURL(/\/circles\/[^/]+\/prompts/, { timeout: 15000 })
 
     const match = page.url().match(/\/circles\/([^/]+)\/prompts/)

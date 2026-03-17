@@ -7,28 +7,26 @@ test.describe('Circle Creation Flow', () => {
     await setupClerkTestingToken({ page })
   })
 
-  test('create page loads with form', async ({ page }) => {
+  test('create page loads with splash screen', async ({ page }) => {
     await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByRole('heading', { name: 'Create Circle' })).toBeVisible({
+    await expect(page.getByRole('heading', { name: 'Create Your Group' })).toBeVisible({
       timeout: 15000,
     })
-    await expect(page.getByLabel('Circle Name')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Get Started' })).toBeVisible()
   })
 
   test('shows back link to dashboard', async ({ page }) => {
     await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByRole('heading', { name: 'Create Circle' })).toBeVisible({
-      timeout: 15000,
-    })
+    // Back link is visible on splash screen
     const backLink = page.locator('a[href="/dashboard"]')
-    await expect(backLink).toBeVisible()
+    await expect(backLink).toBeVisible({ timeout: 15000 })
   })
 
   test('submit button disabled when name too short', async ({ page }) => {
     await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
     await waitForCreateFormHydration(page)
     await page.locator('#name').fill('AB')
-    const submitButton = page.getByRole('button', { name: /create circle/i })
+    const submitButton = page.getByRole('button', { name: 'Next', exact: true })
     await expect(submitButton).toBeDisabled()
   })
 
@@ -36,7 +34,7 @@ test.describe('Circle Creation Flow', () => {
     await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
     await waitForCreateFormHydration(page)
     await page.locator('#name').fill('Test Circle')
-    const submitButton = page.getByRole('button', { name: /create circle/i })
+    const submitButton = page.getByRole('button', { name: 'Next', exact: true })
     await expect(submitButton).toBeEnabled({ timeout: 5000 })
   })
 
@@ -49,12 +47,14 @@ test.describe('Circle Creation Flow', () => {
 
   test('shows icon and cover upload areas', async ({ page }) => {
     await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
+    await waitForCreateFormHydration(page)
     await expect(page.getByText('Icon')).toBeVisible({ timeout: 15000 })
     await expect(page.getByText('Cover Image')).toBeVisible()
   })
 
   test('shows optional description field', async ({ page }) => {
     await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
+    await waitForCreateFormHydration(page)
     await expect(page.getByLabel(/description/i)).toBeVisible({ timeout: 15000 })
   })
 
@@ -67,7 +67,7 @@ test.describe('Circle Creation Flow', () => {
 
     await page.locator('#name').fill('E2E Test Circle')
 
-    const submitButton = page.getByRole('button', { name: /create circle/i })
+    const submitButton = page.getByRole('button', { name: 'Next', exact: true })
     await expect(submitButton).toBeEnabled({ timeout: 5000 })
     await submitButton.click()
 

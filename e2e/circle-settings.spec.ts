@@ -28,10 +28,10 @@ test.describe('Circle Settings (with circle)', () => {
     await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
     await waitForCreateFormHydration(page)
     await page.locator('#name').fill(name)
-    await expect(page.getByRole('button', { name: /create circle/i })).toBeEnabled({
+    await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeEnabled({
       timeout: 5000,
     })
-    await page.getByRole('button', { name: /create circle/i }).click()
+    await page.getByRole('button', { name: 'Next', exact: true }).click()
     await expect(page).toHaveURL(/\/prompts\?setup=true/, { timeout: 15000 })
     const url = page.url()
     const match = url.match(/\/circles\/([^/]+)\/prompts/)

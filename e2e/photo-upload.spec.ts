@@ -14,7 +14,8 @@ test.describe('Photo Upload Flow', () => {
   })
 
   test('displays photo upload buttons', async ({ page }) => {
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     const takePhotoButton = page.getByRole('button', { name: /take photo/i })
     await expect(takePhotoButton).toBeVisible({ timeout: 15000 })
@@ -24,7 +25,8 @@ test.describe('Photo Upload Flow', () => {
   })
 
   test('shows upload progress when photo is selected', async ({ page }) => {
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     // Try to trigger upload via file input if available
     const fileInput = page.locator('input[type="file"]')
@@ -55,9 +57,10 @@ test.describe('Photo Upload Flow', () => {
   })
 
   test('enforces maximum media limit', async ({ page }) => {
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
-    // The demo page starts with currentMediaCount=0, so buttons should be enabled
+    // Buttons should be enabled when under max media count
     const takePhotoButton = page.getByRole('button', { name: /take photo/i })
     const choosePhotoButton = page.getByRole('button', { name: /choose photo/i })
 
@@ -68,7 +71,8 @@ test.describe('Photo Upload Flow', () => {
   })
 
   test('displays error message on upload failure', async ({ page }) => {
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     const choosePhotoButton = page.getByRole('button', { name: /choose photo/i })
     await expect(choosePhotoButton).toBeVisible({ timeout: 15000 })
@@ -84,7 +88,8 @@ test.describe('Photo Upload Flow', () => {
   })
 
   test('allows canceling upload in progress', async ({ page }) => {
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     const choosePhotoButton = page.getByRole('button', { name: /choose photo/i })
     await expect(choosePhotoButton).toBeVisible({ timeout: 15000 })
@@ -99,7 +104,8 @@ test.describe('Photo Upload Flow', () => {
   })
 
   test('handles permission denial gracefully', async ({ page }) => {
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     const takePhotoButton = page.getByRole('button', { name: /take photo/i })
     await expect(takePhotoButton).toBeVisible({ timeout: 15000 })
@@ -114,7 +120,8 @@ test.describe('Photo Upload Flow', () => {
   })
 
   test('validates file format (JPEG/PNG only)', async ({ page }) => {
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     const fileInput = page.locator('input[type="file"]')
     const inputCount = await fileInput.count()
@@ -145,7 +152,8 @@ test.describe('Photo Upload - Compression', () => {
   })
 
   test('compresses large images before upload', async ({ page }) => {
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     const fileInput = page.locator('input[type="file"]')
     const inputCount = await fileInput.count()
@@ -175,7 +183,8 @@ test.describe('Photo Upload - User Cancellation', () => {
   })
 
   test('handles user cancelling photo selection', async ({ page }) => {
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     const choosePhotoButton = page.getByRole('button', { name: /choose photo/i })
     await expect(choosePhotoButton).toBeVisible({ timeout: 15000 })

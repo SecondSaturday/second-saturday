@@ -4,9 +4,8 @@ import { setupClerkTestingToken } from '@clerk/testing/playwright'
 /**
  * E2E tests for text-only submission flow.
  *
- * These tests use /demo-submissions as a harness for the MediaUploader
- * and rely on the full authenticated submission page for text entry tests.
- * The demo page avoids needing real Convex circle/cycle data.
+ * These tests use /dashboard/submit for the submission form
+ * with MediaUploader and text entry for the authenticated user's circles.
  */
 
 test.describe('Text Submission Flow', () => {
@@ -15,7 +14,8 @@ test.describe('Text Submission Flow', () => {
   })
 
   test('demo submissions page loads and shows upload controls', async ({ page }) => {
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     // Page title visible
     await expect(page.getByRole('heading', { name: /demo video upload/i })).toBeVisible({

@@ -6,10 +6,27 @@ import type { Page } from '@playwright/test'
 
 /**
  * Waits for React hydration on the create circle page.
- * SSR renders the page but React event handlers aren't attached until hydration.
- * We check for React's internal __reactFiber property on the input element.
+ * Dismisses the "Create Your Group" splash screen if shown,
+ * then waits for React's internal __reactFiber property on the #name input.
  */
 export async function waitForCreateFormHydration(page: Page): Promise<void> {
+  // Dismiss the "Create Your Group" splash screen if it's showing
+  const getStartedBtn = page.getByRole('button', { name: 'Get Started' })
+  if (await getStartedBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
+    // Wait for React hydration on the button before clicking
+    await page.waitForFunction(
+      () => {
+        const btn = document.querySelector('button')
+        if (!btn || !btn.textContent?.includes('Get Started')) return false
+        return Object.keys(btn).some((k) => k.startsWith('__reactFiber'))
+      },
+      { timeout: 10000 }
+    )
+    await getStartedBtn.click()
+    // Wait for React to re-render the form after splash dismissal
+    await page.waitForFunction(() => document.querySelector('#name') !== null, { timeout: 15000 })
+  }
+
   await page.waitForFunction(
     () => {
       const el = document.querySelector('#name')
@@ -28,8 +45,15 @@ export async function warmupConvexAuth(page: Page): Promise<void> {
   await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
   // Wait until the Convex-powered dashboard finishes loading
   await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
-  // Small extra buffer for auth token propagation to Convex client
-  await page.waitForTimeout(500)
+  // Wait for Convex auth to fully propagate — verify real data has loaded
+  // (circle cards or "No circles" message proves queries are running authenticated)
+  await page.waitForFunction(
+    () =>
+      document.querySelector('[data-testid="circle-card"]') !== null ||
+      document.body.textContent?.includes('No circles') ||
+      document.body.textContent?.includes('Create'),
+    { timeout: 15000 }
+  )
 }
 
 /**
@@ -57,7 +81,7 @@ export async function createCircle(
   }
 
   // Wait for button to be enabled and click
-  const submitBtn = page.getByRole('button', { name: /create circle/i })
+  const submitBtn = page.getByRole('button', { name: 'Next', exact: true })
   await submitBtn.waitFor({ state: 'visible', timeout: 5000 })
   await page.waitForFunction(
     () => {

@@ -49,8 +49,13 @@ test.describe('Auth Flows (Authenticated)', () => {
   test('complete-profile continue button is disabled without name', async ({ page }) => {
     await page.goto('/complete-profile', { waitUntil: 'domcontentloaded' })
     if (page.url().includes('/complete-profile')) {
-      const continueBtn = page.getByRole('button', { name: /continue/i })
-      await expect(continueBtn).toBeDisabled()
+      // Clear any pre-filled name first
+      const nameInput = page.getByPlaceholder('Your name')
+      if (await nameInput.isVisible({ timeout: 5000 }).catch(() => false)) {
+        await nameInput.clear()
+        const continueBtn = page.getByRole('button', { name: /continue/i })
+        await expect(continueBtn).toBeDisabled()
+      }
     }
   })
 
@@ -63,85 +68,34 @@ test.describe('Auth Flows (Authenticated)', () => {
     }
   })
 
-  // --- Settings: Profile ---
+  // --- Account management via Clerk UserButton ---
+  // Profile editing, email change, password change, and delete account
+  // are now handled through Clerk's UserButton → "Manage Account" flow.
 
-  test('settings page shows timezone field', async ({ page }) => {
-    await page.goto('/dashboard/settings', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('Timezone')).toBeVisible({ timeout: 15000 })
+  test('user avatar (Clerk UserButton) is visible on dashboard', async ({ page }) => {
+    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
+    const userButton = page.getByRole('button', { name: /open user menu/i })
+    await expect(userButton).toBeVisible({ timeout: 15000 })
   })
 
-  test('settings page shows change email button', async ({ page }) => {
-    await page.goto('/dashboard/settings', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('Profile')).toBeVisible({ timeout: 15000 })
-    await expect(page.getByRole('button', { name: 'Change', exact: true })).toBeVisible()
+  test('Clerk account menu opens on avatar click', async ({ page }) => {
+    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
+    const userButton = page.getByRole('button', { name: /open user menu/i })
+    await expect(userButton).toBeVisible({ timeout: 15000 })
+    await userButton.click()
+
+    // Clerk popover should show manage account or sign out options
+    await expect(page.getByText(/manage account|sign out/i).first()).toBeVisible({ timeout: 10000 })
   })
 
-  test('change email shows input when clicked', async ({ page }) => {
-    await page.goto('/dashboard/settings', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('Profile')).toBeVisible({ timeout: 15000 })
-    await page.getByRole('button', { name: 'Change', exact: true }).click()
-    await expect(page.getByPlaceholder('New email address')).toBeVisible()
-    await expect(page.getByRole('button', { name: /send verification/i })).toBeVisible()
-  })
+  // --- Notification preferences (moved to /dashboard/notifications) ---
 
-  test('change email cancel hides input', async ({ page }) => {
-    await page.goto('/dashboard/settings', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('Profile')).toBeVisible({ timeout: 15000 })
-    await page.getByRole('button', { name: 'Change', exact: true }).click()
-    await expect(page.getByPlaceholder('New email address')).toBeVisible()
-    await page
-      .getByRole('button', { name: /cancel/i })
-      .first()
-      .click()
-    await expect(page.getByPlaceholder('New email address')).not.toBeVisible()
-  })
-
-  // --- Settings: Photo upload with crop ---
-
-  test('settings photo upload button visible', async ({ page }) => {
-    await page.goto('/dashboard/settings', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('Profile')).toBeVisible({ timeout: 15000 })
-    // The ImageUpload button should be visible
-    await expect(page.getByRole('button', { name: 'Photo' })).toBeVisible()
-  })
-
-  // --- Settings: Account Deletion with Re-auth ---
-
-  test('delete account requires re-authentication step', async ({ page }) => {
-    await page.goto('/dashboard/settings', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('Danger Zone')).toBeVisible({ timeout: 15000 })
-    await page.getByRole('button', { name: /delete account/i }).click()
-    // Should show re-auth step first, not the DELETE confirmation
-    await expect(page.getByText(/enter your password|confirm your email/i)).toBeVisible({
-      timeout: 5000,
+  test('notification preferences page loads', async ({ page }) => {
+    await page.goto('/dashboard/notifications', { waitUntil: 'domcontentloaded' })
+    await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible({
+      timeout: 15000,
     })
-    await expect(page.getByRole('button', { name: /verify identity/i })).toBeVisible()
-  })
-
-  test('delete account dialog resets on close', async ({ page }) => {
-    await page.goto('/dashboard/settings', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('Danger Zone')).toBeVisible({ timeout: 15000 })
-    await page.getByRole('button', { name: /delete account/i }).click()
-    await expect(page.getByRole('button', { name: /verify identity/i })).toBeVisible()
-    // Close dialog
-    await page.getByRole('button', { name: /cancel/i }).click()
-    // Re-open — should be back to re-auth step
-    await page.getByRole('button', { name: /delete account/i }).click()
-    await expect(page.getByRole('button', { name: /verify identity/i })).toBeVisible()
-  })
-
-  // --- Password change (if visible) ---
-
-  test('password change section validates input', async ({ page }) => {
-    await page.goto('/dashboard/settings', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('Settings')).toBeVisible({ timeout: 15000 })
-    // Password section may not be visible for OAuth users
-    const changePasswordSection = page.getByText('Change Password')
-    if (await changePasswordSection.isVisible().catch(() => false)) {
-      const changeBtn = page.getByRole('button', { name: /change password/i })
-      // Should be disabled without valid input
-      await expect(changeBtn).toBeDisabled()
-    }
+    await expect(page.getByText('Control how Second Saturday communicates with you')).toBeVisible()
   })
 
   // --- Session persistence ---

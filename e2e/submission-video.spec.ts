@@ -16,7 +16,8 @@ test.describe('Video Submission - Upload Buttons', () => {
   })
 
   test('shows Choose Video button', async ({ page }) => {
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     await expect(page.getByRole('button', { name: /choose video/i })).toBeVisible({
       timeout: 15000,
@@ -24,7 +25,8 @@ test.describe('Video Submission - Upload Buttons', () => {
   })
 
   test('video button is enabled when under media limit', async ({ page }) => {
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     const chooseVideo = page.getByRole('button', { name: /choose video/i })
 
@@ -39,7 +41,8 @@ test.describe('Video Submission - Blocking Modal', () => {
   })
 
   test('blocking modal appears when video upload starts', async ({ page }) => {
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     const chooseVideo = page.getByRole('button', { name: /choose video/i })
     await expect(chooseVideo).toBeVisible({ timeout: 15000 })
@@ -58,7 +61,8 @@ test.describe('Video Submission - Blocking Modal', () => {
   })
 
   test('blocking modal description mentions not closing window', async ({ page }) => {
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     const chooseVideo = page.getByRole('button', { name: /choose video/i })
     await expect(chooseVideo).toBeVisible({ timeout: 15000 })
@@ -82,7 +86,8 @@ test.describe('Video Submission - Cancel Flow', () => {
   })
 
   test('cancel button shows confirmation dialog', async ({ page }) => {
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     const chooseVideo = page.getByRole('button', { name: /choose video/i })
     await expect(chooseVideo).toBeVisible({ timeout: 15000 })
@@ -110,7 +115,8 @@ test.describe('Video Submission - Cancel Flow', () => {
   })
 
   test('Continue Upload dismisses confirmation and restores modal', async ({ page }) => {
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     const chooseVideo = page.getByRole('button', { name: /choose video/i })
     await expect(chooseVideo).toBeVisible({ timeout: 15000 })
@@ -149,7 +155,8 @@ test.describe('Video Submission - Cancel Flow', () => {
   })
 
   test('confirming cancel returns to idle state', async ({ page }) => {
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     const chooseVideo = page.getByRole('button', { name: /choose video/i })
     await expect(chooseVideo).toBeVisible({ timeout: 15000 })
@@ -216,7 +223,8 @@ test.describe('Video Submission - Format Validation', () => {
       }
     })
 
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     const chooseVideo = page.getByRole('button', { name: /choose video/i })
     await expect(chooseVideo).toBeVisible({ timeout: 15000 })
@@ -245,7 +253,8 @@ test.describe('Video Submission - Format Validation', () => {
       }
     })
 
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     const chooseVideo = page.getByRole('button', { name: /choose video/i })
     await expect(chooseVideo).toBeVisible({ timeout: 15000 })

@@ -12,8 +12,8 @@ import { setupClerkTestingToken } from '@clerk/testing/playwright'
  * - Error handling and Try Again
  * - User cancellation handling
  *
- * These tests use /demo-submissions as the test harness since it renders
- * MediaUploader without requiring real Convex circle/prompt data.
+ * These tests use /dashboard/submit which renders the submission form
+ * with MediaUploader for the authenticated user's circles.
  */
 
 test.describe('Photo Submission - Upload Buttons', () => {
@@ -22,7 +22,8 @@ test.describe('Photo Submission - Upload Buttons', () => {
   })
 
   test('shows Take Photo and Choose Photo buttons', async ({ page }) => {
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     await expect(page.getByRole('button', { name: /take photo/i })).toBeVisible({ timeout: 15000 })
     await expect(page.getByRole('button', { name: /choose photo/i })).toBeVisible({
@@ -31,7 +32,8 @@ test.describe('Photo Submission - Upload Buttons', () => {
   })
 
   test('photo buttons are enabled when under media limit', async ({ page }) => {
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     const takePhoto = page.getByRole('button', { name: /take photo/i })
     const choosePhoto = page.getByRole('button', { name: /choose photo/i })
@@ -75,7 +77,8 @@ test.describe('Photo Submission - Upload Progress', () => {
       }
     })
 
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     const choosePhoto = page.getByRole('button', { name: /choose photo/i })
     await expect(choosePhoto).toBeVisible({ timeout: 15000 })
@@ -121,7 +124,8 @@ test.describe('Photo Submission - Format Validation', () => {
       })
     })
 
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     const choosePhoto = page.getByRole('button', { name: /choose photo/i })
     await expect(choosePhoto).toBeVisible({ timeout: 15000 })
@@ -136,7 +140,8 @@ test.describe('Photo Submission - Format Validation', () => {
   })
 
   test('shows Try Again button after upload error', async ({ page }) => {
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     const choosePhoto = page.getByRole('button', { name: /choose photo/i })
     await expect(choosePhoto).toBeVisible({ timeout: 15000 })
@@ -170,7 +175,8 @@ test.describe('Photo Submission - Max Media Limit', () => {
     // We can't easily upload 3 photos in E2E without a real backend,
     // but we can verify the disabled state is applied when maxMedia=currentMedia.
 
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     // Directly manipulate DOM to simulate max-reached state
     // (buttons have disabled attribute when currentMediaCount >= maxMedia)
@@ -211,7 +217,8 @@ test.describe('Photo Submission - User Cancellation', () => {
       })
     })
 
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     const choosePhoto = page.getByRole('button', { name: /choose photo/i })
     await expect(choosePhoto).toBeVisible({ timeout: 15000 })

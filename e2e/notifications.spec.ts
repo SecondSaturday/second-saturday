@@ -1,30 +1,39 @@
 import { test, expect } from '@playwright/test'
 import { setupClerkTestingToken } from '@clerk/testing/playwright'
+import { warmupConvexAuth } from './helpers'
 
 test.describe('Notification Preferences', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
-    // Warm up Convex auth before navigating to settings
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
-    // Navigate to settings and wait for page to fully hydrate
-    await page.goto('/dashboard/settings', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('Settings')).toBeVisible({ timeout: 15000 })
+    await warmupConvexAuth(page)
+    // Navigate to notifications page via the correct route
+    await page.goto('/dashboard/notifications', { waitUntil: 'domcontentloaded' })
+    await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible({
+      timeout: 15000,
+    })
+    // Wait for Convex to load notification preferences (skeleton → real content)
+    await page.waitForFunction(() => !document.querySelector('.animate-pulse'), { timeout: 15000 })
   })
 
-  test('notification preferences section loads on settings page', async ({ page }) => {
-    await expect(page.getByText('Notifications', { exact: true })).toBeVisible({ timeout: 15000 })
+  test('notification preferences section loads on notifications page', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible({
+      timeout: 15000,
+    })
     await expect(page.getByText('Control how Second Saturday communicates with you')).toBeVisible()
   })
 
   test('submission reminders label is visible', async ({ page }) => {
-    await expect(page.getByText('Notifications', { exact: true })).toBeVisible({ timeout: 15000 })
+    await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible({
+      timeout: 15000,
+    })
     await expect(page.getByText('Submission Reminders')).toBeVisible()
     await expect(page.getByText('Get reminded before the submission deadline')).toBeVisible()
   })
 
   test('newsletter notifications label is visible', async ({ page }) => {
-    await expect(page.getByText('Notifications', { exact: true })).toBeVisible({ timeout: 15000 })
+    await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible({
+      timeout: 15000,
+    })
     await expect(page.getByText('Newsletter Notifications')).toBeVisible()
     await expect(page.getByText('Get notified when a new newsletter is ready')).toBeVisible()
   })
@@ -76,16 +85,10 @@ test.describe('Notification Preferences', () => {
 test.describe('Admin Submission Reminders', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
-    // Warm up Convex auth
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
+    await warmupConvexAuth(page)
   })
 
   test('admin sees submission status page with reminder UI', async ({ page }) => {
-    // First, navigate to dashboard and find a circle
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
-
     // Look for a circle link on the dashboard
     const circleLink = page.locator('a[href*="/dashboard/circles/"]').first()
     const hasCircle = await circleLink.isVisible({ timeout: 5000 }).catch(() => false)
@@ -124,9 +127,6 @@ test.describe('Admin Submission Reminders', () => {
   })
 
   test('admin sees reminders remaining text', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
-
     const circleLink = page.locator('a[href*="/dashboard/circles/"]').first()
     const hasCircle = await circleLink.isVisible({ timeout: 5000 }).catch(() => false)
 
@@ -160,9 +160,6 @@ test.describe('Admin Submission Reminders', () => {
   })
 
   test('admin sees remind all non-submitters button', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
-
     const circleLink = page.locator('a[href*="/dashboard/circles/"]').first()
     const hasCircle = await circleLink.isVisible({ timeout: 5000 }).catch(() => false)
 
@@ -198,9 +195,6 @@ test.describe('Admin Submission Reminders', () => {
   })
 
   test('deadline countdown is visible on submissions page', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
-
     const circleLink = page.locator('a[href*="/dashboard/circles/"]').first()
     const hasCircle = await circleLink.isVisible({ timeout: 5000 }).catch(() => false)
 

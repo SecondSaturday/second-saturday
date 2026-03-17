@@ -18,7 +18,7 @@ test.describe('Prompt Configuration', () => {
     await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
     await waitForCreateFormHydration(page)
     await page.locator('#name').fill(name)
-    const submitBtn = page.getByRole('button', { name: /create circle/i })
+    const submitBtn = page.getByRole('button', { name: 'Next', exact: true })
     await expect(submitBtn).toBeEnabled({ timeout: 5000 })
     await submitBtn.click()
 

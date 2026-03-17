@@ -7,7 +7,8 @@ test.describe('Video Upload', () => {
   })
 
   test('shows video upload button', async ({ page }) => {
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     const chooseButton = page.getByRole('button', { name: /choose video/i })
 
@@ -15,7 +16,8 @@ test.describe('Video Upload', () => {
   })
 
   test('video button is enabled when under media limit', async ({ page }) => {
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     const chooseButton = page.getByRole('button', { name: /choose video/i })
 
@@ -24,7 +26,8 @@ test.describe('Video Upload', () => {
   })
 
   test('displays blocking modal during video upload', async ({ page }) => {
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     const chooseButton = page.getByRole('button', { name: /choose video/i })
     await expect(chooseButton).toBeVisible({ timeout: 15000 })
@@ -57,7 +60,8 @@ test.describe('Video Upload', () => {
       }
     })
 
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     const chooseButton = page.getByRole('button', { name: /choose video/i })
     await expect(chooseButton).toBeVisible({ timeout: 15000 })
@@ -73,7 +77,8 @@ test.describe('Video Upload', () => {
   })
 
   test('video upload button is enabled when under limit', async ({ page }) => {
-    await page.goto('/demo-submissions', { waitUntil: 'domcontentloaded' })
+    await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     const chooseButton = page.getByRole('button', { name: /choose video/i })
     await expect(chooseButton).toBeVisible({ timeout: 15000 })
