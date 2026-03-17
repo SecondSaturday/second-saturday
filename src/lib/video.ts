@@ -1,3 +1,4 @@
+import 'server-only'
 import Mux from '@mux/mux-node'
 import crypto from 'crypto'
 

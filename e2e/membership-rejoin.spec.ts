@@ -1,16 +1,18 @@
 import { test, expect } from '@playwright/test'
 import { setupClerkTestingToken } from '@clerk/testing/playwright'
-import { waitForCreateFormHydration } from './helpers'
+import { waitForCreateFormHydration, warmupConvexAuth } from './helpers'
 
 test.describe('Rejoin Circle Flow', () => {
   test.use({ storageState: '.auth/user.json' })
 
+  test.beforeEach(async ({ page }) => {
+    await setupClerkTestingToken({ page })
+  })
+
   test.describe('After Voluntary Leave', () => {
     test('should allow rejoining via invite link after leaving', async ({ page }) => {
       test.setTimeout(60000)
-      await setupClerkTestingToken({ page })
-      await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-      await page.waitForTimeout(2000)
+      await warmupConvexAuth(page)
 
       await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
       await waitForCreateFormHydration(page)
@@ -51,44 +53,26 @@ test.describe('Rejoin Circle Flow', () => {
       await expect(page.locator('text=E2E Rejoin Test Circle')).toBeVisible({ timeout: 10000 })
     })
 
-    test('should clear leftAt field when rejoining', async ({ page }) => {
-      await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-      await page.waitForTimeout(2000)
-      // Verify dashboard loads
-      await expect(page.locator('body')).toBeVisible()
+    test.skip('should clear leftAt field when rejoining', async () => {
+      // Requires multi-user setup with leave/rejoin flow
     })
 
-    test('should restore full access after rejoining', async ({ page }) => {
-      await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-      await page.waitForTimeout(2000)
-
-      const circleCards = page.locator('[data-testid="circle-card"]')
-      if ((await circleCards.count()) > 0) {
-        await circleCards.first().click()
-        await page.waitForURL(/\/dashboard(\/(circles\/)|(\?.*circle=))/)
-        await expect(page.locator('body')).toBeVisible()
-      }
+    test.skip('should restore full access after rejoining', async () => {
+      // Requires multi-user setup with leave/rejoin flow
     })
 
-    test('should show rejoin success message', async ({ page }) => {
-      // This test requires multi-user setup; verify page loads
-      await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-      await page.waitForTimeout(2000)
-      await expect(page.locator('body')).toBeVisible()
+    test.skip('should show rejoin success message', async () => {
+      // Requires multi-user setup with leave/rejoin flow
     })
   })
 
   test.describe('After Admin Removal (Keep Contributions)', () => {
-    test('should allow rejoining if removed with keep contributions', async ({ page }) => {
-      await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-      await page.waitForTimeout(2000)
-      await expect(page.locator('body')).toBeVisible()
+    test.skip('should allow rejoining if removed with keep contributions', async () => {
+      // Requires multi-user setup with admin removal
     })
 
-    test('should restore membership with original join date updated', async ({ page }) => {
-      await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-      await page.waitForTimeout(2000)
-      await expect(page.locator('body')).toBeVisible()
+    test.skip('should restore membership with original join date updated', async () => {
+      // Requires multi-user setup with admin removal
     })
   })
 
@@ -107,53 +91,22 @@ test.describe('Rejoin Circle Flow', () => {
   })
 
   test.describe('Rejoin Mid-Cycle', () => {
-    test('should allow submission for current cycle after rejoining', async ({ page }) => {
-      await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-      await page.waitForTimeout(2000)
-
-      const circleCards = page.locator('[data-testid="circle-card"]')
-      if ((await circleCards.count()) > 0) {
-        await circleCards.first().click()
-        await page.waitForURL(/\/dashboard(\/(circles\/)|(\?.*circle=))/)
-        await expect(page.locator('body')).toBeVisible()
-      }
+    test.skip('should allow submission for current cycle after rejoining', async () => {
+      // Requires multi-user setup with active cycle
     })
 
-    test('should see same deadline as other members', async ({ page }) => {
-      await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-      await page.waitForTimeout(2000)
-
-      const circleCards = page.locator('[data-testid="circle-card"]')
-      if ((await circleCards.count()) > 0) {
-        await circleCards.first().click()
-        await page.waitForURL(/\/dashboard(\/(circles\/)|(\?.*circle=))/)
-        await expect(page.locator('body')).toBeVisible()
-      }
+    test.skip('should see same deadline as other members', async () => {
+      // Requires multi-user setup with active cycle
     })
   })
 
   test.describe('Past Newsletters Access', () => {
-    test('should restore access to past newsletters after rejoining', async ({ page }) => {
-      await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-      await page.waitForTimeout(2000)
-
-      const circleCards = page.locator('[data-testid="circle-card"]')
-      if ((await circleCards.count()) > 0) {
-        await circleCards.first().click()
-        await page.waitForURL(/\/dashboard(\/(circles\/)|(\?.*circle=))/)
-        await expect(page.locator('body')).toBeVisible()
-      }
+    test.skip('should restore access to past newsletters after rejoining', async () => {
+      // Requires multi-user setup with published newsletters
     })
 
-    test('should see own past contributions in newsletters', async ({ page }) => {
-      await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-      await page.waitForTimeout(2000)
-
-      const circleCards = page.locator('[data-testid="circle-card"]')
-      if ((await circleCards.count()) > 0) {
-        await circleCards.first().click()
-        await expect(page.locator('body')).toBeVisible()
-      }
+    test.skip('should see own past contributions in newsletters', async () => {
+      // Requires multi-user setup with published newsletters
     })
   })
 

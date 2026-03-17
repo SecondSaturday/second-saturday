@@ -1,12 +1,16 @@
 import { test, expect } from '@playwright/test'
-import { waitForCreateFormHydration } from './helpers'
+import { setupClerkTestingToken } from '@clerk/testing/playwright'
+import { waitForCreateFormHydration, warmupConvexAuth } from './helpers'
 
 test.describe('Member List Display', () => {
   test.use({ storageState: '.auth/user.json' })
 
+  test.beforeEach(async ({ page }) => {
+    await setupClerkTestingToken({ page })
+  })
+
   test('should navigate to member list from circle home', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
+    await warmupConvexAuth(page)
 
     const circleCards = page.locator('[data-testid="circle-card"]')
     if ((await circleCards.count()) > 0) {
@@ -22,8 +26,7 @@ test.describe('Member List Display', () => {
   })
 
   test('should show all active members with avatars and names', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
+    await warmupConvexAuth(page)
 
     const circleCards = page.locator('[data-testid="circle-card"]')
     if ((await circleCards.count()) > 0) {
@@ -41,8 +44,7 @@ test.describe('Member List Display', () => {
 
   test('should show admin badge for admin member', async ({ page }) => {
     // Create a circle to ensure we're admin
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
+    await warmupConvexAuth(page)
 
     await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
     await waitForCreateFormHydration(page)
@@ -68,8 +70,7 @@ test.describe('Member List Display', () => {
   })
 
   test('should sort members with admin first, then alphabetical', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
+    await warmupConvexAuth(page)
 
     const circleCards = page.locator('[data-testid="circle-card"]')
     if ((await circleCards.count()) > 0) {
@@ -90,8 +91,7 @@ test.describe('Member List Display', () => {
   })
 
   test('should show member count in header', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
+    await warmupConvexAuth(page)
 
     const circleCards = page.locator('[data-testid="circle-card"]')
     if ((await circleCards.count()) > 0) {
@@ -107,8 +107,7 @@ test.describe('Member List Display', () => {
   })
 
   test('should NOT show members who have left', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
+    await warmupConvexAuth(page)
 
     const circleCards = page.locator('[data-testid="circle-card"]')
     if ((await circleCards.count()) > 0) {
@@ -129,8 +128,7 @@ test.describe('Member List Display', () => {
   })
 
   test('should have back button to circle home', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
+    await warmupConvexAuth(page)
 
     const circleCards = page.locator('[data-testid="circle-card"]')
     if ((await circleCards.count()) > 0) {
@@ -147,8 +145,7 @@ test.describe('Member List Display', () => {
 
   test('should be mobile responsive', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 })
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
+    await warmupConvexAuth(page)
 
     const circleCards = page.locator('[data-testid="circle-card"]')
     if ((await circleCards.count()) > 0) {
@@ -163,8 +160,7 @@ test.describe('Member List Display', () => {
   })
 
   test('should show member initials in avatar fallback', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
+    await warmupConvexAuth(page)
 
     const circleCards = page.locator('[data-testid="circle-card"]')
     if ((await circleCards.count()) > 0) {
@@ -179,29 +175,16 @@ test.describe('Member List Display', () => {
     }
   })
 
-  test('should update in real-time when members are added/removed', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
-
-    const circleCards = page.locator('[data-testid="circle-card"]')
-    if ((await circleCards.count()) > 0) {
-      await circleCards.first().click()
-      await page.waitForURL(/\/dashboard(\/(circles\/)|(\?.*circle=))/)
-      // Verify circle page loads
-      await expect(page.locator('body')).toBeVisible()
-    }
+  test.skip('should update in real-time when members are added/removed', async () => {
+    // Requires multi-user setup with real-time changes
   })
 
-  test('should show empty state when no members (edge case)', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
-    // Just verify dashboard loads
-    await expect(page.locator('body')).toBeVisible()
+  test.skip('should show empty state when no members (edge case)', async () => {
+    // Edge case requiring special setup
   })
 
   test('should show remove button for admin on all non-admin members', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
+    await warmupConvexAuth(page)
 
     await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
     await waitForCreateFormHydration(page)
@@ -235,16 +218,7 @@ test.describe('Member List Display', () => {
     }
   })
 
-  test('should NOT show remove button for non-admin users', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
-
-    const circleCards = page.locator('[data-testid="circle-card"]')
-    if ((await circleCards.count()) > 0) {
-      await circleCards.first().click()
-      await page.waitForURL(/\/dashboard(\/(circles\/)|(\?.*circle=))/)
-      // Just verify page loads
-      await expect(page.locator('body')).toBeVisible()
-    }
+  test.skip('should NOT show remove button for non-admin users', async () => {
+    // Requires multi-user setup with non-admin role
   })
 })

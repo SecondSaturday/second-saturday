@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { setupClerkTestingToken } from '@clerk/testing/playwright'
 import { createCircle, getInviteCode } from './helpers'
 
 test.describe('Invite Link Flow', () => {
@@ -6,6 +7,10 @@ test.describe('Invite Link Flow', () => {
     test.use({ storageState: '.auth/user.json' })
     // These tests create circles + open settings + get invite code - needs extra time
     test.setTimeout(60000)
+
+    test.beforeEach(async ({ page }) => {
+      await setupClerkTestingToken({ page })
+    })
 
     test('should show circle preview and join button for authenticated user', async ({ page }) => {
       // Create a circle and get its invite code
@@ -119,6 +124,10 @@ test.describe('Invite Link Flow', () => {
   test.describe('Invalid Invite Code', () => {
     test.use({ storageState: '.auth/user.json' })
 
+    test.beforeEach(async ({ page }) => {
+      await setupClerkTestingToken({ page })
+    })
+
     test('should show error for invalid invite code', async ({ page }) => {
       await page.goto('/invite/invalid-code-does-not-exist')
 
@@ -130,6 +139,10 @@ test.describe('Invite Link Flow', () => {
 
   test.describe('Analytics Tracking', () => {
     test.use({ storageState: '.auth/user.json' })
+
+    test.beforeEach(async ({ page }) => {
+      await setupClerkTestingToken({ page })
+    })
 
     test('should track invite_link_viewed event', async ({ page, context }) => {
       // Listen for analytics events (if PostHog is configured)

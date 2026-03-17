@@ -1,12 +1,16 @@
 import { test, expect } from '@playwright/test'
-import { waitForCreateFormHydration } from './helpers'
+import { setupClerkTestingToken } from '@clerk/testing/playwright'
+import { waitForCreateFormHydration, warmupConvexAuth } from './helpers'
 
 test.describe('Admin Submission Dashboard', () => {
   test.use({ storageState: '.auth/user.json' })
 
+  test.beforeEach(async ({ page }) => {
+    await setupClerkTestingToken({ page })
+  })
+
   test('should show submission status dashboard for admin', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
+    await warmupConvexAuth(page)
 
     await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
     await waitForCreateFormHydration(page)
@@ -32,8 +36,7 @@ test.describe('Admin Submission Dashboard', () => {
   })
 
   test('should show all active members with status', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
+    await warmupConvexAuth(page)
 
     const circleCards = page.locator('[data-testid="circle-card"]')
     if ((await circleCards.count()) > 0) {
@@ -43,57 +46,39 @@ test.describe('Admin Submission Dashboard', () => {
     }
   })
 
-  test('should show correct status indicators with colors', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
-    await expect(page.locator('body')).toBeVisible()
+  test.skip('should show correct status indicators with colors', async () => {
+    // Requires multi-user setup with submissions
   })
 
-  test('should show send reminder button for non-submitted members', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
-    await expect(page.locator('body')).toBeVisible()
+  test.skip('should show send reminder button for non-submitted members', async () => {
+    // Requires multi-user setup with submissions
   })
 
-  test('should NOT show reminder button for submitted members', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
-    await expect(page.locator('body')).toBeVisible()
+  test.skip('should NOT show reminder button for submitted members', async () => {
+    // Requires multi-user setup with submissions
   })
 
-  test('should show "Coming soon" toast when clicking send reminder', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
-    await expect(page.locator('body')).toBeVisible()
+  test.skip('should show "Coming soon" toast when clicking send reminder', async () => {
+    // Requires multi-user setup with submissions
   })
 
-  test('should redirect non-admin users to error page', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
-    await expect(page.locator('body')).toBeVisible()
+  test.skip('should redirect non-admin users to error page', async () => {
+    // Requires multi-user setup with non-admin role
   })
 
-  test('should show deadline countdown when set', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
-    await expect(page.locator('body')).toBeVisible()
+  test.skip('should show deadline countdown when set', async () => {
+    // Requires submission dashboard implementation
   })
 
-  test('should show submission timestamp for submitted members', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
-    await expect(page.locator('body')).toBeVisible()
+  test.skip('should show submission timestamp for submitted members', async () => {
+    // Requires multi-user setup with submissions
   })
 
-  test('should NOT show content preview (privacy)', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
-    await expect(page.locator('body')).toBeVisible()
+  test.skip('should NOT show content preview (privacy)', async () => {
+    // Requires multi-user setup with submissions
   })
 
-  test('should update in real-time via Convex subscription', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
-    await expect(page.locator('body')).toBeVisible()
+  test.skip('should update in real-time via Convex subscription', async () => {
+    // Requires multi-user setup with real-time changes
   })
 })

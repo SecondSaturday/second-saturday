@@ -1,14 +1,18 @@
 import { test, expect } from '@playwright/test'
-import { waitForCreateFormHydration } from './helpers'
+import { setupClerkTestingToken } from '@clerk/testing/playwright'
+import { waitForCreateFormHydration, warmupConvexAuth } from './helpers'
 
 test.describe('Admin Remove Member Flow', () => {
   test.use({ storageState: '.auth/user.json' })
 
+  test.beforeEach(async ({ page }) => {
+    await setupClerkTestingToken({ page })
+  })
+
   test('should show remove button for admin next to each member (except self)', async ({
     page,
   }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
+    await warmupConvexAuth(page)
 
     await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
     await waitForCreateFormHydration(page)
@@ -44,8 +48,7 @@ test.describe('Admin Remove Member Flow', () => {
   })
 
   test('should show remove modal with two options', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
+    await warmupConvexAuth(page)
 
     await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
     await waitForCreateFormHydration(page)
@@ -75,35 +78,20 @@ test.describe('Admin Remove Member Flow', () => {
     }
   })
 
-  test('should remove member with keep contributions option', async ({ page }) => {
+  test.skip('should remove member with keep contributions option', async () => {
     // Requires multi-user setup
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
-    await expect(page.locator('body')).toBeVisible()
   })
 
-  test('should remove member with block option', async ({ page }) => {
+  test.skip('should remove member with block option', async () => {
     // Requires multi-user setup
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
-    await expect(page.locator('body')).toBeVisible()
   })
 
-  test('should track member_removed analytics event with keepContributions flag', async ({
-    page,
-    context,
-  }) => {
-    await context.route('**/e/track**', (route) => {
-      route.continue()
-    })
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
-    await expect(page.locator('body')).toBeVisible()
+  test.skip('should track member_removed analytics event with keepContributions flag', async () => {
+    // Requires multi-user setup
   })
 
   test('should not allow admin to remove themselves', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
+    await warmupConvexAuth(page)
 
     await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
     await waitForCreateFormHydration(page)
@@ -137,16 +125,12 @@ test.describe('Admin Remove Member Flow', () => {
     }
   })
 
-  test('should update member count after removal', async ({ page }) => {
+  test.skip('should update member count after removal', async () => {
     // Requires multi-user setup
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
-    await expect(page.locator('body')).toBeVisible()
   })
 
   test('should show only active members in list', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
+    await warmupConvexAuth(page)
 
     const circleCards = page.locator('[data-testid="circle-card"]')
     if ((await circleCards.count()) > 0) {

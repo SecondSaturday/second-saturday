@@ -1,12 +1,16 @@
 import { test, expect } from '@playwright/test'
-import { waitForCreateFormHydration } from './helpers'
+import { setupClerkTestingToken } from '@clerk/testing/playwright'
+import { waitForCreateFormHydration, warmupConvexAuth } from './helpers'
 
 test.describe('Leave Circle Flow', () => {
   test.use({ storageState: '.auth/user.json' })
 
+  test.beforeEach(async ({ page }) => {
+    await setupClerkTestingToken({ page })
+  })
+
   test('should show leave circle option for non-admin members', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
+    await warmupConvexAuth(page)
 
     const circleCards = page.locator('[data-testid="circle-card"]')
     const count = await circleCards.count()
@@ -34,8 +38,7 @@ test.describe('Leave Circle Flow', () => {
   })
 
   test('should show confirmation modal when leaving circle', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
+    await warmupConvexAuth(page)
 
     const leaveButton = page.locator('button:has-text("Leave this circle")')
     if (await leaveButton.isVisible().catch(() => false)) {
@@ -47,8 +50,7 @@ test.describe('Leave Circle Flow', () => {
   })
 
   test('should redirect to dashboard after leaving circle', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
+    await warmupConvexAuth(page)
 
     const leaveButton = page.locator('button:has-text("Leave this circle")')
     if (await leaveButton.isVisible().catch(() => false)) {
@@ -61,8 +63,7 @@ test.describe('Leave Circle Flow', () => {
   })
 
   test('should show admin transfer dialog when admin clicks leave', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
+    await warmupConvexAuth(page)
 
     await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
     await waitForCreateFormHydration(page)
@@ -97,8 +98,7 @@ test.describe('Leave Circle Flow', () => {
 
   test('should allow rejoining after leaving', async ({ page }) => {
     test.setTimeout(60000)
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
+    await warmupConvexAuth(page)
 
     await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
     await waitForCreateFormHydration(page)
@@ -147,7 +147,7 @@ test.describe('Leave Circle Flow', () => {
       route.continue()
     })
 
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
+    await warmupConvexAuth(page)
     const leaveButton = page.locator('button:has-text("Leave this circle")')
     if (await leaveButton.isVisible().catch(() => false)) {
       await leaveButton.click()

@@ -1,3 +1,4 @@
+import 'server-only'
 import type React from 'react'
 import { Resend } from 'resend'
 
