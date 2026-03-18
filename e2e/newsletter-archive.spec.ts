@@ -1,37 +1,39 @@
 import { test, expect } from '@playwright/test'
 import { setupClerkTestingToken } from '@clerk/testing/playwright'
-import { warmupConvexAuth, navigateToCircle } from './helpers'
+import { warmupConvexAuth, createCircle } from './helpers'
 
 test.describe('Newsletter - Circle Home', () => {
+  test.setTimeout(60000)
+
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
-    await warmupConvexAuth(page)
   })
 
   test('circle home page loads without errors', async ({ page }) => {
-    const circleId = await navigateToCircle(page)
-    if (!circleId) {
-      test.skip(true, 'No circles available')
-      return
-    }
+    const circleId = await createCircle(page, 'E2E Circle Home Test')
 
-    // Wait for page to hydrate
-    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await page.goto(`/dashboard/circles/${circleId}`, { waitUntil: 'domcontentloaded' })
+    // Wait for Convex to re-authenticate and load data
+    await page.waitForFunction(
+      () => !document.querySelector('.animate-spin') && !document.querySelector('.animate-pulse'),
+      { timeout: 20000 }
+    )
 
-    // Page should show either newsletter content, "No newsletter for this month", or a header
+    // Page should show either newsletter content or "No newsletter for this month"
     const noNewsletter = page.getByText(/no newsletter for this month/i)
     const header = page.locator('header')
-    await expect(noNewsletter.or(header)).toBeVisible({ timeout: 15000 })
+    await expect(noNewsletter.or(header).first()).toBeVisible({ timeout: 15000 })
   })
 
   test('circle home shows newsletter content or empty state', async ({ page }) => {
-    const circleId = await navigateToCircle(page)
-    if (!circleId) {
-      test.skip(true, 'No circles available')
-      return
-    }
+    const circleId = await createCircle(page, 'E2E Circle Content Test')
 
-    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await page.goto(`/dashboard/circles/${circleId}`, { waitUntil: 'domcontentloaded' })
+    // Wait for Convex to re-authenticate and load data
+    await page.waitForFunction(
+      () => !document.querySelector('.animate-spin') && !document.querySelector('.animate-pulse'),
+      { timeout: 20000 }
+    )
 
     // Either shows newsletter content (Issue #N) or "No newsletter for this month"
     const issueText = page.getByText(/Issue #\d+/)
@@ -40,13 +42,14 @@ test.describe('Newsletter - Circle Home', () => {
   })
 
   test('circle home has back link to dashboard', async ({ page }) => {
-    const circleId = await navigateToCircle(page)
-    if (!circleId) {
-      test.skip(true, 'No circles available')
-      return
-    }
+    const circleId = await createCircle(page, 'E2E Circle Back Test')
 
-    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await page.goto(`/dashboard/circles/${circleId}`, { waitUntil: 'domcontentloaded' })
+    // Wait for Convex to re-authenticate and load data
+    await page.waitForFunction(
+      () => !document.querySelector('.animate-spin') && !document.querySelector('.animate-pulse'),
+      { timeout: 20000 }
+    )
 
     // Back link should be visible
     const backLink = page.locator('a[href="/dashboard"]')

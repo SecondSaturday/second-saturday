@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { setupClerkTestingToken } from '@clerk/testing/playwright'
-import { waitForCreateFormHydration, warmupConvexAuth } from './helpers'
+import { waitForCreateFormHydration, warmupConvexAuth, navigateToCreatePage } from './helpers'
 
 test.describe('Leave Circle Flow', () => {
   test.use({ storageState: '.auth/user.json' })
@@ -65,7 +65,7 @@ test.describe('Leave Circle Flow', () => {
   test('should show admin transfer dialog when admin clicks leave', async ({ page }) => {
     await warmupConvexAuth(page)
 
-    await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
+    await navigateToCreatePage(page)
     await waitForCreateFormHydration(page)
     await page.locator('#name').fill('E2E Admin Leave Test')
     await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeEnabled({
@@ -100,7 +100,7 @@ test.describe('Leave Circle Flow', () => {
     test.setTimeout(60000)
     await warmupConvexAuth(page)
 
-    await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
+    await navigateToCreatePage(page)
     await waitForCreateFormHydration(page)
     await page.locator('#name').fill('E2E Rejoin Test')
     await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeEnabled({

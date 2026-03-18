@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { setupClerkTestingToken } from '@clerk/testing/playwright'
-import { waitForCreateFormHydration, warmupConvexAuth } from './helpers'
+import { waitForCreateFormHydration, warmupConvexAuth, navigateToCreatePage } from './helpers'
 
 test.describe('Admin Remove Member Flow', () => {
   test.use({ storageState: '.auth/user.json' })
@@ -14,7 +14,7 @@ test.describe('Admin Remove Member Flow', () => {
   }) => {
     await warmupConvexAuth(page)
 
-    await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
+    await navigateToCreatePage(page)
     await waitForCreateFormHydration(page)
     await page.locator('#name').fill('E2E Remove Member Test')
     await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeEnabled({
@@ -50,7 +50,7 @@ test.describe('Admin Remove Member Flow', () => {
   test('should show remove modal with two options', async ({ page }) => {
     await warmupConvexAuth(page)
 
-    await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
+    await navigateToCreatePage(page)
     await waitForCreateFormHydration(page)
     await page.locator('#name').fill('E2E Remove Modal Test')
     await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeEnabled({
@@ -93,7 +93,7 @@ test.describe('Admin Remove Member Flow', () => {
   test('should not allow admin to remove themselves', async ({ page }) => {
     await warmupConvexAuth(page)
 
-    await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
+    await navigateToCreatePage(page)
     await waitForCreateFormHydration(page)
     await page.locator('#name').fill('E2E Self Remove Test')
     await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeEnabled({

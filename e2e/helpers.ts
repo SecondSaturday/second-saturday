@@ -80,6 +80,24 @@ export async function warmupConvexAuth(page: Page): Promise<void> {
 }
 
 /**
+ * Navigates to the circle creation page using client-side navigation.
+ * This preserves the Convex WebSocket auth — page.goto() would do a full
+ * page load which resets the WebSocket and causes "Not authenticated" errors.
+ * Call warmupConvexAuth() before this.
+ */
+export async function navigateToCreatePage(page: Page): Promise<void> {
+  const menuBtn = page.locator('button[aria-label="Menu"]').first()
+  if (await menuBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+    await menuBtn.click()
+    await page.getByText('Create a circle').click()
+  } else {
+    // Empty state has a direct "Create a circle" link
+    await page.getByText('Create a circle').click()
+  }
+  await page.waitForURL(/\/dashboard\/create/, { timeout: 10000 })
+}
+
+/**
  * Creates a new circle via the create page.
  * Returns the circle ID extracted from the redirect URL.
  */
@@ -91,7 +109,8 @@ export async function createCircle(
   // Warm up Convex auth
   await warmupConvexAuth(page)
 
-  await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
+  // Navigate via client-side nav to preserve Convex WebSocket auth
+  await navigateToCreatePage(page)
 
   // Wait for React hydration - ensure event handlers are attached
   await waitForCreateFormHydration(page)

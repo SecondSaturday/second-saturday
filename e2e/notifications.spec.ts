@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { setupClerkTestingToken } from '@clerk/testing/playwright'
-import { warmupConvexAuth } from './helpers'
+import { warmupConvexAuth, createCircle } from './helpers'
 
 test.describe('Notification Preferences', () => {
   // Increase timeout — warmupConvexAuth + page navigation + data loading can take >30s
@@ -90,110 +90,44 @@ test.describe('Notification Preferences', () => {
 })
 
 test.describe('Admin Submission Reminders', () => {
+  test.setTimeout(60000)
+
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
-    await warmupConvexAuth(page)
   })
 
   test('admin sees submission status page with reminder UI', async ({ page }) => {
-    // Look for a circle link on the dashboard
-    const circleLink = page.locator('a[href*="/dashboard/circles/"]').first()
-    const hasCircle = await circleLink.isVisible({ timeout: 5000 }).catch(() => false)
+    // Create a circle — creator is admin
+    const circleId = await createCircle(page, 'E2E Admin Reminder Test')
 
-    if (!hasCircle) {
-      test.skip(true, 'No circles available to test admin reminders')
-      return
-    }
-
-    // Extract the circle ID from the link href
-    const href = await circleLink.getAttribute('href')
-    const circleIdMatch = href?.match(/\/circles\/([^/]+)/)
-    if (!circleIdMatch) {
-      test.skip(true, 'Could not extract circle ID')
-      return
-    }
-
-    const circleId = circleIdMatch[1]
-
-    // Navigate to the submissions page for this circle
     await page.goto(`/dashboard/circles/${circleId}/submissions`, {
       waitUntil: 'domcontentloaded',
     })
-
-    // Check if we are admin — non-admins see "Only admins can view submissions"
-    const nonAdminMessage = page.getByText('Only admins can view submissions')
-    const isNonAdmin = await nonAdminMessage.isVisible({ timeout: 5000 }).catch(() => false)
-
-    if (isNonAdmin) {
-      test.skip(true, 'Current user is not admin of this circle')
-      return
-    }
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     // Admin should see the submission status header
     await expect(page.getByText('Submission Status')).toBeVisible({ timeout: 15000 })
   })
 
   test('admin sees reminders remaining text', async ({ page }) => {
-    const circleLink = page.locator('a[href*="/dashboard/circles/"]').first()
-    const hasCircle = await circleLink.isVisible({ timeout: 5000 }).catch(() => false)
+    const circleId = await createCircle(page, 'E2E Reminders Text Test')
 
-    if (!hasCircle) {
-      test.skip(true, 'No circles available to test admin reminders')
-      return
-    }
-
-    const href = await circleLink.getAttribute('href')
-    const circleIdMatch = href?.match(/\/circles\/([^/]+)/)
-    if (!circleIdMatch) {
-      test.skip(true, 'Could not extract circle ID')
-      return
-    }
-
-    const circleId = circleIdMatch[1]
     await page.goto(`/dashboard/circles/${circleId}/submissions`, {
       waitUntil: 'domcontentloaded',
     })
-
-    const nonAdminMessage = page.getByText('Only admins can view submissions')
-    const isNonAdmin = await nonAdminMessage.isVisible({ timeout: 5000 }).catch(() => false)
-
-    if (isNonAdmin) {
-      test.skip(true, 'Current user is not admin of this circle')
-      return
-    }
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     // Should see "X of 3 reminders remaining"
     await expect(page.getByText(/\d+ of 3 reminders remaining/)).toBeVisible({ timeout: 15000 })
   })
 
   test('admin sees remind all non-submitters button', async ({ page }) => {
-    const circleLink = page.locator('a[href*="/dashboard/circles/"]').first()
-    const hasCircle = await circleLink.isVisible({ timeout: 5000 }).catch(() => false)
+    const circleId = await createCircle(page, 'E2E Remind Button Test')
 
-    if (!hasCircle) {
-      test.skip(true, 'No circles available to test admin reminders')
-      return
-    }
-
-    const href = await circleLink.getAttribute('href')
-    const circleIdMatch = href?.match(/\/circles\/([^/]+)/)
-    if (!circleIdMatch) {
-      test.skip(true, 'Could not extract circle ID')
-      return
-    }
-
-    const circleId = circleIdMatch[1]
     await page.goto(`/dashboard/circles/${circleId}/submissions`, {
       waitUntil: 'domcontentloaded',
     })
-
-    const nonAdminMessage = page.getByText('Only admins can view submissions')
-    const isNonAdmin = await nonAdminMessage.isVisible({ timeout: 5000 }).catch(() => false)
-
-    if (isNonAdmin) {
-      test.skip(true, 'Current user is not admin of this circle')
-      return
-    }
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     // Should see the bulk remind button
     await expect(page.getByRole('button', { name: /remind all non-submitters/i })).toBeVisible({
@@ -202,37 +136,15 @@ test.describe('Admin Submission Reminders', () => {
   })
 
   test('deadline countdown is visible on submissions page', async ({ page }) => {
-    const circleLink = page.locator('a[href*="/dashboard/circles/"]').first()
-    const hasCircle = await circleLink.isVisible({ timeout: 5000 }).catch(() => false)
+    const circleId = await createCircle(page, 'E2E Deadline Visible Test')
 
-    if (!hasCircle) {
-      test.skip(true, 'No circles available to test admin reminders')
-      return
-    }
-
-    const href = await circleLink.getAttribute('href')
-    const circleIdMatch = href?.match(/\/circles\/([^/]+)/)
-    if (!circleIdMatch) {
-      test.skip(true, 'Could not extract circle ID')
-      return
-    }
-
-    const circleId = circleIdMatch[1]
     await page.goto(`/dashboard/circles/${circleId}/submissions`, {
       waitUntil: 'domcontentloaded',
     })
+    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
-    const nonAdminMessage = page.getByText('Only admins can view submissions')
-    const isNonAdmin = await nonAdminMessage.isVisible({ timeout: 5000 }).catch(() => false)
-
-    if (isNonAdmin) {
-      test.skip(true, 'Current user is not admin of this circle')
-      return
-    }
-
-    // The submissions page should have both the header and the dashboard content
+    // The submissions page should have the header and reminder section
     await expect(page.getByText('Submission Status')).toBeVisible({ timeout: 15000 })
-    // Deadline countdown or reminder section should be present
     await expect(page.getByText(/reminders remaining/)).toBeVisible({ timeout: 15000 })
   })
 })

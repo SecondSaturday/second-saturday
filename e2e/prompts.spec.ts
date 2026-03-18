@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { setupClerkTestingToken } from '@clerk/testing/playwright'
-import { waitForCreateFormHydration, warmupConvexAuth } from './helpers'
+import { waitForCreateFormHydration, warmupConvexAuth, navigateToCreatePage } from './helpers'
 
 test.describe('Prompt Configuration', () => {
   test.beforeEach(async ({ page }) => {
@@ -14,7 +14,7 @@ test.describe('Prompt Configuration', () => {
     // Warm up Convex auth
     await warmupConvexAuth(page)
 
-    await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
+    await navigateToCreatePage(page)
     await waitForCreateFormHydration(page)
     await page.locator('#name').fill(name)
     const submitBtn = page.getByRole('button', { name: 'Next', exact: true })

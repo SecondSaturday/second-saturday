@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { setupClerkTestingToken } from '@clerk/testing/playwright'
-import { waitForCreateFormHydration, warmupConvexAuth } from './helpers'
+import { waitForCreateFormHydration, warmupConvexAuth, navigateToCreatePage } from './helpers'
 
 test.describe('Circle Settings', () => {
   test.beforeEach(async ({ page }) => {
@@ -23,7 +23,7 @@ test.describe('Circle Settings (with circle)', () => {
 
   async function createAndGetCircleId(page: import('@playwright/test').Page, name: string) {
     await warmupConvexAuth(page)
-    await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
+    await navigateToCreatePage(page)
     await waitForCreateFormHydration(page)
     await page.locator('#name').fill(name)
     await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeEnabled({

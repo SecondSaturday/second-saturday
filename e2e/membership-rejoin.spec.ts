@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { setupClerkTestingToken } from '@clerk/testing/playwright'
-import { waitForCreateFormHydration, warmupConvexAuth } from './helpers'
+import { waitForCreateFormHydration, warmupConvexAuth, navigateToCreatePage } from './helpers'
 
 test.describe('Rejoin Circle Flow', () => {
   test.use({ storageState: '.auth/user.json' })
@@ -14,7 +14,7 @@ test.describe('Rejoin Circle Flow', () => {
       test.setTimeout(60000)
       await warmupConvexAuth(page)
 
-      await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
+      await navigateToCreatePage(page)
       await waitForCreateFormHydration(page)
       await page.locator('#name').fill('E2E Rejoin Test Circle')
       await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeEnabled({

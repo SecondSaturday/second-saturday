@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { setupClerkTestingToken } from '@clerk/testing/playwright'
-import { waitForCreateFormHydration, warmupConvexAuth } from './helpers'
+import { waitForCreateFormHydration, warmupConvexAuth, navigateToCreatePage } from './helpers'
 
 test.describe('Circle Creation Flow', () => {
   test.beforeEach(async ({ page }) => {
@@ -60,7 +60,7 @@ test.describe('Circle Creation Flow', () => {
   })
 
   test('full creation flow navigates to prompts', async ({ page }) => {
-    await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
+    await navigateToCreatePage(page)
     await waitForCreateFormHydration(page)
 
     await page.locator('#name').fill('E2E Test Circle')

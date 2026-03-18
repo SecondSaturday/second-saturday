@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { setupClerkTestingToken } from '@clerk/testing/playwright'
-import { waitForCreateFormHydration, warmupConvexAuth } from './helpers'
+import { waitForCreateFormHydration, warmupConvexAuth, navigateToCreatePage } from './helpers'
 
 test.describe('Admin Submission Dashboard', () => {
   test.use({ storageState: '.auth/user.json' })
@@ -12,7 +12,7 @@ test.describe('Admin Submission Dashboard', () => {
   test('should show submission status dashboard for admin', async ({ page }) => {
     await warmupConvexAuth(page)
 
-    await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
+    await navigateToCreatePage(page)
     await waitForCreateFormHydration(page)
     await page.locator('#name').fill('E2E Submission Dashboard Test')
     await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeEnabled({
