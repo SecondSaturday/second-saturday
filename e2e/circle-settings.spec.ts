@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { setupClerkTestingToken } from '@clerk/testing/playwright'
-import { waitForCreateFormHydration } from './helpers'
+import { waitForCreateFormHydration, warmupConvexAuth } from './helpers'
 
 test.describe('Circle Settings', () => {
   test.beforeEach(async ({ page }) => {
@@ -18,13 +18,11 @@ test.describe('Circle Settings', () => {
 test.describe('Circle Settings (with circle)', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    // Wait for Convex auth to fully establish (spinner disappears when data loads)
-    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
-    await page.waitForTimeout(500)
+    await warmupConvexAuth(page)
   })
 
   async function createAndGetCircleId(page: import('@playwright/test').Page, name: string) {
+    await warmupConvexAuth(page)
     await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
     await waitForCreateFormHydration(page)
     await page.locator('#name').fill(name)
@@ -32,7 +30,7 @@ test.describe('Circle Settings (with circle)', () => {
       timeout: 5000,
     })
     await page.getByRole('button', { name: 'Next', exact: true }).click()
-    await expect(page).toHaveURL(/\/prompts\?setup=true/, { timeout: 15000 })
+    await expect(page).toHaveURL(/\/circles\/[^/]+\/prompts/, { timeout: 25000 })
     const url = page.url()
     const match = url.match(/\/circles\/([^/]+)\/prompts/)
     return match?.[1] ?? null

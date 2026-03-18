@@ -25,18 +25,22 @@ test.describe('Settings Page', () => {
   })
 
   test('notifications page loads from menu', async ({ page }) => {
-    // Open the three-dot menu
-    await page.getByLabel('Menu').click()
+    // Open the three-dot menu (disambiguate from Clerk UserButton)
+    await page.locator('button[aria-label="Menu"]').first().click()
     await page.getByText('Notifications').click()
 
     await page.waitForURL(/\/dashboard\/notifications/, { timeout: 10000 })
-    await expect(page.getByText('Notifications')).toBeVisible({ timeout: 15000 })
+    await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible({
+      timeout: 15000,
+    })
     await expect(page.getByText('Control how Second Saturday communicates with you')).toBeVisible()
   })
 
   test('notifications page has back link to dashboard', async ({ page }) => {
     await page.goto('/dashboard/notifications', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByText('Notifications')).toBeVisible({ timeout: 15000 })
+    await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible({
+      timeout: 15000,
+    })
     const backLink = page.locator('a[href="/dashboard"]')
     await expect(backLink).toBeVisible()
   })

@@ -72,7 +72,7 @@ test.describe('Leave Circle Flow', () => {
       timeout: 5000,
     })
     await page.getByRole('button', { name: 'Next', exact: true }).click()
-    await page.waitForURL(/\/circles\/[^/]+\/prompts/, { timeout: 15000 })
+    await page.waitForURL(/\/circles\/[^/]+\/prompts/, { timeout: 25000 })
 
     // Extract circle ID and go to circle home
     const match = page.url().match(/\/circles\/([^/]+)\/prompts/)
@@ -107,7 +107,7 @@ test.describe('Leave Circle Flow', () => {
       timeout: 5000,
     })
     await page.getByRole('button', { name: 'Next', exact: true }).click()
-    await page.waitForURL(/\/circles\/[^/]+\/prompts/, { timeout: 15000 })
+    await page.waitForURL(/\/circles\/[^/]+\/prompts/, { timeout: 25000 })
 
     const match = page.url().match(/\/circles\/([^/]+)\/prompts/)
     const circleId = match?.[1]

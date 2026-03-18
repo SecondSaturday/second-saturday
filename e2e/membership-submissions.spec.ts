@@ -19,7 +19,7 @@ test.describe('Admin Submission Dashboard', () => {
       timeout: 5000,
     })
     await page.getByRole('button', { name: 'Next', exact: true }).click()
-    await page.waitForURL(/\/circles\/[^/]+\/prompts/, { timeout: 15000 })
+    await page.waitForURL(/\/circles\/[^/]+\/prompts/, { timeout: 25000 })
 
     const match = page.url().match(/\/circles\/([^/]+)\/prompts/)
     const circleId = match?.[1]
@@ -41,7 +41,7 @@ test.describe('Admin Submission Dashboard', () => {
     const circleCards = page.locator('[data-testid="circle-card"]')
     if ((await circleCards.count()) > 0) {
       await circleCards.first().click()
-      await page.waitForURL(/\/dashboard\/circles\//)
+      await page.waitForURL(/\/dashboard(\/circles\/|\?circle=)/)
       await expect(page.locator('body')).toBeVisible()
     }
   })

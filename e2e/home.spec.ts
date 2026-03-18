@@ -1,10 +1,12 @@
 import { test, expect } from '@playwright/test'
 import { setupClerkTestingToken } from '@clerk/testing/playwright'
+import { warmupConvexAuth } from './helpers'
 
 test.describe('Home Page (Authenticated)', () => {
   test.beforeEach(async ({ page }) => {
     // Ensure testing token is set for each test
     await setupClerkTestingToken({ page })
+    await warmupConvexAuth(page)
   })
 
   test('authenticated user is redirected to dashboard from home', async ({ page }) => {

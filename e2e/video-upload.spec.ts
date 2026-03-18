@@ -1,16 +1,19 @@
 import { test, expect } from '@playwright/test'
 import { setupClerkTestingToken } from '@clerk/testing/playwright'
+import { warmupConvexAuth, openMediaDropdown } from './helpers'
 
 test.describe('Video Upload', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
+    await warmupConvexAuth(page)
   })
 
   test('shows video upload button', async ({ page }) => {
     await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await openMediaDropdown(page)
 
-    const chooseButton = page.getByRole('button', { name: /choose video/i })
+    const chooseButton = page.getByRole('menuitem', { name: /choose video/i })
 
     await expect(chooseButton).toBeVisible({ timeout: 15000 })
   })
@@ -18,8 +21,9 @@ test.describe('Video Upload', () => {
   test('video button is enabled when under media limit', async ({ page }) => {
     await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await openMediaDropdown(page)
 
-    const chooseButton = page.getByRole('button', { name: /choose video/i })
+    const chooseButton = page.getByRole('menuitem', { name: /choose video/i })
 
     await expect(chooseButton).toBeVisible({ timeout: 15000 })
     await expect(chooseButton).not.toBeDisabled()
@@ -28,8 +32,9 @@ test.describe('Video Upload', () => {
   test('displays blocking modal during video upload', async ({ page }) => {
     await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await openMediaDropdown(page)
 
-    const chooseButton = page.getByRole('button', { name: /choose video/i })
+    const chooseButton = page.getByRole('menuitem', { name: /choose video/i })
     await expect(chooseButton).toBeVisible({ timeout: 15000 })
     await chooseButton.click()
 
@@ -62,8 +67,9 @@ test.describe('Video Upload', () => {
 
     await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await openMediaDropdown(page)
 
-    const chooseButton = page.getByRole('button', { name: /choose video/i })
+    const chooseButton = page.getByRole('menuitem', { name: /choose video/i })
     await expect(chooseButton).toBeVisible({ timeout: 15000 })
     await chooseButton.click()
 
@@ -79,8 +85,9 @@ test.describe('Video Upload', () => {
   test('video upload button is enabled when under limit', async ({ page }) => {
     await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await openMediaDropdown(page)
 
-    const chooseButton = page.getByRole('button', { name: /choose video/i })
+    const chooseButton = page.getByRole('menuitem', { name: /choose video/i })
     await expect(chooseButton).toBeVisible({ timeout: 15000 })
     await expect(chooseButton).not.toBeDisabled()
   })

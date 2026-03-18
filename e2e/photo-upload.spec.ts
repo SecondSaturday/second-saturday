@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { setupClerkTestingToken } from '@clerk/testing/playwright'
+import { warmupConvexAuth, openMediaDropdown } from './helpers'
 
 /**
  * E2E tests for photo upload functionality.
@@ -11,16 +12,18 @@ import { setupClerkTestingToken } from '@clerk/testing/playwright'
 test.describe('Photo Upload Flow', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
+    await warmupConvexAuth(page)
   })
 
   test('displays photo upload buttons', async ({ page }) => {
     await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await openMediaDropdown(page)
 
-    const takePhotoButton = page.getByRole('button', { name: /take photo/i })
+    const takePhotoButton = page.getByRole('menuitem', { name: /take photo/i })
     await expect(takePhotoButton).toBeVisible({ timeout: 15000 })
 
-    const choosePhotoButton = page.getByRole('button', { name: /choose photo/i })
+    const choosePhotoButton = page.getByRole('menuitem', { name: /choose photo/i })
     await expect(choosePhotoButton).toBeVisible()
   })
 
@@ -59,10 +62,11 @@ test.describe('Photo Upload Flow', () => {
   test('enforces maximum media limit', async ({ page }) => {
     await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await openMediaDropdown(page)
 
     // Buttons should be enabled when under max media count
-    const takePhotoButton = page.getByRole('button', { name: /take photo/i })
-    const choosePhotoButton = page.getByRole('button', { name: /choose photo/i })
+    const takePhotoButton = page.getByRole('menuitem', { name: /take photo/i })
+    const choosePhotoButton = page.getByRole('menuitem', { name: /choose photo/i })
 
     await expect(takePhotoButton).toBeVisible({ timeout: 15000 })
     // Verify buttons are enabled (not at max)
@@ -73,8 +77,9 @@ test.describe('Photo Upload Flow', () => {
   test('displays error message on upload failure', async ({ page }) => {
     await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await openMediaDropdown(page)
 
-    const choosePhotoButton = page.getByRole('button', { name: /choose photo/i })
+    const choosePhotoButton = page.getByRole('menuitem', { name: /choose photo/i })
     await expect(choosePhotoButton).toBeVisible({ timeout: 15000 })
     await choosePhotoButton.click()
 
@@ -90,8 +95,9 @@ test.describe('Photo Upload Flow', () => {
   test('allows canceling upload in progress', async ({ page }) => {
     await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await openMediaDropdown(page)
 
-    const choosePhotoButton = page.getByRole('button', { name: /choose photo/i })
+    const choosePhotoButton = page.getByRole('menuitem', { name: /choose photo/i })
     await expect(choosePhotoButton).toBeVisible({ timeout: 15000 })
     await choosePhotoButton.click()
 
@@ -106,8 +112,9 @@ test.describe('Photo Upload Flow', () => {
   test('handles permission denial gracefully', async ({ page }) => {
     await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await openMediaDropdown(page)
 
-    const takePhotoButton = page.getByRole('button', { name: /take photo/i })
+    const takePhotoButton = page.getByRole('menuitem', { name: /take photo/i })
     await expect(takePhotoButton).toBeVisible({ timeout: 15000 })
     await takePhotoButton.click()
 
@@ -149,6 +156,7 @@ test.describe('Photo Upload Flow', () => {
 test.describe('Photo Upload - Compression', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
+    await warmupConvexAuth(page)
   })
 
   test('compresses large images before upload', async ({ page }) => {
@@ -180,17 +188,21 @@ test.describe('Photo Upload - Compression', () => {
 test.describe('Photo Upload - User Cancellation', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
+    await warmupConvexAuth(page)
   })
 
   test('handles user cancelling photo selection', async ({ page }) => {
     await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await openMediaDropdown(page)
 
-    const choosePhotoButton = page.getByRole('button', { name: /choose photo/i })
+    const choosePhotoButton = page.getByRole('menuitem', { name: /choose photo/i })
     await expect(choosePhotoButton).toBeVisible({ timeout: 15000 })
     await choosePhotoButton.click()
 
-    // After Camera.getPhoto completes or errors, button should still be available
-    await expect(choosePhotoButton).toBeVisible({ timeout: 5000 })
+    // After Camera.getPhoto completes or errors, the Add media trigger should still be available
+    await expect(page.getByRole('button', { name: 'Add media' }).first()).toBeVisible({
+      timeout: 5000,
+    })
   })
 })

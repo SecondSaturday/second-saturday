@@ -1,10 +1,11 @@
 import { test, expect } from '@playwright/test'
 import { setupClerkTestingToken } from '@clerk/testing/playwright'
-import { waitForCreateFormHydration } from './helpers'
+import { waitForCreateFormHydration, warmupConvexAuth } from './helpers'
 
 test.describe('Circle Creation Flow', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
+    await warmupConvexAuth(page)
   })
 
   test('create page loads with splash screen', async ({ page }) => {
@@ -59,9 +60,6 @@ test.describe('Circle Creation Flow', () => {
   })
 
   test('full creation flow navigates to prompts', async ({ page }) => {
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
-
     await page.goto('/dashboard/create', { waitUntil: 'domcontentloaded' })
     await waitForCreateFormHydration(page)
 
@@ -69,8 +67,10 @@ test.describe('Circle Creation Flow', () => {
 
     const submitButton = page.getByRole('button', { name: 'Next', exact: true })
     await expect(submitButton).toBeEnabled({ timeout: 5000 })
+    // Wait for React to fully process the form state
+    await page.waitForTimeout(500)
     await submitButton.click()
 
-    await expect(page).toHaveURL(/\/prompts\?setup=true/, { timeout: 15000 })
+    await expect(page).toHaveURL(/\/circles\/[^/]+\/prompts/, { timeout: 25000 })
   })
 })

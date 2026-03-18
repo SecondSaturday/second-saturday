@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { setupClerkTestingToken } from '@clerk/testing/playwright'
-import { createCircle, getInviteCode } from './helpers'
+import { createCircle, getInviteCode, warmupConvexAuth } from './helpers'
 
 test.describe('Invite Link Flow', () => {
   test.describe('Logged-in User', () => {
@@ -10,6 +10,7 @@ test.describe('Invite Link Flow', () => {
 
     test.beforeEach(async ({ page }) => {
       await setupClerkTestingToken({ page })
+      await warmupConvexAuth(page)
     })
 
     test('should show circle preview and join button for authenticated user', async ({ page }) => {
@@ -73,7 +74,7 @@ test.describe('Invite Link Flow', () => {
       const goToCircleButton = page.getByRole('button', { name: /go to circle/i })
       if (await goToCircleButton.isVisible({ timeout: 5000 }).catch(() => false)) {
         await goToCircleButton.click()
-        await page.waitForURL(/\/dashboard\/circles\//, { timeout: 15000 })
+        await page.waitForURL(/\/dashboard(\/circles\/|\?circle=)/, { timeout: 15000 })
       }
     })
   })
@@ -126,6 +127,7 @@ test.describe('Invite Link Flow', () => {
 
     test.beforeEach(async ({ page }) => {
       await setupClerkTestingToken({ page })
+      await warmupConvexAuth(page)
     })
 
     test('should show error for invalid invite code', async ({ page }) => {
@@ -142,6 +144,7 @@ test.describe('Invite Link Flow', () => {
 
     test.beforeEach(async ({ page }) => {
       await setupClerkTestingToken({ page })
+      await warmupConvexAuth(page)
     })
 
     test('should track invite_link_viewed event', async ({ page, context }) => {

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { setupClerkTestingToken } from '@clerk/testing/playwright'
+import { warmupConvexAuth, openMediaDropdown } from './helpers'
 
 /**
  * E2E tests for text-only submission flow.
@@ -11,21 +12,23 @@ import { setupClerkTestingToken } from '@clerk/testing/playwright'
 test.describe('Text Submission Flow', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
+    await warmupConvexAuth(page)
   })
 
-  test('demo submissions page loads and shows upload controls', async ({ page }) => {
+  test('submission page loads and shows upload controls', async ({ page }) => {
     await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
     // Page title visible
-    await expect(page.getByRole('heading', { name: /demo video upload/i })).toBeVisible({
+    await expect(page.getByRole('heading', { name: /make submission|submit/i })).toBeVisible({
       timeout: 15000,
     })
 
-    // Upload buttons visible
-    await expect(page.getByRole('button', { name: /take photo/i })).toBeVisible()
-    await expect(page.getByRole('button', { name: /choose photo/i })).toBeVisible()
-    await expect(page.getByRole('button', { name: /choose video/i })).toBeVisible()
+    // Open media dropdown and verify upload buttons
+    await openMediaDropdown(page)
+    await expect(page.getByRole('menuitem', { name: /take photo/i })).toBeVisible()
+    await expect(page.getByRole('menuitem', { name: /choose photo/i })).toBeVisible()
+    await expect(page.getByRole('menuitem', { name: /choose video/i })).toBeVisible()
   })
 
   test('submission page requires authentication', async ({ page }) => {
@@ -59,7 +62,7 @@ test.describe('Text Submission Flow', () => {
 
     if (hasCircle) {
       await circleCard.click()
-      await page.waitForURL(/\/dashboard\/circles\//, { timeout: 10000 })
+      await page.waitForURL(/\/dashboard(\/circles\/|\?circle=)/, { timeout: 10000 })
 
       // Look for a textarea on the circle page (prompt response)
       const textarea = page.locator('textarea').first()
@@ -87,7 +90,7 @@ test.describe('Text Submission Flow', () => {
     }
 
     await circleCard.click()
-    await page.waitForURL(/\/dashboard\/circles\//, { timeout: 10000 })
+    await page.waitForURL(/\/dashboard(\/circles\/|\?circle=)/, { timeout: 10000 })
 
     const textarea = page.locator('textarea').first()
     const hasTextarea = await textarea.isVisible({ timeout: 5000 }).catch(() => false)
@@ -112,6 +115,7 @@ test.describe('Text Submission Flow', () => {
 test.describe('Text Submission - Auto-save Indicator', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
+    await warmupConvexAuth(page)
   })
 
   test('auto-save indicator is hidden when idle', async ({ page }) => {
@@ -128,7 +132,7 @@ test.describe('Text Submission - Auto-save Indicator', () => {
     }
 
     await circleCard.click()
-    await page.waitForURL(/\/dashboard\/circles\//, { timeout: 10000 })
+    await page.waitForURL(/\/dashboard(\/circles\/|\?circle=)/, { timeout: 10000 })
 
     // Initially no save status shown
     const savingText = page.getByText(/saving\.\.\./i)

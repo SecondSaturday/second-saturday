@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test'
 import { setupClerkTestingToken } from '@clerk/testing/playwright'
+import { warmupConvexAuth } from './helpers'
 
 test.describe('Dashboard', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
+    await warmupConvexAuth(page)
   })
 
   test('dashboard page loads', async ({ page }) => {
@@ -20,8 +22,8 @@ test.describe('Dashboard', () => {
 
   test('dashboard shows FAB with next deadline', async ({ page }) => {
     await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    // FAB links to create page
-    const fab = page.locator('a[href="/dashboard/create"]')
+    // FAB links to submit page
+    const fab = page.locator('[data-testid="submit-button"]')
     await expect(fab).toBeVisible({ timeout: 15000 })
   })
 
@@ -33,12 +35,12 @@ test.describe('Dashboard', () => {
     await expect(emptyState.or(circleItem)).toBeVisible({ timeout: 15000 })
   })
 
-  test('FAB navigates to circle creation page', async ({ page }) => {
+  test('FAB navigates to submit page', async ({ page }) => {
     await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    const fab = page.locator('a[href="/dashboard/create"]')
+    const fab = page.locator('[data-testid="submit-button"]')
     await expect(fab).toBeVisible({ timeout: 15000 })
     await fab.click()
-    await expect(page).toHaveURL(/\/dashboard\/create/)
+    await expect(page).toHaveURL(/\/dashboard\/submit/)
   })
 
   test('date picker opens when clicked', async ({ page }) => {

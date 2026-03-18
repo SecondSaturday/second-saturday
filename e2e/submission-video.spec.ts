@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { setupClerkTestingToken } from '@clerk/testing/playwright'
+import { warmupConvexAuth, openMediaDropdown } from './helpers'
 
 /**
  * E2E tests for the video submission flow.
@@ -13,13 +14,15 @@ import { setupClerkTestingToken } from '@clerk/testing/playwright'
 test.describe('Video Submission - Upload Buttons', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
+    await warmupConvexAuth(page)
   })
 
   test('shows Choose Video button', async ({ page }) => {
     await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await openMediaDropdown(page)
 
-    await expect(page.getByRole('button', { name: /choose video/i })).toBeVisible({
+    await expect(page.getByRole('menuitem', { name: /choose video/i })).toBeVisible({
       timeout: 15000,
     })
   })
@@ -27,8 +30,9 @@ test.describe('Video Submission - Upload Buttons', () => {
   test('video button is enabled when under media limit', async ({ page }) => {
     await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await openMediaDropdown(page)
 
-    const chooseVideo = page.getByRole('button', { name: /choose video/i })
+    const chooseVideo = page.getByRole('menuitem', { name: /choose video/i })
 
     await expect(chooseVideo).toBeVisible({ timeout: 15000 })
     await expect(chooseVideo).not.toBeDisabled()
@@ -38,13 +42,15 @@ test.describe('Video Submission - Upload Buttons', () => {
 test.describe('Video Submission - Blocking Modal', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
+    await warmupConvexAuth(page)
   })
 
   test('blocking modal appears when video upload starts', async ({ page }) => {
     await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await openMediaDropdown(page)
 
-    const chooseVideo = page.getByRole('button', { name: /choose video/i })
+    const chooseVideo = page.getByRole('menuitem', { name: /choose video/i })
     await expect(chooseVideo).toBeVisible({ timeout: 15000 })
     await chooseVideo.click()
 
@@ -63,8 +69,9 @@ test.describe('Video Submission - Blocking Modal', () => {
   test('blocking modal description mentions not closing window', async ({ page }) => {
     await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await openMediaDropdown(page)
 
-    const chooseVideo = page.getByRole('button', { name: /choose video/i })
+    const chooseVideo = page.getByRole('menuitem', { name: /choose video/i })
     await expect(chooseVideo).toBeVisible({ timeout: 15000 })
     await chooseVideo.click()
 
@@ -83,13 +90,15 @@ test.describe('Video Submission - Blocking Modal', () => {
 test.describe('Video Submission - Cancel Flow', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
+    await warmupConvexAuth(page)
   })
 
   test('cancel button shows confirmation dialog', async ({ page }) => {
     await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await openMediaDropdown(page)
 
-    const chooseVideo = page.getByRole('button', { name: /choose video/i })
+    const chooseVideo = page.getByRole('menuitem', { name: /choose video/i })
     await expect(chooseVideo).toBeVisible({ timeout: 15000 })
     await chooseVideo.click()
 
@@ -117,8 +126,9 @@ test.describe('Video Submission - Cancel Flow', () => {
   test('Continue Upload dismisses confirmation and restores modal', async ({ page }) => {
     await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await openMediaDropdown(page)
 
-    const chooseVideo = page.getByRole('button', { name: /choose video/i })
+    const chooseVideo = page.getByRole('menuitem', { name: /choose video/i })
     await expect(chooseVideo).toBeVisible({ timeout: 15000 })
     await chooseVideo.click()
 
@@ -157,8 +167,9 @@ test.describe('Video Submission - Cancel Flow', () => {
   test('confirming cancel returns to idle state', async ({ page }) => {
     await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await openMediaDropdown(page)
 
-    const chooseVideo = page.getByRole('button', { name: /choose video/i })
+    const chooseVideo = page.getByRole('menuitem', { name: /choose video/i })
     await expect(chooseVideo).toBeVisible({ timeout: 15000 })
     await chooseVideo.click()
 
@@ -199,14 +210,17 @@ test.describe('Video Submission - Cancel Flow', () => {
       .last()
       .click()
 
-    // Modal should close and upload buttons should be visible again
-    await expect(page.getByRole('button', { name: /choose video/i })).toBeVisible({ timeout: 5000 })
+    // Modal should close and the Add media trigger button should be visible again
+    await expect(page.getByRole('button', { name: 'Add media' }).first()).toBeVisible({
+      timeout: 5000,
+    })
   })
 })
 
 test.describe('Video Submission - Format Validation', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
+    await warmupConvexAuth(page)
   })
 
   test('shows error for unsupported video format (AVI)', async ({ page }) => {
@@ -225,8 +239,9 @@ test.describe('Video Submission - Format Validation', () => {
 
     await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await openMediaDropdown(page)
 
-    const chooseVideo = page.getByRole('button', { name: /choose video/i })
+    const chooseVideo = page.getByRole('menuitem', { name: /choose video/i })
     await expect(chooseVideo).toBeVisible({ timeout: 15000 })
     await chooseVideo.click()
 
@@ -255,8 +270,9 @@ test.describe('Video Submission - Format Validation', () => {
 
     await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await openMediaDropdown(page)
 
-    const chooseVideo = page.getByRole('button', { name: /choose video/i })
+    const chooseVideo = page.getByRole('menuitem', { name: /choose video/i })
     await expect(chooseVideo).toBeVisible({ timeout: 15000 })
     await chooseVideo.click()
 
@@ -269,6 +285,8 @@ test.describe('Video Submission - Format Validation', () => {
 
     // Clicking Try Again should reset back to idle upload state
     await tryAgain.click()
-    await expect(page.getByRole('button', { name: /choose video/i })).toBeVisible({ timeout: 5000 })
+    await expect(page.getByRole('button', { name: 'Add media' }).first()).toBeVisible({
+      timeout: 5000,
+    })
   })
 })

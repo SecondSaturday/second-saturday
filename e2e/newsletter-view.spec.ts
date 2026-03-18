@@ -1,12 +1,11 @@
 import { test, expect } from '@playwright/test'
 import { setupClerkTestingToken } from '@clerk/testing/playwright'
+import { warmupConvexAuth, navigateToCircle } from './helpers'
 
 test.describe('Newsletter View Page', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
-    // Warm up Convex auth before navigating
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
+    await warmupConvexAuth(page)
   })
 
   test('newsletter page requires authentication (protected route)', async ({ page }) => {
@@ -17,17 +16,11 @@ test.describe('Newsletter View Page', () => {
   })
 
   test('newsletter page loads without server errors', async ({ page }) => {
-    // Navigate to dashboard and find a circle
-    const circleCard = page.locator('[data-testid="circle-card"]').first()
-    const hasCircle = await circleCard.isVisible({ timeout: 10000 }).catch(() => false)
-
-    if (!hasCircle) {
+    const circleId = await navigateToCircle(page)
+    if (!circleId) {
       test.skip(true, 'No circles available')
       return
     }
-
-    await circleCard.click()
-    await page.waitForURL(/\/dashboard\/circles\//, { timeout: 10000 })
 
     // Look for a newsletter link in the archive section
     const newsletterLink = page.locator('a[href*="/newsletter/"]').first()
@@ -46,16 +39,11 @@ test.describe('Newsletter View Page', () => {
   })
 
   test('newsletter page shows loading state while data loads', async ({ page }) => {
-    const circleCard = page.locator('[data-testid="circle-card"]').first()
-    const hasCircle = await circleCard.isVisible({ timeout: 10000 }).catch(() => false)
-
-    if (!hasCircle) {
+    const circleId = await navigateToCircle(page)
+    if (!circleId) {
       test.skip(true, 'No circles available')
       return
     }
-
-    await circleCard.click()
-    await page.waitForURL(/\/dashboard\/circles\//, { timeout: 10000 })
 
     const newsletterLink = page.locator('a[href*="/newsletter/"]').first()
     const hasNewsletter = await newsletterLink.isVisible({ timeout: 10000 }).catch(() => false)
@@ -81,26 +69,11 @@ test.describe('Newsletter View Page', () => {
   })
 
   test('newsletter page shows "not found" for invalid newsletter ID', async ({ page }) => {
-    const circleCard = page.locator('[data-testid="circle-card"]').first()
-    const hasCircle = await circleCard.isVisible({ timeout: 10000 }).catch(() => false)
-
-    if (!hasCircle) {
+    const circleId = await navigateToCircle(page)
+    if (!circleId) {
       test.skip(true, 'No circles available')
       return
     }
-
-    await circleCard.click()
-    await page.waitForURL(/\/dashboard\/circles\//, { timeout: 10000 })
-
-    // Extract circle ID from URL
-    const url = page.url()
-    const match = url.match(/\/circles\/([^/]+)/)
-    if (!match) {
-      test.skip(true, 'Could not extract circle ID')
-      return
-    }
-
-    const circleId = match[1]
 
     // Navigate to a non-existent newsletter
     await page.goto(`/dashboard/circles/${circleId}/newsletter/invalid_id_here`, {
@@ -114,25 +87,11 @@ test.describe('Newsletter View Page', () => {
   })
 
   test('newsletter page shows back button that links to circle dashboard', async ({ page }) => {
-    const circleCard = page.locator('[data-testid="circle-card"]').first()
-    const hasCircle = await circleCard.isVisible({ timeout: 10000 }).catch(() => false)
-
-    if (!hasCircle) {
+    const circleId = await navigateToCircle(page)
+    if (!circleId) {
       test.skip(true, 'No circles available')
       return
     }
-
-    await circleCard.click()
-    await page.waitForURL(/\/dashboard\/circles\//, { timeout: 10000 })
-
-    const circleUrl = page.url()
-    const circleMatch = circleUrl.match(/\/circles\/([^/]+)/)
-    if (!circleMatch) {
-      test.skip(true, 'Could not extract circle ID')
-      return
-    }
-
-    const circleId = circleMatch[1]
 
     const newsletterLink = page.locator('a[href*="/newsletter/"]').first()
     const hasNewsletter = await newsletterLink.isVisible({ timeout: 10000 }).catch(() => false)
@@ -153,16 +112,11 @@ test.describe('Newsletter View Page', () => {
   test('newsletter page displays circle name and issue number when newsletter exists', async ({
     page,
   }) => {
-    const circleCard = page.locator('[data-testid="circle-card"]').first()
-    const hasCircle = await circleCard.isVisible({ timeout: 10000 }).catch(() => false)
-
-    if (!hasCircle) {
+    const circleId = await navigateToCircle(page)
+    if (!circleId) {
       test.skip(true, 'No circles available')
       return
     }
-
-    await circleCard.click()
-    await page.waitForURL(/\/dashboard\/circles\//, { timeout: 10000 })
 
     const newsletterLink = page.locator('a[href*="/newsletter/"]').first()
     const hasNewsletter = await newsletterLink.isVisible({ timeout: 10000 }).catch(() => false)
@@ -184,16 +138,11 @@ test.describe('Newsletter View Page', () => {
   })
 
   test('newsletter page displays publication date', async ({ page }) => {
-    const circleCard = page.locator('[data-testid="circle-card"]').first()
-    const hasCircle = await circleCard.isVisible({ timeout: 10000 }).catch(() => false)
-
-    if (!hasCircle) {
+    const circleId = await navigateToCircle(page)
+    if (!circleId) {
       test.skip(true, 'No circles available')
       return
     }
-
-    await circleCard.click()
-    await page.waitForURL(/\/dashboard\/circles\//, { timeout: 10000 })
 
     const newsletterLink = page.locator('a[href*="/newsletter/"]').first()
     const hasNewsletter = await newsletterLink.isVisible({ timeout: 10000 }).catch(() => false)
@@ -227,16 +176,11 @@ test.describe('Newsletter View Page', () => {
   })
 
   test('newsletter page displays prompt sections with member responses', async ({ page }) => {
-    const circleCard = page.locator('[data-testid="circle-card"]').first()
-    const hasCircle = await circleCard.isVisible({ timeout: 10000 }).catch(() => false)
-
-    if (!hasCircle) {
+    const circleId = await navigateToCircle(page)
+    if (!circleId) {
       test.skip(true, 'No circles available')
       return
     }
-
-    await circleCard.click()
-    await page.waitForURL(/\/dashboard\/circles\//, { timeout: 10000 })
 
     const newsletterLink = page.locator('a[href*="/newsletter/"]').first()
     const hasNewsletter = await newsletterLink.isVisible({ timeout: 10000 }).catch(() => false)
@@ -269,30 +213,15 @@ test.describe('Newsletter View Page', () => {
 test.describe('Newsletter View - Navigation', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(2000)
+    await warmupConvexAuth(page)
   })
 
   test('back button navigates to circle dashboard', async ({ page }) => {
-    const circleCard = page.locator('[data-testid="circle-card"]').first()
-    const hasCircle = await circleCard.isVisible({ timeout: 10000 }).catch(() => false)
-
-    if (!hasCircle) {
+    const circleId = await navigateToCircle(page)
+    if (!circleId) {
       test.skip(true, 'No circles available')
       return
     }
-
-    await circleCard.click()
-    await page.waitForURL(/\/dashboard\/circles\//, { timeout: 10000 })
-
-    const circleUrl = page.url()
-    const circleMatch = circleUrl.match(/\/circles\/([^/]+)/)
-    if (!circleMatch) {
-      test.skip(true, 'Could not extract circle ID')
-      return
-    }
-
-    const circleId = circleMatch[1]
 
     const newsletterLink = page.locator('a[href*="/newsletter/"]').first()
     const hasNewsletter = await newsletterLink.isVisible({ timeout: 10000 }).catch(() => false)

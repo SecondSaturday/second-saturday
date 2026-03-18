@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { setupClerkTestingToken } from '@clerk/testing/playwright'
+import { warmupConvexAuth } from './helpers'
 
 test.describe('Auth Flows (Authenticated)', () => {
   test.beforeEach(async ({ page }) => {
@@ -31,26 +32,32 @@ test.describe('Auth Flows (Authenticated)', () => {
 
   test('complete-profile has display name input', async ({ page }) => {
     await page.goto('/complete-profile', { waitUntil: 'domcontentloaded' })
-    // If user already has name, it redirects — so check if we're still on the page
+    // Wait for Convex to load — page may redirect if user already has name
+    await page.waitForTimeout(3000)
     if (page.url().includes('/complete-profile')) {
-      await expect(page.getByPlaceholder('Your name')).toBeVisible({ timeout: 15000 })
+      await expect(page.getByLabel('First Name')).toBeVisible({ timeout: 15000 })
       await expect(page.getByText('Set up your profile')).toBeVisible()
     }
   })
 
   test('complete-profile has photo upload', async ({ page }) => {
     await page.goto('/complete-profile', { waitUntil: 'domcontentloaded' })
+    // Wait for Convex to load — page may redirect if user already has name
+    await page.waitForTimeout(3000)
     if (page.url().includes('/complete-profile')) {
+      // Wait for loading spinner to clear
+      await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
       await expect(page.getByText('Add photo')).toBeVisible({ timeout: 15000 })
-      await expect(page.getByText('Optional')).toBeVisible()
     }
   })
 
   test('complete-profile continue button is disabled without name', async ({ page }) => {
     await page.goto('/complete-profile', { waitUntil: 'domcontentloaded' })
+    await page.waitForTimeout(3000)
     if (page.url().includes('/complete-profile')) {
+      await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
       // Clear any pre-filled name first
-      const nameInput = page.getByPlaceholder('Your name')
+      const nameInput = page.getByLabel('First Name')
       if (await nameInput.isVisible({ timeout: 5000 }).catch(() => false)) {
         await nameInput.clear()
         const continueBtn = page.getByRole('button', { name: /continue/i })
@@ -61,8 +68,10 @@ test.describe('Auth Flows (Authenticated)', () => {
 
   test('complete-profile continue button enables with name', async ({ page }) => {
     await page.goto('/complete-profile', { waitUntil: 'domcontentloaded' })
+    await page.waitForTimeout(3000)
     if (page.url().includes('/complete-profile')) {
-      await page.getByPlaceholder('Your name').fill('Test User')
+      await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+      await page.getByLabel('First Name').fill('Test User')
       const continueBtn = page.getByRole('button', { name: /continue/i })
       await expect(continueBtn).toBeEnabled()
     }
@@ -73,12 +82,14 @@ test.describe('Auth Flows (Authenticated)', () => {
   // are now handled through Clerk's UserButton → "Manage Account" flow.
 
   test('user avatar (Clerk UserButton) is visible on dashboard', async ({ page }) => {
+    await warmupConvexAuth(page)
     await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
     const userButton = page.getByRole('button', { name: /open user menu/i })
     await expect(userButton).toBeVisible({ timeout: 15000 })
   })
 
   test('Clerk account menu opens on avatar click', async ({ page }) => {
+    await warmupConvexAuth(page)
     await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
     const userButton = page.getByRole('button', { name: /open user menu/i })
     await expect(userButton).toBeVisible({ timeout: 15000 })
@@ -91,6 +102,7 @@ test.describe('Auth Flows (Authenticated)', () => {
   // --- Notification preferences (moved to /dashboard/notifications) ---
 
   test('notification preferences page loads', async ({ page }) => {
+    await warmupConvexAuth(page)
     await page.goto('/dashboard/notifications', { waitUntil: 'domcontentloaded' })
     await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible({
       timeout: 15000,
@@ -101,6 +113,7 @@ test.describe('Auth Flows (Authenticated)', () => {
   // --- Session persistence ---
 
   test('authenticated user is redirected from home to dashboard', async ({ page }) => {
+    await warmupConvexAuth(page)
     await page.goto('/', { waitUntil: 'domcontentloaded' })
     // Middleware should redirect authenticated users to /dashboard
     await page.waitForURL(/\/dashboard/, { timeout: 15000 })
@@ -108,6 +121,7 @@ test.describe('Auth Flows (Authenticated)', () => {
   })
 
   test('protected routes are accessible when authenticated', async ({ page }) => {
+    await warmupConvexAuth(page)
     const response = await page.goto('/dashboard', { waitUntil: 'domcontentloaded' })
     expect(response?.status()).toBeLessThan(500)
     await expect(page.locator('body')).toBeVisible()

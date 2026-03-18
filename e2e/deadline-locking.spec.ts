@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { setupClerkTestingToken } from '@clerk/testing/playwright'
+import { warmupConvexAuth } from './helpers'
 
 /**
  * E2E tests for deadline countdown and submission locking.
@@ -42,6 +43,7 @@ function injectPastDeadlineClock(isoDate: string) {
 test.describe('Deadline Countdown - Display', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
+    await warmupConvexAuth(page)
   })
 
   test('deadline countdown is visible on submissions admin page', async ({ page }) => {
@@ -57,7 +59,7 @@ test.describe('Deadline Countdown - Display', () => {
     }
 
     await circleCard.click()
-    await page.waitForURL(/\/dashboard\/circles\//, { timeout: 10000 })
+    await page.waitForURL(/\/dashboard(\/circles\/|\?circle=)/, { timeout: 10000 })
 
     // Check if admin can see the Submission Status link
     const submissionsLink = page.locator('a:has-text("Submission Status")')
@@ -91,7 +93,7 @@ test.describe('Deadline Countdown - Display', () => {
     }
 
     await circleCard.click()
-    await page.waitForURL(/\/dashboard\/circles\//, { timeout: 10000 })
+    await page.waitForURL(/\/dashboard(\/circles\/|\?circle=)/, { timeout: 10000 })
 
     const submissionsLink = page.locator('a:has-text("Submission Status")')
     const hasLink = await submissionsLink.isVisible({ timeout: 5000 }).catch(() => false)
@@ -114,6 +116,7 @@ test.describe('Deadline Countdown - Display', () => {
 test.describe('Deadline Locking - Past Deadline', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
+    await warmupConvexAuth(page)
   })
 
   test('shows Submissions Locked state when deadline is in the past', async ({ page }) => {
@@ -131,7 +134,7 @@ test.describe('Deadline Locking - Past Deadline', () => {
     }
 
     await circleCard.click()
-    await page.waitForURL(/\/dashboard\/circles\//, { timeout: 10000 })
+    await page.waitForURL(/\/dashboard(\/circles\/|\?circle=)/, { timeout: 10000 })
 
     const submissionsLink = page.locator('a:has-text("Submission Status")')
     const hasLink = await submissionsLink.isVisible({ timeout: 5000 }).catch(() => false)
@@ -164,7 +167,7 @@ test.describe('Deadline Locking - Past Deadline', () => {
     }
 
     await circleCard.click()
-    await page.waitForURL(/\/dashboard\/circles\//, { timeout: 10000 })
+    await page.waitForURL(/\/dashboard(\/circles\/|\?circle=)/, { timeout: 10000 })
 
     // After deadline, an informational banner shows instead of a destructive lock banner.
     // The banner says submissions will be included in next month's newsletter.
@@ -194,7 +197,7 @@ test.describe('Deadline Locking - Past Deadline', () => {
     }
 
     await circleCard.click()
-    await page.waitForURL(/\/dashboard\/circles\//, { timeout: 10000 })
+    await page.waitForURL(/\/dashboard(\/circles\/|\?circle=)/, { timeout: 10000 })
 
     // Textareas should remain enabled even after deadline — users can still submit late
     const textareas = page.locator('textarea')
@@ -214,6 +217,7 @@ test.describe('Deadline Locking - Past Deadline', () => {
 test.describe('Deadline Countdown - Urgency Styling', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
+    await warmupConvexAuth(page)
   })
 
   test('countdown widget is visible with clock icon', async ({ page }) => {
@@ -228,7 +232,7 @@ test.describe('Deadline Countdown - Urgency Styling', () => {
     }
 
     await circleCard.click()
-    await page.waitForURL(/\/dashboard\/circles\//, { timeout: 10000 })
+    await page.waitForURL(/\/dashboard(\/circles\/|\?circle=)/, { timeout: 10000 })
 
     const submissionsLink = page.locator('a:has-text("Submission Status")')
     const hasLink = await submissionsLink.isVisible({ timeout: 5000 }).catch(() => false)
@@ -264,7 +268,7 @@ test.describe('Deadline Countdown - Urgency Styling', () => {
     }
 
     await circleCard.click()
-    await page.waitForURL(/\/dashboard\/circles\//, { timeout: 10000 })
+    await page.waitForURL(/\/dashboard(\/circles\/|\?circle=)/, { timeout: 10000 })
 
     const submissionsLink = page.locator('a:has-text("Submission Status")')
     const hasLink = await submissionsLink.isVisible({ timeout: 5000 }).catch(() => false)

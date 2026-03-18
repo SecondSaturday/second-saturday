@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { setupClerkTestingToken } from '@clerk/testing/playwright'
+import { warmupConvexAuth, openMediaDropdown } from './helpers'
 
 /**
  * E2E tests for the photo submission flow.
@@ -19,14 +20,18 @@ import { setupClerkTestingToken } from '@clerk/testing/playwright'
 test.describe('Photo Submission - Upload Buttons', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
+    await warmupConvexAuth(page)
   })
 
   test('shows Take Photo and Choose Photo buttons', async ({ page }) => {
     await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await openMediaDropdown(page)
 
-    await expect(page.getByRole('button', { name: /take photo/i })).toBeVisible({ timeout: 15000 })
-    await expect(page.getByRole('button', { name: /choose photo/i })).toBeVisible({
+    await expect(page.getByRole('menuitem', { name: /take photo/i })).toBeVisible({
+      timeout: 15000,
+    })
+    await expect(page.getByRole('menuitem', { name: /choose photo/i })).toBeVisible({
       timeout: 15000,
     })
   })
@@ -34,9 +39,10 @@ test.describe('Photo Submission - Upload Buttons', () => {
   test('photo buttons are enabled when under media limit', async ({ page }) => {
     await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await openMediaDropdown(page)
 
-    const takePhoto = page.getByRole('button', { name: /take photo/i })
-    const choosePhoto = page.getByRole('button', { name: /choose photo/i })
+    const takePhoto = page.getByRole('menuitem', { name: /take photo/i })
+    const choosePhoto = page.getByRole('menuitem', { name: /choose photo/i })
 
     await expect(takePhoto).toBeVisible({ timeout: 15000 })
     await expect(takePhoto).not.toBeDisabled()
@@ -47,6 +53,7 @@ test.describe('Photo Submission - Upload Buttons', () => {
 test.describe('Photo Submission - Upload Progress', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
+    await warmupConvexAuth(page)
   })
 
   test('shows compression stage when photo is uploading', async ({ page }) => {
@@ -79,8 +86,9 @@ test.describe('Photo Submission - Upload Progress', () => {
 
     await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await openMediaDropdown(page)
 
-    const choosePhoto = page.getByRole('button', { name: /choose photo/i })
+    const choosePhoto = page.getByRole('menuitem', { name: /choose photo/i })
     await expect(choosePhoto).toBeVisible({ timeout: 15000 })
     await choosePhoto.click()
 
@@ -112,6 +120,7 @@ test.describe('Photo Submission - Upload Progress', () => {
 test.describe('Photo Submission - Format Validation', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
+    await warmupConvexAuth(page)
   })
 
   test('shows error for unsupported file format', async ({ page }) => {
@@ -126,8 +135,9 @@ test.describe('Photo Submission - Format Validation', () => {
 
     await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await openMediaDropdown(page)
 
-    const choosePhoto = page.getByRole('button', { name: /choose photo/i })
+    const choosePhoto = page.getByRole('menuitem', { name: /choose photo/i })
     await expect(choosePhoto).toBeVisible({ timeout: 15000 })
     await choosePhoto.click()
 
@@ -142,8 +152,9 @@ test.describe('Photo Submission - Format Validation', () => {
   test('shows Try Again button after upload error', async ({ page }) => {
     await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await openMediaDropdown(page)
 
-    const choosePhoto = page.getByRole('button', { name: /choose photo/i })
+    const choosePhoto = page.getByRole('menuitem', { name: /choose photo/i })
     await expect(choosePhoto).toBeVisible({ timeout: 15000 })
 
     // If a file chooser appears, provide a non-image to trigger a validation error
@@ -168,6 +179,7 @@ test.describe('Photo Submission - Format Validation', () => {
 test.describe('Photo Submission - Max Media Limit', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
+    await warmupConvexAuth(page)
   })
 
   test('shows max media reached message and disables buttons when limit hit', async ({ page }) => {
@@ -198,7 +210,7 @@ test.describe('Photo Submission - Max Media Limit', () => {
     })
 
     // After manual DOM manipulation, verify structure
-    const maxMessage = page.getByText(/maximum 3 media items reached/i)
+    const maxMessage = page.getByText(/maximum 3 media items reached/i).first()
     await expect(maxMessage).toBeVisible()
   })
 })
@@ -206,6 +218,7 @@ test.describe('Photo Submission - Max Media Limit', () => {
 test.describe('Photo Submission - User Cancellation', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
+    await warmupConvexAuth(page)
   })
 
   test('silently resets when user cancels photo picker', async ({ page }) => {
@@ -219,15 +232,18 @@ test.describe('Photo Submission - User Cancellation', () => {
 
     await page.goto('/dashboard/submit', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    await openMediaDropdown(page)
 
-    const choosePhoto = page.getByRole('button', { name: /choose photo/i })
+    const choosePhoto = page.getByRole('menuitem', { name: /choose photo/i })
     await expect(choosePhoto).toBeVisible({ timeout: 15000 })
 
     // Click choose photo - if a file chooser appears, dismiss it
     await choosePhoto.click()
 
-    // After cancellation, buttons should still be visible (reset to idle state)
-    await expect(choosePhoto).toBeVisible({ timeout: 5000 })
+    // After cancellation, the Add media trigger should still be visible (reset to idle state)
+    await expect(page.getByRole('button', { name: 'Add media' }).first()).toBeVisible({
+      timeout: 5000,
+    })
 
     // No error should be shown for user cancellation
     const errorText = page.getByText(/failed|error/i)

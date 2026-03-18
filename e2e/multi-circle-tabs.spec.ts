@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { setupClerkTestingToken } from '@clerk/testing/playwright'
+import { warmupConvexAuth } from './helpers'
 
 /**
  * E2E tests for multi-circle tab switching in the submission screen.
@@ -19,6 +20,7 @@ import { setupClerkTestingToken } from '@clerk/testing/playwright'
 test.describe('Multi-Circle Tab Navigation', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
+    await warmupConvexAuth(page)
   })
 
   test('dashboard page loads with circle navigation', async ({ page }) => {
@@ -44,7 +46,7 @@ test.describe('Multi-Circle Tab Navigation', () => {
     }
 
     await circleCard.click()
-    await page.waitForURL(/\/dashboard\/circles\//, { timeout: 10000 })
+    await page.waitForURL(/\/dashboard(\/circles\/|\?circle=)/, { timeout: 10000 })
 
     // The circle page should load
     await expect(page.locator('body')).toBeVisible()
@@ -62,7 +64,7 @@ test.describe('Multi-Circle Tab Navigation', () => {
     }
 
     await circleCard.click()
-    await page.waitForURL(/\/dashboard\/circles\//, { timeout: 10000 })
+    await page.waitForURL(/\/dashboard(\/circles\/|\?circle=)/, { timeout: 10000 })
 
     // Look for the tablist (CircleSubmissionTabs uses role="tablist")
     const tabList = page.getByRole('tablist')
@@ -88,7 +90,7 @@ test.describe('Multi-Circle Tab Navigation', () => {
     }
 
     await circleCard.click()
-    await page.waitForURL(/\/dashboard\/circles\//, { timeout: 10000 })
+    await page.waitForURL(/\/dashboard(\/circles\/|\?circle=)/, { timeout: 10000 })
 
     const tabList = page.getByRole('tablist')
     const hasTabList = await tabList.isVisible({ timeout: 5000 }).catch(() => false)
@@ -124,7 +126,7 @@ test.describe('Multi-Circle Tab Navigation', () => {
     }
 
     await circleCard.click()
-    await page.waitForURL(/\/dashboard\/circles\//, { timeout: 10000 })
+    await page.waitForURL(/\/dashboard(\/circles\/|\?circle=)/, { timeout: 10000 })
 
     const tabList = page.getByRole('tablist')
     const hasTabList = await tabList.isVisible({ timeout: 5000 }).catch(() => false)
@@ -172,6 +174,7 @@ test.describe('Multi-Circle Tab Navigation', () => {
 test.describe('Multi-Circle Tabs - Status Indicators', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
+    await warmupConvexAuth(page)
   })
 
   test('locked circle shows lock icon in tab', async ({ page }) => {
@@ -191,7 +194,7 @@ test.describe('Multi-Circle Tabs - Status Indicators', () => {
     }
 
     await circleCard.click()
-    await page.waitForURL(/\/dashboard\/circles\//, { timeout: 10000 })
+    await page.waitForURL(/\/dashboard(\/circles\/|\?circle=)/, { timeout: 10000 })
 
     // Look for lock icons (used when a circle has 'locked' status)
     // They may or may not be present depending on circle state
@@ -215,7 +218,7 @@ test.describe('Multi-Circle Tabs - Status Indicators', () => {
     }
 
     await circleCard.click()
-    await page.waitForURL(/\/dashboard\/circles\//, { timeout: 10000 })
+    await page.waitForURL(/\/dashboard(\/circles\/|\?circle=)/, { timeout: 10000 })
 
     // SVG circles are rendered for status indicators
     const svgElements = page.locator('svg circle')
@@ -231,6 +234,7 @@ test.describe('Multi-Circle Tabs - Status Indicators', () => {
 test.describe('Multi-Circle Tabs - Scroll Behavior', () => {
   test.beforeEach(async ({ page }) => {
     await setupClerkTestingToken({ page })
+    await warmupConvexAuth(page)
   })
 
   test('tab list has horizontal scroll when many circles present', async ({ page }) => {
@@ -245,7 +249,7 @@ test.describe('Multi-Circle Tabs - Scroll Behavior', () => {
     }
 
     await circleCard.click()
-    await page.waitForURL(/\/dashboard\/circles\//, { timeout: 10000 })
+    await page.waitForURL(/\/dashboard(\/circles\/|\?circle=)/, { timeout: 10000 })
 
     const tabList = page.getByRole('tablist')
     const hasTabList = await tabList.isVisible({ timeout: 5000 }).catch(() => false)
