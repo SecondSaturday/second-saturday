@@ -46,39 +46,14 @@ test.describe('Admin Submission Dashboard', () => {
     }
   })
 
-  test.skip('should show correct status indicators with colors', async () => {
-    // Requires multi-user setup with submissions
-  })
-
-  test.skip('should show send reminder button for non-submitted members', async () => {
-    // Requires multi-user setup with submissions
-  })
-
-  test.skip('should NOT show reminder button for submitted members', async () => {
-    // Requires multi-user setup with submissions
-  })
-
-  test.skip('should show "Coming soon" toast when clicking send reminder', async () => {
-    // Requires multi-user setup with submissions
-  })
-
-  test.skip('should redirect non-admin users to error page', async () => {
-    // Requires multi-user setup with non-admin role
-  })
-
-  test.skip('should show deadline countdown when set', async () => {
-    // Requires submission dashboard implementation
-  })
-
-  test.skip('should show submission timestamp for submitted members', async () => {
-    // Requires multi-user setup with submissions
-  })
-
-  test.skip('should NOT show content preview (privacy)', async () => {
-    // Requires multi-user setup with submissions
-  })
+  // Implemented in membership-submissions.multiuser.spec.ts:
+  // - should show correct status indicators for members
+  // - should show send reminder button for non-submitted members
+  // - should NOT show status tab for non-admin users
+  // - should NOT show content preview (privacy)
+  // - should track analytics for member_removed (in membership-remove.multiuser.spec.ts)
 
   test.skip('should update in real-time via Convex subscription', async () => {
-    // Requires multi-user setup with real-time changes
+    // Requires simultaneous browser sessions observing live Convex updates
   })
 })

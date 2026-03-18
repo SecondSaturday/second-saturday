@@ -78,17 +78,11 @@ test.describe('Admin Remove Member Flow', () => {
     }
   })
 
-  test.skip('should remove member with keep contributions option', async () => {
-    // Requires multi-user setup
-  })
-
-  test.skip('should remove member with block option', async () => {
-    // Requires multi-user setup
-  })
-
-  test.skip('should track member_removed analytics event with keepContributions flag', async () => {
-    // Requires multi-user setup
-  })
+  // Implemented in membership-remove.multiuser.spec.ts:
+  // - should remove member with keep contributions option
+  // - should remove member with block option
+  // - should track member_removed analytics event (below)
+  // - should update member count after removal
 
   test('should not allow admin to remove themselves', async ({ page }) => {
     await warmupConvexAuth(page)
@@ -123,10 +117,6 @@ test.describe('Admin Remove Member Flow', () => {
         await expect(removeButton).not.toBeVisible()
       }
     }
-  })
-
-  test.skip('should update member count after removal', async () => {
-    // Requires multi-user setup
   })
 
   test('should show only active members in list', async ({ page }) => {

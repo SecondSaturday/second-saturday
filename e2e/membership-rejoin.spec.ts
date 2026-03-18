@@ -53,27 +53,12 @@ test.describe('Rejoin Circle Flow', () => {
       await expect(page.locator('text=E2E Rejoin Test Circle')).toBeVisible({ timeout: 10000 })
     })
 
-    test.skip('should clear leftAt field when rejoining', async () => {
-      // Requires multi-user setup with leave/rejoin flow
-    })
-
-    test.skip('should restore full access after rejoining', async () => {
-      // Requires multi-user setup with leave/rejoin flow
-    })
-
-    test.skip('should show rejoin success message', async () => {
-      // Requires multi-user setup with leave/rejoin flow
-    })
-  })
-
-  test.describe('After Admin Removal (Keep Contributions)', () => {
-    test.skip('should allow rejoining if removed with keep contributions', async () => {
-      // Requires multi-user setup with admin removal
-    })
-
-    test.skip('should restore membership with original join date updated', async () => {
-      // Requires multi-user setup with admin removal
-    })
+    // Implemented in membership-rejoin.multiuser.spec.ts:
+    // - should allow rejoining via invite link after removal
+    // - should show rejoin success message
+    // - should restore access after rejoining
+    // - should clear leftAt field when rejoining (below)
+    // - should restore membership with original join date updated (below)
   })
 
   test.describe('After Admin Removal (Block)', () => {
@@ -92,21 +77,21 @@ test.describe('Rejoin Circle Flow', () => {
 
   test.describe('Rejoin Mid-Cycle', () => {
     test.skip('should allow submission for current cycle after rejoining', async () => {
-      // Requires multi-user setup with active cycle
+      // Requires multi-user setup with submission flow after rejoin
     })
 
     test.skip('should see same deadline as other members', async () => {
-      // Requires multi-user setup with active cycle
+      // Requires comparing deadline display across two user sessions
     })
   })
 
   test.describe('Past Newsletters Access', () => {
     test.skip('should restore access to past newsletters after rejoining', async () => {
-      // Requires multi-user setup with published newsletters
+      // Requires pre-existing newsletter data
     })
 
     test.skip('should see own past contributions in newsletters', async () => {
-      // Requires multi-user setup with published newsletters
+      // Requires pre-existing newsletter data with user contributions
     })
   })
 

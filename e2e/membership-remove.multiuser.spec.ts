@@ -155,4 +155,57 @@ test.describe('Multi-User: Admin Remove Member', () => {
       await user2Page.context().close()
     }
   })
+
+  test('should track member_removed analytics event with keepContributions flag', async ({
+    page,
+    browser,
+    context,
+  }) => {
+    await setupClerkTestingToken({ page })
+
+    // Intercept PostHog analytics requests
+    const analyticsEvents: string[] = []
+    await context.route('**/*posthog*/**', async (route) => {
+      const body = route.request().postData()
+      if (body) analyticsEvents.push(body)
+      await route.continue()
+    })
+
+    const circleId = await createCircle(page, 'E2E Analytics Remove Test')
+    const inviteCode = await getInviteCode(page, circleId)
+
+    const user2Page = await createUser2Page(browser)
+    try {
+      await joinCircleViaInvite(user2Page, inviteCode)
+
+      // User A removes User B
+      await page.goto(`/dashboard/circles/${circleId}/settings`, {
+        waitUntil: 'domcontentloaded',
+      })
+      await page.waitForFunction(
+        () => !document.querySelector('.animate-spin') && !document.querySelector('.animate-pulse'),
+        { timeout: 20000 }
+      )
+
+      const membersTab = page.getByRole('tab', { name: /members/i })
+      await expect(membersTab).toBeVisible({ timeout: 15000 })
+      await membersTab.click()
+
+      await page.waitForFunction(
+        () => document.querySelectorAll('[aria-label="Member actions"]').length >= 1,
+        { timeout: 20000 }
+      )
+
+      await page.locator('[aria-label="Member actions"]').first().click()
+      await page.getByRole('menuitem', { name: /remove/i }).click()
+      await page.getByRole('button', { name: /^remove$/i }).click()
+      await expect(page.getByText(/removed/i).first()).toBeVisible({ timeout: 10000 })
+
+      // Verify analytics event was captured
+      const hasRemovalEvent = analyticsEvents.some((e) => e.includes('member_removed'))
+      expect(hasRemovalEvent).toBe(true)
+    } finally {
+      await user2Page.context().close()
+    }
+  })
 })

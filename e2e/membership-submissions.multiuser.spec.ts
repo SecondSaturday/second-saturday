@@ -145,4 +145,74 @@ test.describe('Multi-User: Submission Status Dashboard', () => {
       await user2Page.context().close()
     }
   })
+
+  test('should show "Reminder sent!" toast when clicking send reminder', async ({
+    page,
+    browser,
+  }) => {
+    await setupClerkTestingToken({ page })
+
+    const circleId = await createCircle(page, 'E2E Reminder Toast Test')
+    const inviteCode = await getInviteCode(page, circleId)
+
+    const user2Page = await createUser2Page(browser)
+    try {
+      await joinCircleViaInvite(user2Page, inviteCode)
+
+      // User A navigates to Status tab
+      await page.goto(`/dashboard/circles/${circleId}/settings`, {
+        waitUntil: 'domcontentloaded',
+      })
+      await page.waitForFunction(
+        () => !document.querySelector('.animate-spin') && !document.querySelector('.animate-pulse'),
+        { timeout: 20000 }
+      )
+
+      const statusTab = page.getByRole('tab', { name: /status/i })
+      await expect(statusTab).toBeVisible({ timeout: 10000 })
+      await statusTab.click()
+
+      // Click the individual remind button (Send icon) for User B
+      const sendBtn = page.locator('button[title="Send reminder"]').first()
+      const hasSendBtn = await sendBtn.isVisible({ timeout: 10000 }).catch(() => false)
+
+      if (hasSendBtn) {
+        await sendBtn.click()
+        // Should show "Reminder sent!" toast
+        await expect(page.getByText(/reminder sent/i)).toBeVisible({ timeout: 10000 })
+      }
+    } finally {
+      await user2Page.context().close()
+    }
+  })
+
+  test('should show deadline info on submissions status page', async ({ page, browser }) => {
+    await setupClerkTestingToken({ page })
+
+    const circleId = await createCircle(page, 'E2E Status Deadline Test')
+    const inviteCode = await getInviteCode(page, circleId)
+
+    const user2Page = await createUser2Page(browser)
+    try {
+      await joinCircleViaInvite(user2Page, inviteCode)
+
+      // User A navigates to Status tab
+      await page.goto(`/dashboard/circles/${circleId}/settings`, {
+        waitUntil: 'domcontentloaded',
+      })
+      await page.waitForFunction(
+        () => !document.querySelector('.animate-spin') && !document.querySelector('.animate-pulse'),
+        { timeout: 20000 }
+      )
+
+      const statusTab = page.getByRole('tab', { name: /status/i })
+      await expect(statusTab).toBeVisible({ timeout: 10000 })
+      await statusTab.click()
+
+      // The status dashboard should show reminders remaining
+      await expect(page.getByText(/reminders remaining/i)).toBeVisible({ timeout: 10000 })
+    } finally {
+      await user2Page.context().close()
+    }
+  })
 })

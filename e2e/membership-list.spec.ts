@@ -175,13 +175,9 @@ test.describe('Member List Display', () => {
     }
   })
 
-  test.skip('should update in real-time when members are added/removed', async () => {
-    // Requires multi-user setup with real-time changes
-  })
-
-  test.skip('should show empty state when no members (edge case)', async () => {
-    // Edge case requiring special setup
-  })
+  // Implemented in membership-list.multiuser.spec.ts:
+  // - should update in real-time when members join
+  // - should NOT show remove button for non-admin users
 
   test('should show remove button for admin on all non-admin members', async ({ page }) => {
     await warmupConvexAuth(page)
@@ -216,9 +212,5 @@ test.describe('Member List Display', () => {
         }
       }
     }
-  })
-
-  test.skip('should NOT show remove button for non-admin users', async () => {
-    // Requires multi-user setup with non-admin role
   })
 })

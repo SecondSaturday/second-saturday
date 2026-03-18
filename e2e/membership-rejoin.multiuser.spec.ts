@@ -132,4 +132,74 @@ test.describe('Multi-User: Rejoin After Removal', () => {
       await user2Page.context().close()
     }
   })
+
+  test('should clear leftAt and show member in active list after rejoining', async ({
+    page,
+    browser,
+  }) => {
+    await setupClerkTestingToken({ page })
+
+    const { circleId, inviteCode, user2Page } = await setupRemovalScenario(
+      page,
+      browser,
+      'E2E Clear LeftAt Test'
+    )
+
+    try {
+      // User A verifies User B is NOT in the active member list
+      await page.goto(`/dashboard/circles/${circleId}/settings`, {
+        waitUntil: 'domcontentloaded',
+      })
+      await page.waitForFunction(
+        () => !document.querySelector('.animate-spin') && !document.querySelector('.animate-pulse'),
+        { timeout: 20000 }
+      )
+      const membersTab = page.getByRole('tab', { name: /members/i })
+      await expect(membersTab).toBeVisible({ timeout: 10000 })
+      await membersTab.click()
+
+      // Should show only 1 member (admin) — User B was removed
+      await expect(page.getByRole('tab', { name: /members.*1/i })).toBeVisible({ timeout: 10000 })
+
+      // User B rejoins
+      await joinCircleViaInvite(user2Page, inviteCode)
+
+      // User A's member list should now show 2 members (real-time update)
+      await expect(page.getByRole('tab', { name: /members.*2/i })).toBeVisible({ timeout: 15000 })
+    } finally {
+      await user2Page.context().close()
+    }
+  })
+
+  test('should update join date when member rejoins', async ({ page, browser }) => {
+    await setupClerkTestingToken({ page })
+
+    const { circleId, inviteCode, user2Page } = await setupRemovalScenario(
+      page,
+      browser,
+      'E2E Rejoin Date Test'
+    )
+
+    try {
+      // User B rejoins
+      await joinCircleViaInvite(user2Page, inviteCode)
+
+      // User A views the member list — User B should appear with a recent join date
+      await page.goto(`/dashboard/circles/${circleId}/settings`, {
+        waitUntil: 'domcontentloaded',
+      })
+      await page.waitForFunction(
+        () => !document.querySelector('.animate-spin') && !document.querySelector('.animate-pulse'),
+        { timeout: 20000 }
+      )
+      const membersTab = page.getByRole('tab', { name: /members/i })
+      await expect(membersTab).toBeVisible({ timeout: 10000 })
+      await membersTab.click()
+
+      // Should show 2 members now
+      await expect(page.getByRole('tab', { name: /members.*2/i })).toBeVisible({ timeout: 15000 })
+    } finally {
+      await user2Page.context().close()
+    }
+  })
 })
