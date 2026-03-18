@@ -1,8 +1,66 @@
-import { type Page, expect } from '@playwright/test'
+import { type Page, type Browser, expect } from '@playwright/test'
+import { setupClerkTestingToken } from '@clerk/testing/playwright'
+import path from 'path'
 
 /**
  * Helper functions for E2E tests
  */
+
+/**
+ * Creates an authenticated browser page for a secondary user.
+ * Uses the saved auth state from auth.setup.ts.
+ * Returns the new page — caller must close the context when done.
+ */
+export async function createUser2Page(browser: Browser): Promise<Page> {
+  const context = await browser.newContext({
+    storageState: path.join(__dirname, '../.auth/user2.json'),
+  })
+  const page = await context.newPage()
+  await setupClerkTestingToken({ page })
+  return page
+}
+
+/**
+ * Creates an authenticated browser page for the third user.
+ */
+export async function createUser3Page(browser: Browser): Promise<Page> {
+  const context = await browser.newContext({
+    storageState: path.join(__dirname, '../.auth/user3.json'),
+  })
+  const page = await context.newPage()
+  await setupClerkTestingToken({ page })
+  return page
+}
+
+/**
+ * Joins a circle via invite code using the given page (different user context).
+ * Navigates to the invite page, clicks Join, and waits for redirect.
+ */
+export async function joinCircleViaInvite(page: Page, inviteCode: string): Promise<void> {
+  // First warm up auth so Clerk recognizes the user
+  await warmupConvexAuth(page)
+
+  // Navigate to invite page
+  await page.goto(`/invite/${inviteCode}`, { waitUntil: 'domcontentloaded' })
+  await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+
+  // Authenticated users see "Join Circle" button, unauthenticated see "Sign up to Join"/"Log in to Join"
+  const joinBtn = page.getByRole('button', { name: /^join circle$/i })
+  const loginJoinBtn = page.getByRole('button', { name: /log in to join/i })
+
+  // Wait for either button
+  await expect(joinBtn.or(loginJoinBtn)).toBeVisible({ timeout: 15000 })
+
+  if (await joinBtn.isVisible().catch(() => false)) {
+    await joinBtn.click()
+    await page.waitForURL(/\/dashboard/, { timeout: 15000 })
+  } else {
+    // User appears unauthenticated on invite page — click "Log in to Join"
+    // which will redirect through auth and auto-join
+    await loginJoinBtn.click()
+    await page.waitForURL(/\/dashboard/, { timeout: 30000 })
+  }
+}
 
 /**
  * Waits for React hydration on the create circle page.
@@ -89,7 +147,8 @@ export async function navigateToCreatePage(page: Page): Promise<void> {
   const menuBtn = page.locator('button[aria-label="Menu"]').first()
   if (await menuBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
     await menuBtn.click()
-    await page.getByText('Create a circle').click()
+    // Use menuitem role to avoid strict mode violation with empty state link
+    await page.getByRole('menuitem', { name: /create a circle/i }).click()
   } else {
     // Empty state has a direct "Create a circle" link
     await page.getByText('Create a circle').click()
@@ -150,10 +209,24 @@ export async function createCircle(
  * Gets the invite code for a circle by navigating to its settings page.
  */
 export async function getInviteCode(page: Page, circleId: string): Promise<string> {
-  // Navigate directly to the settings page
-  await page.goto(`/dashboard/circles/${circleId}/settings`, {
-    waitUntil: 'domcontentloaded',
-  })
+  // Navigate to settings page — prefer client-side nav if on prompts page
+  const currentUrl = page.url()
+  if (currentUrl.includes(`/circles/${circleId}/prompts`)) {
+    // Use the back arrow link (goes to settings) to preserve Convex WebSocket auth
+    const backLink = page.locator(`a[href*="/circles/${circleId}/settings"]`).first()
+    if (await backLink.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await backLink.click()
+      await page.waitForURL(/\/settings/, { timeout: 10000 })
+    } else {
+      await page.goto(`/dashboard/circles/${circleId}/settings`, {
+        waitUntil: 'domcontentloaded',
+      })
+    }
+  } else {
+    await page.goto(`/dashboard/circles/${circleId}/settings`, {
+      waitUntil: 'domcontentloaded',
+    })
+  }
 
   // Wait for CircleSettings component to finish loading
   await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })

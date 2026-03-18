@@ -19,13 +19,13 @@ export default defineConfig({
   },
 
   projects: [
-    // Setup project - runs first to authenticate
+    // Setup project - runs first to authenticate all users
     {
       name: 'setup',
       testMatch: /auth\.setup\.ts/,
     },
 
-    // Authenticated tests - use saved auth state
+    // Authenticated tests - use saved auth state (primary user)
     {
       name: 'authenticated',
       use: {
@@ -33,7 +33,18 @@ export default defineConfig({
         storageState: '.auth/user.json',
       },
       dependencies: ['setup'],
-      testIgnore: /auth\.setup\.ts/,
+      testIgnore: [/auth\.setup\.ts/, /\.multiuser\.spec\.ts/],
+    },
+
+    // Multi-user tests - these manage their own auth contexts
+    {
+      name: 'multiuser',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: '.auth/user.json',
+      },
+      dependencies: ['setup'],
+      testMatch: /\.multiuser\.spec\.ts/,
     },
 
     // Unauthenticated tests - no auth state
