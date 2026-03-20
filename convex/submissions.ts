@@ -280,9 +280,18 @@ export const getSubmissionForCircle = query({
         // Get media URLs
         const mediaWithUrls = await Promise.all(
           sortedMedia.map(async (m) => {
-            let url = null
+            let url: string | null = null
             if (m.storageId) {
               url = await ctx.storage.getUrl(m.storageId)
+            } else if (m.type === 'video' && m.muxAssetId) {
+              // Videos stored on Mux don't have a storageId — look up the playback ID
+              const video = await ctx.db
+                .query('videos')
+                .withIndex('by_asset_id', (q) => q.eq('assetId', m.muxAssetId!))
+                .first()
+              if (video?.playbackId) {
+                url = `https://stream.mux.com/${video.playbackId}.m3u8`
+              }
             }
             return {
               ...m,
@@ -325,7 +334,15 @@ export const getPromptsForCircle = query({
       .withIndex('by_circle', (q) => q.eq('circleId', args.circleId))
       .collect()
 
-    return prompts.filter((p) => p.active).sort((a, b) => a.order - b.order)
+    const active = prompts.filter((p) => p.active).sort((a, b) => a.order - b.order)
+    // Deduplicate by prompt text (safety net for legacy data)
+    const seen = new Set<string>()
+    return active.filter((p) => {
+      const key = p.text.trim().toLowerCase()
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
   },
 })
 

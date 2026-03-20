@@ -20,11 +20,12 @@ test.describe('Newsletter View Page', () => {
   test('circle landing page loads without server errors', async ({ page }) => {
     const circleId = await createCircle(page, 'E2E Newsletter Load Test')
 
+    // Warm up Convex auth before navigating (page.goto breaks Convex WebSocket)
+    await warmupConvexAuth(page)
     await page.goto(`/dashboard/circles/${circleId}`, {
       waitUntil: 'domcontentloaded',
     })
-
-    // Page should load — either shows newsletter or "No newsletter for this month"
+    await page.waitForSelector('header', { timeout: 20000 })
     await page.waitForFunction(
       () => !document.querySelector('.animate-spin') && !document.querySelector('.animate-pulse'),
       { timeout: 20000 }
@@ -47,9 +48,12 @@ test.describe('Newsletter View Page', () => {
   test('circle page has back button to dashboard', async ({ page }) => {
     const circleId = await createCircle(page, 'E2E Back Button Test')
 
+    // Warm up Convex auth before navigating (page.goto breaks Convex WebSocket)
+    await warmupConvexAuth(page)
     await page.goto(`/dashboard/circles/${circleId}`, {
       waitUntil: 'domcontentloaded',
     })
+    await page.waitForSelector('header', { timeout: 20000 })
     await page.waitForFunction(
       () => !document.querySelector('.animate-spin') && !document.querySelector('.animate-pulse'),
       { timeout: 20000 }
@@ -63,9 +67,12 @@ test.describe('Newsletter View Page', () => {
   test('new circle shows no newsletter for this month', async ({ page }) => {
     const circleId = await createCircle(page, 'E2E No Newsletter Test')
 
+    // Warm up Convex auth before navigating (page.goto breaks Convex WebSocket)
+    await warmupConvexAuth(page)
     await page.goto(`/dashboard/circles/${circleId}`, {
       waitUntil: 'domcontentloaded',
     })
+    await page.waitForSelector('header', { timeout: 20000 })
     await page.waitForFunction(
       () => !document.querySelector('.animate-spin') && !document.querySelector('.animate-pulse'),
       { timeout: 20000 }
@@ -87,9 +94,12 @@ test.describe('Newsletter View - Navigation', () => {
   test('back button navigates to dashboard', async ({ page }) => {
     const circleId = await createCircle(page, 'E2E Nav Back Test')
 
+    // Warm up Convex auth before navigating (page.goto breaks Convex WebSocket)
+    await warmupConvexAuth(page)
     await page.goto(`/dashboard/circles/${circleId}`, {
       waitUntil: 'domcontentloaded',
     })
+    await page.waitForSelector('header', { timeout: 20000 })
     await page.waitForFunction(
       () => !document.querySelector('.animate-spin') && !document.querySelector('.animate-pulse'),
       { timeout: 20000 }

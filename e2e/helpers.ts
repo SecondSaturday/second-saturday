@@ -56,9 +56,19 @@ export async function joinCircleViaInvite(page: Page, inviteCode: string): Promi
     await page.waitForURL(/\/dashboard/, { timeout: 15000 })
   } else {
     // User appears unauthenticated on invite page — click "Log in to Join"
-    // which will redirect through auth and auto-join
+    // which will redirect through auth and back to invite page
     await loginJoinBtn.click()
-    await page.waitForURL(/\/dashboard/, { timeout: 30000 })
+    // After sign-in redirect, user may land back on invite page (not dashboard)
+    await page.waitForURL(/\/(dashboard|invite)/, { timeout: 30000 })
+
+    // If redirected back to invite page after auth, click "Join Circle"
+    if (page.url().includes('/invite/')) {
+      await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+      const joinBtnAfterAuth = page.getByRole('button', { name: /^join circle$/i })
+      await expect(joinBtnAfterAuth).toBeVisible({ timeout: 15000 })
+      await joinBtnAfterAuth.click()
+      await page.waitForURL(/\/dashboard/, { timeout: 15000 })
+    }
   }
 }
 

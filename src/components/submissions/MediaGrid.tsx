@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { X, Play } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Id } from '../../../convex/_generated/dataModel'
@@ -14,17 +15,37 @@ export interface MediaItem {
 interface MediaGridProps {
   media: MediaItem[]
   onRemove?: (mediaId: Id<'media'>) => void
+  onBrokenMedia?: () => void
   disabled?: boolean
   className?: string
 }
 
-export function MediaGrid({ media, onRemove, disabled = false, className }: MediaGridProps) {
-  if (media.length === 0) {
+export function MediaGrid({
+  media,
+  onRemove,
+  onBrokenMedia,
+  disabled = false,
+  className,
+}: MediaGridProps) {
+  const [brokenIds, setBrokenIds] = useState<Set<string>>(new Set())
+
+  const visibleMedia = media.filter((m) => !brokenIds.has(m._id))
+
+  if (visibleMedia.length === 0) {
     return null
   }
 
+  const handleImageError = (id: string) => {
+    setBrokenIds((prev) => {
+      if (prev.has(id)) return prev
+      const next = new Set(prev).add(id)
+      onBrokenMedia?.()
+      return next
+    })
+  }
+
   const getGridLayout = () => {
-    switch (media.length) {
+    switch (visibleMedia.length) {
       case 1:
         return 'grid-cols-1'
       case 2:
@@ -38,12 +59,12 @@ export function MediaGrid({ media, onRemove, disabled = false, className }: Medi
 
   return (
     <div className={cn('grid gap-2', getGridLayout(), className)}>
-      {media.map((item, index) => (
+      {visibleMedia.map((item, index) => (
         <div
           key={item._id}
           className={cn(
             'group relative aspect-square overflow-hidden rounded-lg bg-muted',
-            media.length === 3 && index === 0 && 'col-span-2'
+            visibleMedia.length === 3 && index === 0 && 'col-span-2'
           )}
         >
           {/* Media Display */}
@@ -53,6 +74,7 @@ export function MediaGrid({ media, onRemove, disabled = false, className }: Medi
               src={item.url}
               alt={`Media ${index + 1}`}
               className="size-full object-cover transition-transform group-hover:scale-105"
+              onError={() => handleImageError(item._id)}
             />
           ) : (
             <div className="relative size-full">
@@ -61,6 +83,7 @@ export function MediaGrid({ media, onRemove, disabled = false, className }: Medi
                 src={item.thumbnailUrl ?? item.url}
                 alt={`Video ${index + 1}`}
                 className="size-full object-cover"
+                onError={() => handleImageError(item._id)}
               />
               {/* Video Play Indicator */}
               <div className="absolute inset-0 flex items-center justify-center bg-black/20">

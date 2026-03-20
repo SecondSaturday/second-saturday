@@ -103,19 +103,26 @@ test.describe('Admin Submission Reminders', () => {
     await page.goto(`/dashboard/circles/${circleId}/submissions`, {
       waitUntil: 'domcontentloaded',
     })
-    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
 
-    // Admin should see the submission status header
-    await expect(page.getByText('Submission Status')).toBeVisible({ timeout: 15000 })
+    // Wait for the actual heading to render (not just spinner absence —
+    // page.goto can resolve before React hydrates, making the spinner check pass prematurely)
+    await expect(page.getByRole('heading', { name: 'Submission Status' })).toBeVisible({
+      timeout: 20000,
+    })
   })
 
   test('admin sees reminders remaining text', async ({ page }) => {
     const circleId = await createCircle(page, 'E2E Reminders Text Test')
 
+    // Warm up Convex auth before navigating (page.goto breaks Convex WebSocket)
+    await warmupConvexAuth(page)
     await page.goto(`/dashboard/circles/${circleId}/submissions`, {
       waitUntil: 'domcontentloaded',
     })
-    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    // Wait for the page to fully render
+    await expect(page.getByRole('heading', { name: 'Submission Status' })).toBeVisible({
+      timeout: 20000,
+    })
 
     // Should see "X of 3 reminders remaining"
     await expect(page.getByText(/\d+ of 3 reminders remaining/)).toBeVisible({ timeout: 15000 })
@@ -127,7 +134,10 @@ test.describe('Admin Submission Reminders', () => {
     await page.goto(`/dashboard/circles/${circleId}/submissions`, {
       waitUntil: 'domcontentloaded',
     })
-    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    // Wait for the page to fully render
+    await expect(page.getByRole('heading', { name: 'Submission Status' })).toBeVisible({
+      timeout: 20000,
+    })
 
     // Should see the bulk remind button
     await expect(page.getByRole('button', { name: /remind all non-submitters/i })).toBeVisible({
@@ -141,10 +151,10 @@ test.describe('Admin Submission Reminders', () => {
     await page.goto(`/dashboard/circles/${circleId}/submissions`, {
       waitUntil: 'domcontentloaded',
     })
-    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
-
-    // The submissions page should have the header and reminder section
-    await expect(page.getByText('Submission Status')).toBeVisible({ timeout: 15000 })
+    // Wait for the page to fully render
+    await expect(page.getByRole('heading', { name: 'Submission Status' })).toBeVisible({
+      timeout: 20000,
+    })
     await expect(page.getByText(/reminders remaining/)).toBeVisible({ timeout: 15000 })
   })
 })

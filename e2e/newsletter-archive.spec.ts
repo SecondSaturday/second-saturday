@@ -12,8 +12,10 @@ test.describe('Newsletter - Circle Home', () => {
   test('circle home page loads without errors', async ({ page }) => {
     const circleId = await createCircle(page, 'E2E Circle Home Test')
 
+    // Warm up Convex auth before navigating (page.goto breaks Convex WebSocket)
+    await warmupConvexAuth(page)
     await page.goto(`/dashboard/circles/${circleId}`, { waitUntil: 'domcontentloaded' })
-    // Wait for Convex to re-authenticate and load data
+    await page.waitForSelector('header', { timeout: 20000 })
     await page.waitForFunction(
       () => !document.querySelector('.animate-spin') && !document.querySelector('.animate-pulse'),
       { timeout: 20000 }
@@ -28,8 +30,10 @@ test.describe('Newsletter - Circle Home', () => {
   test('circle home shows newsletter content or empty state', async ({ page }) => {
     const circleId = await createCircle(page, 'E2E Circle Content Test')
 
+    // Warm up Convex auth before navigating (page.goto breaks Convex WebSocket)
+    await warmupConvexAuth(page)
     await page.goto(`/dashboard/circles/${circleId}`, { waitUntil: 'domcontentloaded' })
-    // Wait for Convex to re-authenticate and load data
+    await page.waitForSelector('header', { timeout: 20000 })
     await page.waitForFunction(
       () => !document.querySelector('.animate-spin') && !document.querySelector('.animate-pulse'),
       { timeout: 20000 }
@@ -44,8 +48,10 @@ test.describe('Newsletter - Circle Home', () => {
   test('circle home has back link to dashboard', async ({ page }) => {
     const circleId = await createCircle(page, 'E2E Circle Back Test')
 
+    // Warm up Convex auth before navigating (page.goto breaks Convex WebSocket)
+    await warmupConvexAuth(page)
     await page.goto(`/dashboard/circles/${circleId}`, { waitUntil: 'domcontentloaded' })
-    // Wait for Convex to re-authenticate and load data
+    await page.waitForSelector('header', { timeout: 20000 })
     await page.waitForFunction(
       () => !document.querySelector('.animate-spin') && !document.querySelector('.animate-pulse'),
       { timeout: 20000 }

@@ -39,9 +39,11 @@ test.describe('Circle Settings (with circle)', () => {
   async function openSettingsPage(page: import('@playwright/test').Page, circleId: string) {
     // Navigate directly to the settings page
     await page.goto(`/dashboard/circles/${circleId}/settings`, { waitUntil: 'domcontentloaded' })
-    // Wait for page to hydrate (Convex data loaded, spinner gone)
+    // Wait for React to mount (heading appears in server-rendered shell)
+    await page.waitForSelector('h1', { timeout: 15000 })
+    // Wait for Convex data to load (spinner gone)
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
-    // Wait for the settings heading to be visible
+    // Verify heading is visible
     await expect(page.getByRole('heading', { name: 'Circle Settings' })).toBeVisible({
       timeout: 15000,
     })

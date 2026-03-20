@@ -41,9 +41,9 @@ const E2E_EXACT_NAMES = new Set([
   'E2E Submission Dashboard Test',
 ])
 
-function isE2ECircle(name: string): boolean {
-  // Match exact known test names or any circle starting with "E2E "
-  return E2E_EXACT_NAMES.has(name) || name.startsWith('E2E ')
+function isTestCircle(name: string): boolean {
+  // Match exact known test names, or any circle starting with "E2E " or "QA "
+  return E2E_EXACT_NAMES.has(name) || name.startsWith('E2E ') || name.startsWith('QA ')
 }
 
 export const cleanupE2EData = mutation({
@@ -55,7 +55,7 @@ export const cleanupE2EData = mutation({
 
     // Find all circles matching E2E patterns
     const allCircles = await ctx.db.query('circles').collect()
-    const e2eCircles = allCircles.filter((c) => isE2ECircle(c.name))
+    const e2eCircles = allCircles.filter((c) => isTestCircle(c.name))
 
     const stats = {
       circles: 0,

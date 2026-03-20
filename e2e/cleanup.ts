@@ -1,11 +1,11 @@
 /**
- * E2E Test Data Cleanup Script
+ * Test Data Cleanup Script
  *
- * Removes circles and all related data created by E2E tests from Convex.
- * Only deletes circles matching known E2E test name patterns.
+ * Removes circles and all related data created by E2E tests or QA dogfooding from Convex.
+ * Only deletes circles matching known test name patterns (E2E *, QA *).
  *
  * Usage:
- *   pnpm e2e:cleanup              # Delete E2E test data
+ *   pnpm e2e:cleanup              # Delete E2E + QA test data
  *   pnpm e2e:cleanup --dry-run    # Preview what would be deleted
  */
 

@@ -51,6 +51,12 @@ next-env.d.ts
 # clone cache
 /.clone/
 
+# dogfood / QA output
+/dogfood-output/
+e2e-results*.log
+e2e-results*.md
+e2e-auth-debug*.png
+
 # dev analysis files
 .claude/epics/epic-1-analysis.md
 .claude/epics/epic-3-audit.md

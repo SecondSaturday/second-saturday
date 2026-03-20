@@ -150,7 +150,7 @@ export function CircleSubmissionTabs({
               {/* Circle name */}
               <span
                 className={cn(
-                  'text-xs font-medium max-w-[80px] truncate',
+                  'text-xs font-medium max-w-[120px] truncate',
                   'text-muted-foreground',
                   'group-data-[state=active]/tabs:text-foreground'
                 )}

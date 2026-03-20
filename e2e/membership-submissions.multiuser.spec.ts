@@ -14,8 +14,53 @@ import {
  * User B (user2) = non-admin member whose status is tracked.
  */
 
+/**
+ * Ensures user A is on the settings page with tabs rendered.
+ * If already on the settings page (e.g. after getInviteCode), avoids a full
+ * page.goto() which can break Convex WebSocket auth. Uses reload instead.
+ * Falls back to full navigation if reload doesn't establish Convex auth.
+ */
+async function ensureOnSettingsWithTabs(page: import('@playwright/test').Page, circleId: string) {
+  const settingsUrl = `/dashboard/circles/${circleId}/settings`
+  const currentUrl = page.url()
+
+  if (currentUrl.includes(`/circles/${circleId}/settings`)) {
+    // Already on settings (e.g. after getInviteCode) — Convex subscriptions
+    // keep data live, so tabs should already be visible without navigation.
+    const tabsAlready = await page
+      .waitForFunction(() => document.querySelectorAll('[role="tab"]').length >= 3, {
+        timeout: 10000,
+      })
+      .then(() => true)
+      .catch(() => false)
+
+    if (tabsAlready) return
+
+    // Tabs not visible — reload to re-establish Convex auth
+    await page.reload({ waitUntil: 'domcontentloaded' })
+  } else {
+    await page.goto(settingsUrl, { waitUntil: 'domcontentloaded' })
+  }
+
+  const tabsLoaded = await page
+    .waitForFunction(() => document.querySelectorAll('[role="tab"]').length >= 3, {
+      timeout: 25000,
+    })
+    .then(() => true)
+    .catch(() => false)
+
+  if (!tabsLoaded) {
+    // Last resort: warm up Convex auth on dashboard then retry
+    await warmupConvexAuth(page)
+    await page.goto(settingsUrl, { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => document.querySelectorAll('[role="tab"]').length >= 3, {
+      timeout: 30000,
+    })
+  }
+}
+
 test.describe('Multi-User: Submission Status Dashboard', () => {
-  test.setTimeout(90000)
+  test.setTimeout(120000)
 
   test('should show correct status indicators for members', async ({ page, browser }) => {
     await setupClerkTestingToken({ page })
@@ -28,10 +73,7 @@ test.describe('Multi-User: Submission Status Dashboard', () => {
       await joinCircleViaInvite(user2Page, inviteCode)
 
       // User A navigates to settings → Status tab
-      await page.goto(`/dashboard/circles/${circleId}/settings`, {
-        waitUntil: 'domcontentloaded',
-      })
-      await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+      await ensureOnSettingsWithTabs(page, circleId)
 
       const statusTab = page.getByRole('tab', { name: /status/i })
       await expect(statusTab).toBeVisible({ timeout: 10000 })
@@ -56,10 +98,7 @@ test.describe('Multi-User: Submission Status Dashboard', () => {
       await joinCircleViaInvite(user2Page, inviteCode)
 
       // User A navigates to settings → Status tab
-      await page.goto(`/dashboard/circles/${circleId}/settings`, {
-        waitUntil: 'domcontentloaded',
-      })
-      await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+      await ensureOnSettingsWithTabs(page, circleId)
 
       const statusTab = page.getByRole('tab', { name: /status/i })
       await expect(statusTab).toBeVisible({ timeout: 10000 })
@@ -92,13 +131,13 @@ test.describe('Multi-User: Submission Status Dashboard', () => {
     try {
       await joinCircleViaInvite(user2Page, inviteCode)
 
-      // User B navigates to settings
+      // User B navigates to settings — wait for tabs to render
       await warmupConvexAuth(user2Page)
       await user2Page.goto(`/dashboard/circles/${circleId}/settings`, {
         waitUntil: 'domcontentloaded',
       })
-      await user2Page.waitForFunction(() => !document.querySelector('.animate-spin'), {
-        timeout: 15000,
+      await user2Page.waitForFunction(() => document.querySelectorAll('[role="tab"]').length >= 3, {
+        timeout: 20000,
       })
 
       // User B should NOT see the Status tab (admin-only)
@@ -121,10 +160,7 @@ test.describe('Multi-User: Submission Status Dashboard', () => {
       await joinCircleViaInvite(user2Page, inviteCode)
 
       // User A navigates to Status tab
-      await page.goto(`/dashboard/circles/${circleId}/settings`, {
-        waitUntil: 'domcontentloaded',
-      })
-      await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+      await ensureOnSettingsWithTabs(page, circleId)
 
       const statusTab = page.getByRole('tab', { name: /status/i })
       await expect(statusTab).toBeVisible({ timeout: 10000 })
@@ -160,13 +196,7 @@ test.describe('Multi-User: Submission Status Dashboard', () => {
       await joinCircleViaInvite(user2Page, inviteCode)
 
       // User A navigates to Status tab
-      await page.goto(`/dashboard/circles/${circleId}/settings`, {
-        waitUntil: 'domcontentloaded',
-      })
-      await page.waitForFunction(
-        () => !document.querySelector('.animate-spin') && !document.querySelector('.animate-pulse'),
-        { timeout: 20000 }
-      )
+      await ensureOnSettingsWithTabs(page, circleId)
 
       const statusTab = page.getByRole('tab', { name: /status/i })
       await expect(statusTab).toBeVisible({ timeout: 10000 })
@@ -197,13 +227,7 @@ test.describe('Multi-User: Submission Status Dashboard', () => {
       await joinCircleViaInvite(user2Page, inviteCode)
 
       // User A navigates to Status tab
-      await page.goto(`/dashboard/circles/${circleId}/settings`, {
-        waitUntil: 'domcontentloaded',
-      })
-      await page.waitForFunction(
-        () => !document.querySelector('.animate-spin') && !document.querySelector('.animate-pulse'),
-        { timeout: 20000 }
-      )
+      await ensureOnSettingsWithTabs(page, circleId)
 
       const statusTab = page.getByRole('tab', { name: /status/i })
       await expect(statusTab).toBeVisible({ timeout: 10000 })

@@ -255,7 +255,14 @@ export const getCirclesByUser = query({
 export const getCircle = query({
   args: { circleId: v.id('circles') },
   handler: async (ctx, args) => {
-    const user = await getAuthUser(ctx)
+    // Gracefully return null if auth is not yet ready (avoids race condition on direct navigation)
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) return null
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', (q) => q.eq('clerkId', identity.subject))
+      .first()
+    if (!user) return null
 
     // Check membership - return null if not a member
     const membership = await ctx.db

@@ -6,7 +6,7 @@ import { DashboardHeader } from '@/components/dashboard/DashboardHeader'
 import { CircleList } from '@/components/dashboard/CircleList'
 import { SubmitFAB } from '@/components/dashboard/SubmitFAB'
 import { DatePicker } from '@/components/dashboard/DatePicker'
-import { getLastSecondSaturday, formatShortDate } from '@/lib/dates'
+import { getLastSecondSaturday, formatMonthYear } from '@/lib/dates'
 import { trackEvent } from '@/lib/analytics'
 import type { Id } from '../../../convex/_generated/dataModel'
 import { useQuery } from 'convex/react'
@@ -55,7 +55,7 @@ export default function DashboardPage() {
       {/* Sidebar (full-screen on mobile, fixed-width on desktop) */}
       <div className="flex min-h-0 w-full flex-col md:w-[380px] md:border-r md:border-border">
         <DashboardHeader
-          dateLabel={formatShortDate(selectedDate)}
+          dateLabel={formatMonthYear(selectedDate)}
           onDatePickerOpen={() => setDatePickerOpen(true)}
         />
         <CircleList onCircleSelect={handleCircleSelect} />

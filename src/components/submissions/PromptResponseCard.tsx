@@ -82,6 +82,7 @@ export function PromptResponseCard({
         <MediaGrid
           media={existingMedia}
           onRemove={disabled ? undefined : onMediaRemove}
+          onBrokenMedia={() => setMediaCount((prev) => Math.max(0, prev - 1))}
           disabled={disabled}
         />
       )}

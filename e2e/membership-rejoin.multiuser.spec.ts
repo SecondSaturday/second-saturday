@@ -124,10 +124,9 @@ test.describe('Multi-User: Rejoin After Removal', () => {
         timeout: 15000,
       })
 
-      // Should see the submission form (not "Join or create a circle")
+      // Should see the submission page loaded (heading is present whether user has circles or not)
       const heading = user2Page.getByRole('heading', { name: /make submission/i })
-      const joinPrompt = user2Page.getByText(/join or create a circle/i)
-      await expect(heading.or(joinPrompt)).toBeVisible({ timeout: 15000 })
+      await expect(heading).toBeVisible({ timeout: 15000 })
     } finally {
       await user2Page.context().close()
     }

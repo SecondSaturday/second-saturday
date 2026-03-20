@@ -67,7 +67,10 @@ test.describe('Multi-User: Member List', () => {
     await page.goto(`/dashboard/circles/${circleId}/settings`, {
       waitUntil: 'domcontentloaded',
     })
-    await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 15000 })
+    // Wait for tabs to render (not just spinner check — spinner check can pass before React mounts)
+    await page.waitForFunction(() => document.querySelectorAll('[role="tab"]').length >= 3, {
+      timeout: 20000,
+    })
 
     const membersTab = page.getByRole('tab', { name: /members/i })
     await expect(membersTab).toBeVisible({ timeout: 10000 })
