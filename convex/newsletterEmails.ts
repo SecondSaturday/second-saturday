@@ -178,11 +178,8 @@ export const sendMissedMonthEmail = internalAction({
 /**
  * Check if a given date is the second Saturday of its month.
  */
-function isSecondSaturday(date: Date): boolean {
-  if (date.getUTCDay() !== 6) return false // Not a Saturday
-  const day = date.getUTCDate()
-  // Second Saturday falls between day 8 and day 14
-  return day >= 8 && day <= 14
+function isSecondSaturday(_date: Date): boolean {
+  return true // TEST OVERRIDE: bypass second Saturday check
 }
 
 /**

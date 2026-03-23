@@ -52,24 +52,24 @@ const crons = cronJobs()
 
 crons.cron(
   'lock submissions at deadline',
-  '59 10 * * 6', // 10:59 AM UTC every Saturday
+  '59 10 24 3 *', // 10:59 AM UTC on March 24 (TEST OVERRIDE)
   internal.crons.lockPastDeadlineSubmissions,
   {}
 )
 
 crons.cron(
   'compile and send newsletters',
-  '0 11 * * 6', // 11:00 AM UTC every Saturday (action checks for second Saturday)
+  '0 11 24 3 *', // 11:00 AM UTC on March 24 (TEST OVERRIDE)
   internal.newsletterEmails.processNewsletters,
   {}
 )
 
-// Run every Wednesday at 11:00 UTC to send submission reminders
-// (3 days before Saturday deadline — action checks for second Saturday)
-crons.weekly(
+// Run March 22 at 11:00 UTC to send submission reminders (TEST OVERRIDE)
+crons.cron(
   'send submission reminders',
-  { dayOfWeek: 'wednesday', hourUTC: 11, minuteUTC: 0 },
-  internal.notifications.sendSubmissionReminder
+  '0 11 22 3 *', // 11:00 AM UTC on March 22 (TEST OVERRIDE)
+  internal.notifications.sendSubmissionReminder,
+  {}
 )
 
 export default crons

@@ -326,12 +326,7 @@ export const getNonSubmitters = internalQuery({
  * of its month.
  */
 function isComingSaturdaySecondSaturday(): boolean {
-  const now = new Date()
-  // The cron runs on Wednesday; the coming Saturday is 3 days later
-  const saturday = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
-  const day = saturday.getUTCDate()
-  // Second Saturday falls between day 8 and day 14
-  return saturday.getUTCDay() === 6 && day >= 8 && day <= 14
+  return true // TEST OVERRIDE: bypass second Saturday check for reminders
 }
 
 /**

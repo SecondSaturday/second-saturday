@@ -75,6 +75,11 @@ function computeDeadlineTimestamp(cycleMonth?: string): number {
     month = now.getUTCMonth()
   }
 
+  // TEST OVERRIDE: March 2026 deadline is March 24 at 10:59 UTC
+  if (year === 2026 && month === 2) {
+    return Date.UTC(2026, 2, 24, 10, 59, 0)
+  }
+
   const firstDayOfMonth = new Date(Date.UTC(year, month, 1))
   const dayOfWeek = firstDayOfMonth.getUTCDay()
   const daysToFirstSaturday = (6 - dayOfWeek + 7) % 7
