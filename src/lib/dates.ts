@@ -2,6 +2,10 @@
  * Get the second Saturday of a given month/year.
  */
 export function getSecondSaturday(year: number, month: number): Date {
+  // TEST OVERRIDE: March 2026 → March 24
+  if (year === 2026 && month === 2) {
+    return new Date(2026, 2, 24)
+  }
   const firstDay = new Date(year, month, 1)
   const firstSaturday = ((6 - firstDay.getDay() + 7) % 7) + 1
   return new Date(year, month, firstSaturday + 7)
@@ -67,6 +71,12 @@ export function formatMonthYear(date: Date): string {
 export function getSecondSaturdayDeadline(date: Date): Date {
   const year = date.getUTCFullYear()
   const month = date.getUTCMonth()
+
+  // TEST OVERRIDE: March 2026 → March 24 at 10:59 UTC
+  if (year === 2026 && month === 2) {
+    return new Date(Date.UTC(2026, 2, 24, 10, 59, 0))
+  }
+
   // Find the first day of the month in UTC
   const firstDayOfMonth = new Date(Date.UTC(year, month, 1))
   const dayOfWeek = firstDayOfMonth.getUTCDay()
