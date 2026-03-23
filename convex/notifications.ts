@@ -381,7 +381,7 @@ export const sendSubmissionReminder = internalAction({
           await ctx.scheduler.runAfter(0, internal.notificationPush.sendPushNotification, {
             playerIds,
             title: 'Submission Reminder',
-            message: `Don't forget to submit to ${circle.name} before Saturday's deadline!`,
+            message: `Don't forget to submit to ${circle.name} before the deadline!`,
             data: { type: 'submission_reminder', circleId: circle._id as string },
           })
           console.log(
