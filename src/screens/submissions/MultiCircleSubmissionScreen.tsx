@@ -14,7 +14,7 @@ import {
 import type { Circle, SaveStatus } from '@/components/submissions'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useDeadlineCountdown } from '@/hooks/useDeadlineCountdown'
-import { getNextSecondSaturday } from '@/lib/dates'
+import { getSecondSaturdayDeadline } from '@/lib/dates'
 import { trackEvent } from '@/lib/analytics'
 import { toast } from 'sonner'
 
@@ -24,9 +24,13 @@ interface MultiCircleSubmissionScreenProps {
 }
 
 function getDeadlineTimestamp(): number {
-  const d = getNextSecondSaturday(new Date())
-  d.setUTCHours(10, 59, 0, 0)
-  return d.getTime()
+  const now = new Date()
+  const deadline = getSecondSaturdayDeadline(now)
+  if (now.getTime() > deadline.getTime()) {
+    const nextMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1))
+    return getSecondSaturdayDeadline(nextMonth).getTime()
+  }
+  return deadline.getTime()
 }
 
 export function MultiCircleSubmissionScreen({
