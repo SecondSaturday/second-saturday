@@ -17,6 +17,7 @@ import { useDeadlineCountdown } from '@/hooks/useDeadlineCountdown'
 import { getSecondSaturdayDeadline } from '@/lib/dates'
 import { trackEvent } from '@/lib/analytics'
 import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
 
 interface MultiCircleSubmissionScreenProps {
   circles: Circle[]
@@ -37,6 +38,7 @@ export function MultiCircleSubmissionScreen({
   circles,
   cycleId,
 }: MultiCircleSubmissionScreenProps) {
+  const router = useRouter()
   const [activeCircleId, setActiveCircleId] = useState<string>(circles[0]?.id ?? '')
   const [draftTexts, setDraftTexts] = useState<Map<string, Map<string, string>>>(new Map())
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
@@ -111,6 +113,8 @@ export function MultiCircleSubmissionScreen({
       try {
         trackEvent('submission_locked', { circle_id: activeCircleId, cycle_id: cycleId })
       } catch {}
+      toast.success('Submission locked! See you on newsletter day.')
+      router.push('/dashboard')
     } catch (err) {
       toast.error('Failed to submit. Please try again.')
     } finally {
