@@ -115,10 +115,10 @@ export function CircleSubmissionTabs({
   return (
     <Tabs value={activeCircleId} onValueChange={onCircleChange} className="w-full">
       {/* Instagram Stories-style horizontal tab bar */}
-      <div className="border-b border-border/50 bg-background sticky top-0 z-10">
+      <div className="border-b border-border/50 bg-background sticky top-0 z-10 overflow-hidden">
         <TabsList
           variant="line"
-          className="w-full justify-start overflow-x-auto overflow-y-hidden px-4 py-3 gap-4 scrollbar-hide"
+          className="w-full justify-start overflow-x-auto overflow-y-hidden px-4 pt-7 pb-5 gap-4 scrollbar-hide"
         >
           {circles.map((circle) => (
             <TabsTrigger
@@ -126,7 +126,7 @@ export function CircleSubmissionTabs({
               value={circle.id}
               className={cn(
                 'relative flex flex-col items-center gap-2 px-0 pb-2',
-                'data-[state=active]:after:opacity-0',
+                'after:!bottom-[-13px]',
                 'focus-visible:ring-0 focus-visible:ring-offset-0'
               )}
             >
