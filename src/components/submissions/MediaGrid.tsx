@@ -36,12 +36,9 @@ export function MediaGrid({
   }
 
   const handleImageError = (id: string) => {
-    setBrokenIds((prev) => {
-      if (prev.has(id)) return prev
-      const next = new Set(prev).add(id)
-      onBrokenMedia?.()
-      return next
-    })
+    if (brokenIds.has(id)) return
+    setBrokenIds((prev) => new Set(prev).add(id))
+    onBrokenMedia?.()
   }
 
   const getGridLayout = () => {
