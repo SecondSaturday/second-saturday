@@ -66,6 +66,7 @@ export function MediaUploader({
   const videoUpload = useBlockingUpload({
     onComplete: () => {
       setStage('idle')
+      if (preview) URL.revokeObjectURL(preview)
       setPreview(null)
       setMediaType(null)
       videoIdRef.current = null
@@ -83,6 +84,7 @@ export function MediaUploader({
     setStage('idle')
     setProgress(0)
     setError(null)
+    if (preview) URL.revokeObjectURL(preview)
     setPreview(null)
     setMediaType(null)
     videoIdRef.current = null
@@ -235,6 +237,7 @@ export function MediaUploader({
 
       setProgress(100)
       setStage('idle')
+      if (preview) URL.revokeObjectURL(preview)
       setPreview(null)
       onUploadComplete?.(mediaId, 'image')
     } catch (err: unknown) {
