@@ -1,4 +1,4 @@
-import { mutation } from './_generated/server'
+import { internalMutation } from './_generated/server'
 import { v } from 'convex/values'
 
 const TEST_RESPONSES = [
@@ -17,7 +17,7 @@ const TEST_RESPONSES_2 = [
   "Started a new habit I've been meaning to build for years. Day 18. Still going. Quietly proud of myself.",
 ]
 
-export const createTestNewsletter = mutation({
+export const createTestNewsletter = internalMutation({
   args: {
     circleId: v.id('circles'),
     cycleId: v.optional(v.string()),

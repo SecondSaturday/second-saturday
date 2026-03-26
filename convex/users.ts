@@ -1,8 +1,8 @@
-import { mutation, query, internalQuery } from './_generated/server'
+import { mutation, query, internalQuery, internalMutation } from './_generated/server'
 import { v } from 'convex/values'
 import { internal } from './_generated/api'
 
-export const upsertUser = mutation({
+export const upsertUser = internalMutation({
   args: {
     clerkId: v.string(),
     email: v.string(),
@@ -38,7 +38,7 @@ export const upsertUser = mutation({
   },
 })
 
-export const deleteUser = mutation({
+export const deleteUser = internalMutation({
   args: { clerkId: v.string() },
   handler: async (ctx, args) => {
     const user = await ctx.db

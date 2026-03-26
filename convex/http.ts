@@ -1,7 +1,7 @@
 import { httpRouter } from 'convex/server'
 import { httpAction } from './_generated/server'
 import { Webhook } from 'svix'
-import { api, internal } from './_generated/api'
+import { internal } from './_generated/api'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const internalVideos = (internal as any).videos
@@ -69,7 +69,7 @@ http.route({
         // Don't set name here — let the user set it on /complete-profile
         const name = [data.first_name, data.last_name].filter(Boolean).join(' ') || undefined
 
-        await ctx.runMutation(api.users.upsertUser, {
+        await ctx.runMutation(internal.users.upsertUser, {
           clerkId: data.id,
           email,
           imageUrl: data.image_url,
@@ -88,7 +88,7 @@ http.route({
 
         const name = [data.first_name, data.last_name].filter(Boolean).join(' ') || undefined
 
-        await ctx.runMutation(api.users.upsertUser, {
+        await ctx.runMutation(internal.users.upsertUser, {
           clerkId: data.id,
           email,
           name,
@@ -98,7 +98,7 @@ http.route({
       }
 
       case 'user.deleted': {
-        await ctx.runMutation(api.users.deleteUser, {
+        await ctx.runMutation(internal.users.deleteUser, {
           clerkId: data.id,
         })
         break
@@ -126,13 +126,21 @@ http.route({
     const signature = request.headers.get('mux-signature')
     const body = await request.text()
 
-    // Verify webhook signature if secret is configured
-    if (muxWebhookSecret && signature) {
-      const isValid = await verifyMuxSignature(body, signature, muxWebhookSecret)
-      if (!isValid) {
-        console.error('Mux webhook signature verification failed')
-        return new Response('Invalid signature', { status: 400 })
-      }
+    // Fail closed: require webhook secret to be configured
+    if (!muxWebhookSecret) {
+      console.error('MUX_WEBHOOK_SECRET not configured')
+      return new Response('Webhook secret not configured', { status: 500 })
+    }
+
+    // Fail closed: require signature header
+    if (!signature) {
+      return new Response('Missing mux-signature header', { status: 400 })
+    }
+
+    const isValid = await verifyMuxSignature(body, signature, muxWebhookSecret)
+    if (!isValid) {
+      console.error('Mux webhook signature verification failed')
+      return new Response('Invalid signature', { status: 400 })
     }
 
     const payload = JSON.parse(body) as {

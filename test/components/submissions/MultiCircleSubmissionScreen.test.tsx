@@ -13,6 +13,7 @@ const {
   mockUpdateResponseMutation,
   mockCreateSubmissionMutation,
   mockLockSubmissionMutation,
+  mockRemoveMediaMutation,
   mockUseQuery,
   mockUseMutation,
 } = vi.hoisted(() => {
@@ -21,6 +22,7 @@ const {
   const mockUpdateResponseMutation = { _type: 'mutation', _name: 'updateResponse' }
   const mockCreateSubmissionMutation = { _type: 'mutation', _name: 'createSubmission' }
   const mockLockSubmissionMutation = { _type: 'mutation', _name: 'lockSubmission' }
+  const mockRemoveMediaMutation = { _type: 'mutation', _name: 'removeMediaFromResponse' }
   const mockUseQuery = vi.fn()
   const mockUseMutation = vi.fn()
   return {
@@ -29,6 +31,7 @@ const {
     mockUpdateResponseMutation,
     mockCreateSubmissionMutation,
     mockLockSubmissionMutation,
+    mockRemoveMediaMutation,
     mockUseQuery,
     mockUseMutation,
   }
@@ -45,6 +48,7 @@ vi.mock('../../../convex/_generated/api', () => ({
       createSubmission: mockCreateSubmissionMutation,
       updateResponse: mockUpdateResponseMutation,
       lockSubmission: mockLockSubmissionMutation,
+      removeMediaFromResponse: mockRemoveMediaMutation,
     },
   },
 }))
@@ -122,6 +126,34 @@ vi.mock('@/components/submissions', async (importOriginal) => {
 // ---------------------------------------------------------------------------
 // Mock lucide-react to avoid SVG issues
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Mock next/navigation (useRouter used for post-submit redirect)
+// ---------------------------------------------------------------------------
+const mockPush = vi.fn()
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockPush, replace: vi.fn(), back: vi.fn() }),
+  usePathname: () => '/dashboard/submit',
+  useSearchParams: () => new URLSearchParams(),
+}))
+
+// ---------------------------------------------------------------------------
+// Mock analytics & toast (fire-and-forget, not under test)
+// ---------------------------------------------------------------------------
+vi.mock('@/lib/analytics', () => ({
+  trackEvent: vi.fn(),
+}))
+
+vi.mock('sonner', () => ({
+  toast: { success: vi.fn(), error: vi.fn() },
+}))
+
+// ---------------------------------------------------------------------------
+// Mock useDeadlineCountdown hook
+// ---------------------------------------------------------------------------
+vi.mock('@/hooks/useDeadlineCountdown', () => ({
+  useDeadlineCountdown: () => ({ isPast: false, timeLeft: '6d 23h' }),
+}))
+
 vi.mock('lucide-react', () => ({
   Loader2: ({ className }: { className?: string }) => (
     <div data-testid="loader" className={className} />
@@ -135,6 +167,7 @@ vi.mock('lucide-react', () => ({
 
 vi.mock('@/lib/dates', () => ({
   getNextSecondSaturday: () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  getSecondSaturdayDeadline: () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
 }))
 
 // ---------------------------------------------------------------------------
