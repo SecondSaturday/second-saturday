@@ -368,7 +368,7 @@ describe('InvitePreviewPage', () => {
         source: 'invite_link',
       })
 
-      expect(mockPush).toHaveBeenCalledWith('/dashboard/circles/circle-123')
+      expect(mockPush).toHaveBeenCalledWith('/dashboard?circle=circle-123')
     })
 
     it('shows loading state while joining', async () => {

@@ -17,15 +17,19 @@ import { parseNewsletterContent } from '@/lib/newsletter'
 export default function DashboardPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [selectedCircleId, setSelectedCircleId] = useState<string | null>(() =>
-    searchParams.get('circle')
-  )
+  const selectedCircleId = searchParams.get('circle')
   const [selectedDate, setSelectedDate] = useState(() => getLastSecondSaturday())
   const [datePickerOpen, setDatePickerOpen] = useState(false)
 
+  // Redirect mobile users who land on /dashboard?circle=[id] to the full-page route
+  useEffect(() => {
+    if (selectedCircleId && window.innerWidth < 768) {
+      router.replace(`/dashboard/circles/${selectedCircleId}`)
+    }
+  }, [selectedCircleId, router])
+
   const handleCircleSelect = useCallback(
     (id: string) => {
-      setSelectedCircleId(id)
       // On mobile (sidebar is full-width), navigate to the dedicated page
       if (window.innerWidth < 768) {
         router.push(`/dashboard/circles/${id}`)

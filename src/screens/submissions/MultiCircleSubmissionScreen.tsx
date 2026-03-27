@@ -114,7 +114,11 @@ export function MultiCircleSubmissionScreen({
         trackEvent('submission_locked', { circle_id: activeCircleId, cycle_id: cycleId })
       } catch {}
       toast.success('Submission locked! See you on newsletter day.')
-      router.push('/dashboard')
+      if (window.innerWidth >= 768) {
+        router.push(`/dashboard?circle=${activeCircleId}`)
+      } else {
+        router.push(`/dashboard/circles/${activeCircleId}`)
+      }
     } catch (err) {
       toast.error('Failed to submit. Please try again.')
     } finally {

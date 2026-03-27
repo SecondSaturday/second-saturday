@@ -58,8 +58,8 @@ test.describe('Newsletter - Circle Home', () => {
     )
 
     // Back link should be visible
-    const backLink = page.locator('a[href="/dashboard"]')
-    await expect(backLink.first()).toBeVisible({ timeout: 15000 })
+    const backButton = page.locator('button[aria-label="Back"]')
+    await expect(backButton.first()).toBeVisible({ timeout: 15000 })
   })
 })
 

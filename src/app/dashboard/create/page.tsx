@@ -34,7 +34,7 @@ export default function CreateCirclePage() {
     e.preventDefault()
     setError(null)
 
-    if (name.length < 3) {
+    if (name.trim().length < 3) {
       setError('Name must be at least 3 characters')
       return
     }
@@ -42,7 +42,7 @@ export default function CreateCirclePage() {
     setSubmitting(true)
     try {
       const circleId = await createCircle({
-        name,
+        name: name.trim(),
         description: description || undefined,
         iconImageId,
         coverImageId,
@@ -146,7 +146,7 @@ export default function CreateCirclePage() {
             form="create-circle-form"
             type="submit"
             className="w-full"
-            disabled={submitting || name.length < 3}
+            disabled={submitting || name.trim().length < 3}
           >
             {submitting ? 'Creating...' : 'Next'}
           </Button>

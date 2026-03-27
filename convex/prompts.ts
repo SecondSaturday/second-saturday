@@ -51,7 +51,7 @@ async function requireAdmin(
     .withIndex('by_user_circle', (q) => q.eq('userId', userId).eq('circleId', circleId))
     .first()
 
-  if (!membership || membership.role !== 'admin') {
+  if (!membership || membership.leftAt || membership.role !== 'admin') {
     throw new Error('Admin access required')
   }
   return membership

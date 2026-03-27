@@ -275,6 +275,17 @@ export const compileNewsletter = internalMutation({
                 thumbnailUrl,
               })
             }
+          } else if (m.type === 'video' && m.videoId) {
+            // Fallback: muxAssetId not yet populated, look up via videoId FK
+            const video = await ctx.db.get(m.videoId)
+            if (video?.playbackId) {
+              const thumbnailUrl = `https://image.mux.com/${video.playbackId}/thumbnail.jpg?width=640&height=360&fit_mode=smartcrop`
+              media.push({
+                type: 'video',
+                url: `https://stream.mux.com/${video.playbackId}.m3u8`,
+                thumbnailUrl,
+              })
+            }
           }
         }
 

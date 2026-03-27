@@ -1,6 +1,6 @@
 'use client'
 
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { useQuery } from 'convex/react'
 import { api } from '../../../../../../convex/_generated/api'
 import type { Id } from '../../../../../../convex/_generated/dataModel'
@@ -23,6 +23,7 @@ function getDeadlineTimestamp(): number {
 
 export default function SubmissionsPage() {
   const params = useParams()
+  const router = useRouter()
   const circleId = params.circleId as Id<'circles'>
 
   const circle = useQuery(api.circles.getCircle, { circleId })
@@ -58,9 +59,18 @@ export default function SubmissionsPage() {
   return (
     <div className="safe-area-top flex h-dvh flex-col bg-background">
       <header className="flex shrink-0 items-center gap-3 border-b border-border bg-background px-4 py-3">
-        <Link href={`/dashboard?circle=${circleId}`}>
+        <button
+          onClick={() => {
+            if (window.innerWidth >= 768) {
+              router.push(`/dashboard?circle=${circleId}`)
+            } else {
+              router.push(`/dashboard/circles/${circleId}`)
+            }
+          }}
+          aria-label="Back"
+        >
           <ArrowLeft className="size-5 text-foreground" />
-        </Link>
+        </button>
         <h1 className="text-lg font-semibold text-foreground">Submission Status</h1>
       </header>
 

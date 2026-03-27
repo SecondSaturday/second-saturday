@@ -127,7 +127,7 @@ describe('InvitePreviewPage', () => {
     render(<InvitePreviewPage />)
     fireEvent.click(screen.getByText('Join Circle'))
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/dashboard/circles/c1')
+      expect(mockPush).toHaveBeenCalledWith('/dashboard?circle=c1')
     })
   })
 

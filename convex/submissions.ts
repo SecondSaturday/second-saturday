@@ -292,6 +292,12 @@ export const getSubmissionForCircle = query({
               if (video?.playbackId) {
                 url = `https://stream.mux.com/${video.playbackId}.m3u8`
               }
+            } else if (m.type === 'video' && m.videoId) {
+              // Fallback: muxAssetId not yet populated by webhook, look up via videoId FK
+              const video = await ctx.db.get(m.videoId)
+              if (video?.playbackId) {
+                url = `https://stream.mux.com/${video.playbackId}.m3u8`
+              }
             }
             return {
               ...m,
@@ -355,6 +361,7 @@ export const addMediaToResponse = mutation({
     responseId: v.id('responses'),
     storageId: v.optional(v.id('_storage')),
     muxAssetId: v.optional(v.string()),
+    videoId: v.optional(v.id('videos')),
     type: v.union(v.literal('image'), v.literal('video')),
     thumbnailUrl: v.optional(v.string()),
   },
@@ -392,6 +399,7 @@ export const addMediaToResponse = mutation({
       responseId: args.responseId,
       storageId: args.storageId,
       muxAssetId: args.muxAssetId,
+      videoId: args.videoId,
       type: args.type,
       thumbnailUrl: args.thumbnailUrl,
       order,

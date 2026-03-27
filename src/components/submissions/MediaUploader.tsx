@@ -384,13 +384,12 @@ export function MediaUploader({
       videoUpload.setProgress(80)
       setProgress(80)
 
-      // Save media record to database
-      // Note: muxAssetId will be updated via webhook when Mux processes the video
-      // For now, we store the uploadId to track the video
+      // Save media record linked to the video record
+      // muxAssetId will be populated via webhook when Mux finishes processing
       const mediaId = await addMediaToResponse({
         responseId: responseId!,
         type: 'video',
-        // Asset ID will be updated via Mux webhook when video is processed
+        videoId,
       })
 
       videoUpload.setProgress(100)

@@ -1,7 +1,7 @@
 'use node'
 
 import { v } from 'convex/values'
-import { action } from './_generated/server'
+import { action, internalAction } from './_generated/server'
 import { Id } from './_generated/dataModel'
 import Mux from '@mux/mux-node'
 import { api } from './_generated/api'
@@ -60,6 +60,20 @@ export const uploadVideoToMux = action({
       throw new Error(
         `Failed to create video upload: ${error instanceof Error ? error.message : 'Unknown error'}`
       )
+    }
+  },
+})
+
+// Delete a Mux asset (internal - called when videos are deleted)
+export const deleteMuxAsset = internalAction({
+  args: { assetId: v.string() },
+  handler: async (_ctx, args) => {
+    try {
+      const mux = getMuxClient()
+      await mux.video.assets.delete(args.assetId)
+    } catch (error) {
+      // Log but don't throw — the DB record is already deleted
+      console.error('Failed to delete Mux asset:', args.assetId, error)
     }
   },
 })

@@ -28,8 +28,10 @@ vi.mock('convex/react', () => ({
 
 const CIRCLE_ID = 'circle-123' as Id<'circles'>
 
+const mockPush = vi.fn()
 vi.mock('next/navigation', () => ({
   useParams: () => ({ circleId: CIRCLE_ID }),
+  useRouter: () => ({ push: mockPush }),
 }))
 
 vi.mock('next/link', () => ({
@@ -172,14 +174,14 @@ describe('SubmitPage', () => {
     expect(circles[0].status).toBe('submitted')
   })
 
-  it('renders back link to dashboard with circle param', () => {
+  it('renders back button with aria-label', () => {
     mockUseQuery.mockImplementation((queryRef: unknown) => {
       if (queryRef === mockGetCircle) return mockCircle
       if (queryRef === mockGetSubmissionForCircle) return null
       return undefined
     })
     render(<SubmitPage />)
-    expect(screen.getByRole('link')).toHaveAttribute('href', `/dashboard?circle=${CIRCLE_ID}`)
+    expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument()
   })
 
   it('renders page title', () => {

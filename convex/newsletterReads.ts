@@ -91,7 +91,7 @@ export const getNewslettersByDate = query({
       .withIndex('by_user_circle', (q) => q.eq('userId', user._id).eq('circleId', args.circleId))
       .first()
 
-    if (!membership) throw new Error('Not a member of this circle')
+    if (!membership || membership.leftAt) throw new Error('Not a member of this circle')
 
     const startOfMonth = Date.UTC(args.year, args.month, 1)
     const endOfMonth = Date.UTC(args.year, args.month + 1, 0, 23, 59, 59, 999)

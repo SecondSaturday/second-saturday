@@ -44,7 +44,11 @@ export default function InvitePreviewPage() {
       } else {
         trackEvent('circle_joined', { circleId: result.circleId, source: 'invite_link' })
         toast.success('Successfully joined circle!')
-        router.push(`/dashboard/circles/${result.circleId}`)
+        if (window.innerWidth >= 768) {
+          router.push(`/dashboard?circle=${result.circleId}`)
+        } else {
+          router.push(`/dashboard/circles/${result.circleId}`)
+        }
       }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to join circle'
@@ -148,9 +152,18 @@ export default function InvitePreviewPage() {
 
           <p className="text-sm text-muted-foreground">You are already a member of this circle</p>
 
-          <Link href={`/dashboard/circles/${circle._id}`} className="w-full">
-            <Button className="w-full">Go to Circle</Button>
-          </Link>
+          <Button
+            className="w-full"
+            onClick={() => {
+              if (window.innerWidth >= 768) {
+                router.push(`/dashboard?circle=${circle._id}`)
+              } else {
+                router.push(`/dashboard/circles/${circle._id}`)
+              }
+            }}
+          >
+            Go to Circle
+          </Button>
         </div>
       </div>
     )

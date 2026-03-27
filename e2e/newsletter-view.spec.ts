@@ -59,9 +59,9 @@ test.describe('Newsletter View Page', () => {
       { timeout: 20000 }
     )
 
-    // Back link should be visible
-    const backLink = page.locator('a[href="/dashboard"]')
-    await expect(backLink.first()).toBeVisible({ timeout: 15000 })
+    // Back button should be visible
+    const backButton = page.locator('button[aria-label="Back"]')
+    await expect(backButton.first()).toBeVisible({ timeout: 15000 })
   })
 
   test('new circle shows no newsletter for this month', async ({ page }) => {
@@ -105,10 +105,10 @@ test.describe('Newsletter View - Navigation', () => {
       { timeout: 20000 }
     )
 
-    // Click the back arrow link
-    const backLink = page.locator('a[href="/dashboard"]').first()
-    await expect(backLink).toBeVisible({ timeout: 15000 })
-    await backLink.click()
+    // Click the back arrow button
+    const backButton = page.locator('button[aria-label="Back"]').first()
+    await expect(backButton).toBeVisible({ timeout: 15000 })
+    await backButton.click()
 
     // Should navigate back to dashboard
     await page.waitForURL(/\/dashboard/, { timeout: 10000 })

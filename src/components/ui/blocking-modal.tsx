@@ -97,7 +97,11 @@ export function BlockingModal({
                 <Loader2 className="size-5 animate-spin text-primary" />
                 {title}
               </DialogTitle>
-              {description && <DialogDescription>{description}</DialogDescription>}
+              {description ? (
+                <DialogDescription>{description}</DialogDescription>
+              ) : (
+                <DialogDescription className="sr-only">Processing in progress</DialogDescription>
+              )}
             </DialogHeader>
 
             <div className="space-y-4 py-4">

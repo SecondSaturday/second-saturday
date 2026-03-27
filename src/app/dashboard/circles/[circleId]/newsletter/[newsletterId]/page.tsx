@@ -1,21 +1,29 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
-import { useParams } from 'next/navigation'
+import { useCallback, useEffect, useRef } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../../../../../../convex/_generated/api'
 import type { Id } from '../../../../../../../convex/_generated/dataModel'
 import { useSearchParams } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
 import { NewsletterView } from '@/components/newsletter/NewsletterView'
 import { parseNewsletterContent } from '@/lib/newsletter'
 import { trackEvent } from '@/lib/analytics'
 
 export default function NewsletterPage() {
   const params = useParams()
+  const router = useRouter()
   const circleId = params.circleId as Id<'circles'>
   const newsletterId = params.newsletterId as Id<'newsletters'>
+
+  const handleBack = useCallback(() => {
+    if (window.innerWidth >= 768) {
+      router.push(`/dashboard?circle=${circleId}`)
+    } else {
+      router.push(`/dashboard/circles/${circleId}`)
+    }
+  }, [router, circleId])
 
   const searchParams = useSearchParams()
   const newsletter = useQuery(api.newsletters.getNewsletterById, { newsletterId })
@@ -58,9 +66,9 @@ export default function NewsletterPage() {
     return (
       <div className="safe-area-top flex h-dvh flex-col bg-background">
         <header className="flex shrink-0 items-center gap-3 border-b border-border bg-background px-4 py-3">
-          <Link href={`/dashboard/circles/${circleId}`}>
+          <button onClick={handleBack} aria-label="Back">
             <ArrowLeft className="size-5 text-foreground" />
-          </Link>
+          </button>
           <h1 className="text-lg font-semibold text-foreground">Newsletter</h1>
         </header>
         <div className="flex flex-1 items-center justify-center">
@@ -75,9 +83,9 @@ export default function NewsletterPage() {
     return (
       <div className="safe-area-top flex h-dvh flex-col bg-background">
         <header className="flex shrink-0 items-center gap-3 border-b border-border bg-background px-4 py-3">
-          <Link href={`/dashboard/circles/${circleId}`}>
+          <button onClick={handleBack} aria-label="Back">
             <ArrowLeft className="size-5 text-foreground" />
-          </Link>
+          </button>
           <h1 className="text-lg font-semibold text-foreground">Newsletter</h1>
         </header>
         <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4">
@@ -85,12 +93,12 @@ export default function NewsletterPage() {
           <p className="text-sm text-muted-foreground">
             This newsletter may have been removed or you may not have access.
           </p>
-          <Link
-            href={`/dashboard/circles/${circleId}`}
+          <button
+            onClick={handleBack}
             className="mt-4 text-sm font-medium text-primary hover:underline"
           >
             Back to circle
-          </Link>
+          </button>
         </div>
       </div>
     )
@@ -107,9 +115,9 @@ export default function NewsletterPage() {
   return (
     <div className="safe-area-top flex h-dvh flex-col bg-background">
       <header className="flex shrink-0 items-center gap-3 border-b border-border bg-background px-4 py-3">
-        <Link href={`/dashboard/circles/${circleId}`}>
+        <button onClick={handleBack} aria-label="Back">
           <ArrowLeft className="size-5 text-foreground" />
-        </Link>
+        </button>
         <h1 className="flex-1 truncate text-lg font-semibold text-foreground">
           {newsletter.title ?? `Issue #${newsletter.issueNumber}`}
         </h1>

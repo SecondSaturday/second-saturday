@@ -126,6 +126,7 @@ export default defineSchema({
     responseId: v.id('responses'),
     storageId: v.optional(v.id('_storage')),
     muxAssetId: v.optional(v.string()),
+    videoId: v.optional(v.id('videos')),
     type: v.union(v.literal('image'), v.literal('video')),
     thumbnailUrl: v.optional(v.string()),
     order: v.number(), // 0, 1, or 2 (max 3 items)
@@ -133,7 +134,8 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index('by_response', ['responseId'])
-    .index('by_response_order', ['responseId', 'order']),
+    .index('by_response_order', ['responseId', 'order'])
+    .index('by_video', ['videoId']),
 
   notificationPreferences: defineTable({
     userId: v.id('users'),

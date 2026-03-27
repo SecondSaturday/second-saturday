@@ -1,10 +1,9 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
-import { useParams, useSearchParams } from 'next/navigation'
+import { useCallback, useEffect, useRef } from 'react'
+import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import type { Id } from '../../../../../convex/_generated/dataModel'
 import { ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../../../../convex/_generated/api'
 import { NewsletterView } from '@/components/newsletter/NewsletterView'
@@ -14,8 +13,17 @@ import { getLastSecondSaturday } from '@/lib/dates'
 
 export default function CircleLandingPage() {
   const params = useParams()
+  const router = useRouter()
   const searchParams = useSearchParams()
   const circleId = params.circleId as Id<'circles'>
+
+  const handleBack = useCallback(() => {
+    if (window.innerWidth >= 768) {
+      router.push(`/dashboard?circle=${circleId}`)
+    } else {
+      router.push('/dashboard')
+    }
+  }, [router, circleId])
 
   // Parse month from searchParams or default to last second Saturday
   const monthParam = searchParams.get('month') // e.g., "2026-02"
@@ -63,9 +71,9 @@ export default function CircleLandingPage() {
     return (
       <div className="safe-area-top flex h-dvh flex-col bg-background">
         <header className="flex shrink-0 items-center gap-3 border-b border-border bg-background px-4 py-3">
-          <Link href="/dashboard">
+          <button onClick={handleBack} aria-label="Back">
             <ArrowLeft className="size-5 text-foreground" />
-          </Link>
+          </button>
           <h1 className="text-lg font-semibold text-foreground">Loading...</h1>
         </header>
         <div className="flex flex-1 items-center justify-center">
@@ -80,9 +88,9 @@ export default function CircleLandingPage() {
     return (
       <div className="safe-area-top flex h-dvh flex-col bg-background">
         <header className="flex shrink-0 items-center gap-3 border-b border-border bg-background px-4 py-3">
-          <Link href="/dashboard">
+          <button onClick={handleBack} aria-label="Back">
             <ArrowLeft className="size-5 text-foreground" />
-          </Link>
+          </button>
           <h1 className="text-lg font-semibold text-foreground">Circle not found</h1>
         </header>
         <div className="flex flex-1 items-center justify-center px-4">
@@ -97,12 +105,13 @@ export default function CircleLandingPage() {
     return (
       <div className="safe-area-top flex h-dvh flex-col bg-background">
         <header className="absolute left-0 top-0 z-10 p-4">
-          <Link
-            href="/dashboard"
+          <button
+            onClick={handleBack}
+            aria-label="Back"
             className="flex size-9 items-center justify-center rounded-full bg-background/80 shadow-sm backdrop-blur-sm"
           >
             <ArrowLeft className="size-5 text-foreground" />
-          </Link>
+          </button>
         </header>
         <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 text-center">
           <p className="text-lg font-medium text-foreground">No newsletter for this month</p>
@@ -125,12 +134,13 @@ export default function CircleLandingPage() {
   return (
     <div className="safe-area-top relative flex h-dvh flex-col bg-background">
       <header className="absolute left-0 top-0 z-10 p-4">
-        <Link
-          href="/dashboard"
+        <button
+          onClick={handleBack}
+          aria-label="Back"
           className="flex size-9 items-center justify-center rounded-full bg-background/80 shadow-sm backdrop-blur-sm"
         >
           <ArrowLeft className="size-5 text-foreground" />
-        </Link>
+        </button>
       </header>
 
       <main className="safe-area-bottom flex-1 overflow-y-auto">

@@ -17,12 +17,17 @@ function navigateToDeepLink(
   router: ReturnType<typeof useRouter>,
   payload: NotificationClickPayload
 ) {
+  const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768
   switch (payload.type) {
     case 'submission_reminder':
       router.push(`/dashboard/circles/${payload.circleId}/submit`)
       break
     case 'newsletter_ready':
-      router.push(`/dashboard/circles/${payload.circleId}`)
+      if (isDesktop) {
+        router.push(`/dashboard?circle=${payload.circleId}`)
+      } else {
+        router.push(`/dashboard/circles/${payload.circleId}`)
+      }
       break
     default:
       console.warn('OneSignal: unknown notification type', payload.type)

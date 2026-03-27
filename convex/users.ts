@@ -203,6 +203,11 @@ export const deleteAccount = mutation({
       .collect()
 
     for (const video of videos) {
+      if (video.assetId) {
+        await ctx.scheduler.runAfter(0, internal.videoActions.deleteMuxAsset, {
+          assetId: video.assetId,
+        })
+      }
       await ctx.db.delete(video._id)
     }
 

@@ -2,6 +2,7 @@ import { v } from 'convex/values'
 import { mutation, query, internalMutation } from './_generated/server'
 import type { MutationCtx, QueryCtx } from './_generated/server'
 import type { Doc, Id } from './_generated/dataModel'
+import { internal } from './_generated/api'
 
 /** Get the authenticated user or throw */
 async function getAuthUser(ctx: QueryCtx | MutationCtx): Promise<Doc<'users'>> {
@@ -109,6 +110,16 @@ export const updateVideoReady = internalMutation({
       updatedAt: Date.now(),
     })
 
+    // Update linked media record with muxAssetId so newsletters can find the video
+    const linkedMedia = await ctx.db
+      .query('media')
+      .withIndex('by_video', (q) => q.eq('videoId', video._id))
+      .first()
+
+    if (linkedMedia && !linkedMedia.muxAssetId) {
+      await ctx.db.patch(linkedMedia._id, { muxAssetId: args.assetId })
+    }
+
     return video._id
   },
 })
@@ -127,6 +138,11 @@ export const updateVideoError = internalMutation({
 
     if (!video) {
       console.error('Video not found for asset:', args.assetId)
+      return null
+    }
+
+    // Don't overwrite a ready video with an error from a stale/replayed event
+    if (video.status === 'ready') {
       return null
     }
 
@@ -209,6 +225,13 @@ export const deleteVideo = mutation({
     // Verify ownership
     if (video.userId !== user.clerkId) {
       throw new Error('Not authorized to delete this video')
+    }
+
+    // Schedule Mux asset deletion before removing the DB record
+    if (video.assetId) {
+      await ctx.scheduler.runAfter(0, internal.videoActions.deleteMuxAsset, {
+        assetId: video.assetId,
+      })
     }
 
     await ctx.db.delete(args.id)

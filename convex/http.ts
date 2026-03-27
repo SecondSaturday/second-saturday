@@ -230,6 +230,13 @@ async function verifyMuxSignature(
   const timestamp = timestampPart.slice(2)
   const expectedSignature = signaturePart.slice(3)
 
+  // Reject replayed webhooks older than 5 minutes
+  const tsSeconds = parseInt(timestamp, 10)
+  const nowSeconds = Math.floor(Date.now() / 1000)
+  if (isNaN(tsSeconds) || Math.abs(nowSeconds - tsSeconds) > 300) {
+    return false
+  }
+
   // Create the signed payload
   const signedPayload = `${timestamp}.${body}`
 
