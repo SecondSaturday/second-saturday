@@ -131,39 +131,44 @@ export default function InvitePreviewPage() {
   if (alreadyMember) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-background px-6">
-        <div className="flex w-full max-w-md flex-col items-center gap-6 rounded-lg border border-border bg-card px-8 pb-8 text-center">
+        <div className="flex w-full max-w-md flex-col items-center rounded-lg border border-border bg-card text-center">
           <ProfileHeaderImageLayout
-            coverImageUrl={null}
+            coverImageUrl={circle.coverUrl ?? null}
             iconUrl={circle.iconUrl ?? null}
-            className="rounded-t-lg overflow-hidden"
+            centered
+            fallbackInitial={circle.name[0]}
+            className="w-full rounded-t-lg overflow-hidden"
           />
 
-          <h1 className="text-2xl font-semibold text-foreground">
-            You&apos;ve been invited to join {circle.name}
-          </h1>
+          <div className="flex w-full flex-col items-center gap-6 px-8 pb-8">
+            <div className="flex flex-col items-center gap-2">
+              <h1 className="text-2xl font-semibold text-foreground">
+                You&apos;ve been invited to join {circle.name}
+              </h1>
+              <div className="flex flex-col items-center gap-1 text-sm text-muted-foreground">
+                <span>
+                  {circle.memberCount === 1 ? '1 member' : `${circle.memberCount} members`} sharing
+                  monthly updates
+                </span>
+                <span>{circle.adminName} started this circle</span>
+              </div>
+            </div>
 
-          <div className="flex flex-col items-center gap-1 text-sm text-muted-foreground">
-            <span>
-              {circle.memberCount === 1 ? '1 member' : `${circle.memberCount} members`} sharing
-              monthly updates
-            </span>
-            <span>{circle.adminName} started this circle</span>
+            <p className="text-sm text-muted-foreground">You are already a member of this circle</p>
+
+            <Button
+              className="w-full"
+              onClick={() => {
+                if (window.innerWidth >= 768) {
+                  router.push(`/dashboard?circle=${circle._id}`)
+                } else {
+                  router.push(`/dashboard/circles/${circle._id}`)
+                }
+              }}
+            >
+              Go to Circle
+            </Button>
           </div>
-
-          <p className="text-sm text-muted-foreground">You are already a member of this circle</p>
-
-          <Button
-            className="w-full"
-            onClick={() => {
-              if (window.innerWidth >= 768) {
-                router.push(`/dashboard?circle=${circle._id}`)
-              } else {
-                router.push(`/dashboard/circles/${circle._id}`)
-              }
-            }}
-          >
-            Go to Circle
-          </Button>
         </div>
       </div>
     )
@@ -172,34 +177,39 @@ export default function InvitePreviewPage() {
   if (!isSignedIn) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-background px-6">
-        <div className="flex w-full max-w-md flex-col items-center gap-6 rounded-lg border border-border bg-card px-8 pb-8 text-center">
+        <div className="flex w-full max-w-md flex-col items-center rounded-lg border border-border bg-card text-center">
           <ProfileHeaderImageLayout
-            coverImageUrl={null}
+            coverImageUrl={circle.coverUrl ?? null}
             iconUrl={circle.iconUrl ?? null}
-            className="rounded-t-lg overflow-hidden"
+            centered
+            fallbackInitial={circle.name[0]}
+            className="w-full rounded-t-lg overflow-hidden"
           />
 
-          <h1 className="text-2xl font-semibold text-foreground">
-            You&apos;ve been invited to join {circle.name}
-          </h1>
+          <div className="flex w-full flex-col items-center gap-6 px-8 pb-8">
+            <div className="flex flex-col items-center gap-2">
+              <h1 className="text-2xl font-semibold text-foreground">
+                You&apos;ve been invited to join {circle.name}
+              </h1>
+              <div className="flex flex-col items-center gap-1 text-sm text-muted-foreground">
+                <span>
+                  {circle.memberCount === 1 ? '1 member' : `${circle.memberCount} members`} sharing
+                  monthly updates
+                </span>
+                <span>{circle.adminName} started this circle</span>
+              </div>
+            </div>
 
-          <div className="flex flex-col items-center gap-1 text-sm text-muted-foreground">
-            <span>
-              {circle.memberCount === 1 ? '1 member' : `${circle.memberCount} members`} sharing
-              monthly updates
-            </span>
-            <span>{circle.adminName} started this circle</span>
-          </div>
-
-          <div className="flex w-full flex-col gap-2">
-            <Link href={`/sign-up?redirect_url=/invite/${inviteCode}`} className="w-full">
-              <Button className="w-full">Sign up to Join</Button>
-            </Link>
-            <Link href={`/sign-in?redirect_url=/invite/${inviteCode}`} className="w-full">
-              <Button variant="outline" className="w-full">
-                Log in to Join
-              </Button>
-            </Link>
+            <div className="flex w-full flex-col gap-2">
+              <Link href={`/sign-up?redirect_url=/invite/${inviteCode}`} className="w-full">
+                <Button className="w-full">Sign up to Join</Button>
+              </Link>
+              <Link href={`/sign-in?redirect_url=/invite/${inviteCode}`} className="w-full">
+                <Button variant="outline" className="w-full">
+                  Log in to Join
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -208,28 +218,33 @@ export default function InvitePreviewPage() {
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-background px-6">
-      <div className="flex w-full max-w-md flex-col items-center gap-6 rounded-lg border border-border bg-card px-8 pb-8 text-center">
+      <div className="flex w-full max-w-md flex-col items-center rounded-lg border border-border bg-card text-center">
         <ProfileHeaderImageLayout
-          coverImageUrl={null}
+          coverImageUrl={circle.coverUrl ?? null}
           iconUrl={circle.iconUrl ?? null}
-          className="rounded-t-lg overflow-hidden"
+          centered
+          fallbackInitial={circle.name[0]}
+          className="w-full rounded-t-lg overflow-hidden"
         />
 
-        <h1 className="text-2xl font-semibold text-foreground">
-          You&apos;ve been invited to join {circle.name}
-        </h1>
+        <div className="flex w-full flex-col items-center gap-6 px-8 pb-8">
+          <div className="flex flex-col items-center gap-2">
+            <h1 className="text-2xl font-semibold text-foreground">
+              You&apos;ve been invited to join {circle.name}
+            </h1>
+            <div className="flex flex-col items-center gap-1 text-sm text-muted-foreground">
+              <span>
+                {circle.memberCount === 1 ? '1 member' : `${circle.memberCount} members`} sharing
+                monthly updates
+              </span>
+              <span>{circle.adminName} started this circle</span>
+            </div>
+          </div>
 
-        <div className="flex flex-col items-center gap-1 text-sm text-muted-foreground">
-          <span>
-            {circle.memberCount === 1 ? '1 member' : `${circle.memberCount} members`} sharing
-            monthly updates
-          </span>
-          <span>{circle.adminName} started this circle</span>
+          <Button onClick={handleJoin} className="w-full" disabled={joining}>
+            {joining ? 'Joining...' : 'Join Circle'}
+          </Button>
         </div>
-
-        <Button onClick={handleJoin} className="w-full" disabled={joining}>
-          {joining ? 'Joining...' : 'Join Circle'}
-        </Button>
       </div>
     </div>
   )

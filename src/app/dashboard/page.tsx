@@ -13,6 +13,8 @@ import { useQuery } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
 import { NewsletterView } from '@/components/newsletter/NewsletterView'
 import { parseNewsletterContent } from '@/lib/newsletter'
+import Link from 'next/link'
+import { Settings } from 'lucide-react'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -140,9 +142,11 @@ function DesktopCircleNewsletter({
     )
   }
 
+  const needsMoreMembers = circle.memberCount < 3
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {fullNewsletter ? (
+      {fullNewsletter && !needsMoreMembers ? (
         <main className="flex-1 overflow-y-auto">
           <NewsletterView
             circle={{
@@ -158,11 +162,32 @@ function DesktopCircleNewsletter({
           />
         </main>
       ) : (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 text-center">
-          <p className="text-lg font-medium text-foreground">No newsletter for this month</p>
-          <p className="text-sm text-muted-foreground">
-            Try selecting a different month from the date picker.
-          </p>
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 text-center">
+          {needsMoreMembers ? (
+            <>
+              <p className="text-lg font-medium text-foreground">
+                Invite {3 - circle.memberCount} more{' '}
+                {3 - circle.memberCount === 1 ? 'member' : 'members'} to get started
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Circles need at least 3 members before the first newsletter is sent.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-lg font-medium text-foreground">No newsletter for this month</p>
+              <p className="text-sm text-muted-foreground">
+                Try selecting a different month from the date picker.
+              </p>
+            </>
+          )}
+          <Link
+            href={`/dashboard/circles/${circleId}/settings`}
+            className="mt-2 inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
+          >
+            <Settings className="size-4" />
+            Circle Settings
+          </Link>
         </div>
       )}
     </div>

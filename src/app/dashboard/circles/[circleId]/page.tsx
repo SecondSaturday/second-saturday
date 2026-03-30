@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import type { Id } from '../../../../../convex/_generated/dataModel'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Settings } from 'lucide-react'
+import Link from 'next/link'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../../../../convex/_generated/api'
 import { NewsletterView } from '@/components/newsletter/NewsletterView'
@@ -100,24 +101,41 @@ export default function CircleLandingPage() {
     )
   }
 
-  // No newsletter for selected month
-  if (!newsletter) {
+  // No newsletter for selected month or needs more members
+  const needsMoreMembers = circle.memberCount < 3
+  if (!newsletter || needsMoreMembers) {
     return (
       <div className="safe-area-top flex h-dvh flex-col bg-background">
-        <header className="absolute left-0 top-0 z-10 p-4">
-          <button
-            onClick={handleBack}
-            aria-label="Back"
-            className="flex size-9 items-center justify-center rounded-full bg-background/80 shadow-sm backdrop-blur-sm"
-          >
-            <ArrowLeft className="size-5 text-foreground" />
-          </button>
+        <header className="flex shrink-0 items-center justify-between border-b border-border bg-background px-4 py-3">
+          <div className="flex items-center gap-3">
+            <button onClick={handleBack} aria-label="Back">
+              <ArrowLeft className="size-5 text-foreground" />
+            </button>
+            <h1 className="text-lg font-semibold text-foreground">{circle.name}</h1>
+          </div>
+          <Link href={`/dashboard/circles/${circleId}/settings`} aria-label="Circle Settings">
+            <Settings className="size-5 text-muted-foreground" />
+          </Link>
         </header>
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 text-center">
-          <p className="text-lg font-medium text-foreground">No newsletter for this month</p>
-          <p className="text-sm text-muted-foreground">
-            Try selecting a different month from the date picker.
-          </p>
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 text-center">
+          {needsMoreMembers ? (
+            <>
+              <p className="text-lg font-medium text-foreground">
+                Invite {3 - circle.memberCount} more{' '}
+                {3 - circle.memberCount === 1 ? 'member' : 'members'} to get started
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Circles need at least 3 members before the first newsletter is sent.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-lg font-medium text-foreground">No newsletter for this month</p>
+              <p className="text-sm text-muted-foreground">
+                Try selecting a different month from the date picker.
+              </p>
+            </>
+          )}
         </div>
       </div>
     )

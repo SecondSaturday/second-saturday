@@ -312,6 +312,7 @@ export const getCircleByInviteCode = query({
     if (!circle) return null
 
     const iconUrl = circle.iconImageId ? await ctx.storage.getUrl(circle.iconImageId) : null
+    const coverUrl = circle.coverImageId ? await ctx.storage.getUrl(circle.coverImageId) : null
 
     const admin = await ctx.db.get(circle.adminId)
 
@@ -327,6 +328,7 @@ export const getCircleByInviteCode = query({
       name: circle.name,
       description: circle.description,
       iconUrl,
+      coverUrl,
       memberCount: members.length,
       adminName: admin?.name ?? admin?.email ?? 'Unknown',
     }

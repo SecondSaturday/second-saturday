@@ -13,7 +13,7 @@ export default function SignUpPage() {
   // Only allow internal relative paths to prevent open redirect
   const redirectUrl =
     rawRedirect?.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : null
-  const afterSignUpUrl = redirectUrl
+  const signUpForceRedirectUrl = redirectUrl
     ? `/complete-profile?redirect_url=${encodeURIComponent(redirectUrl)}`
     : '/complete-profile'
 
@@ -21,7 +21,7 @@ export default function SignUpPage() {
     <AuthLayout>
       <div className="flex flex-col items-center gap-8">
         <Image src="/icon.svg" alt="Second Saturday" width={48} height={48} />
-        <SignUp afterSignUpUrl={afterSignUpUrl} />
+        <SignUp forceRedirectUrl={signUpForceRedirectUrl} />
       </div>
     </AuthLayout>
   )

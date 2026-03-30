@@ -46,13 +46,14 @@ export const getCircleMembers = query({
   handler: async (ctx, args) => {
     const user = await getAuthUser(ctx)
 
-    // Verify caller is a member
+    // Verify caller is a member — return empty instead of throwing
+    // so reactive queries don't hit error boundaries after leaving
     const callerMembership = await ctx.db
       .query('memberships')
       .withIndex('by_user_circle', (q) => q.eq('userId', user._id).eq('circleId', args.circleId))
       .first()
 
-    if (!callerMembership || callerMembership.leftAt) throw new Error('Not a member of this circle')
+    if (!callerMembership || callerMembership.leftAt) return []
 
     const memberships = await ctx.db
       .query('memberships')
@@ -173,7 +174,7 @@ export const getSubmissionStatus = query({
       .first()
 
     if (!callerMembership || callerMembership.leftAt || callerMembership.role !== 'admin') {
-      throw new Error('Admin access required')
+      return null
     }
 
     const cycleId = getCurrentCycleId()
@@ -272,6 +273,93 @@ export const transferAdmin = mutation({
   },
 })
 
+/** Cascade-delete all data belonging to a circle */
+async function cascadeDeleteCircle(ctx: MutationCtx, circleId: Id<'circles'>) {
+  // 1. Delete submissions → responses → media (with storage blobs)
+  const submissions = await ctx.db
+    .query('submissions')
+    .withIndex('by_circle', (q) => q.eq('circleId', circleId))
+    .collect()
+  for (const sub of submissions) {
+    const responses = await ctx.db
+      .query('responses')
+      .withIndex('by_submission', (q) => q.eq('submissionId', sub._id))
+      .collect()
+    for (const resp of responses) {
+      const mediaItems = await ctx.db
+        .query('media')
+        .withIndex('by_response', (q) => q.eq('responseId', resp._id))
+        .collect()
+      for (const m of mediaItems) {
+        if (m.storageId) await ctx.storage.delete(m.storageId)
+        await ctx.db.delete(m._id)
+      }
+      await ctx.db.delete(resp._id)
+    }
+    await ctx.db.delete(sub._id)
+  }
+
+  // 2. Delete prompts
+  const prompts = await ctx.db
+    .query('prompts')
+    .withIndex('by_circle', (q) => q.eq('circleId', circleId))
+    .collect()
+  for (const p of prompts) {
+    await ctx.db.delete(p._id)
+  }
+
+  // 3. Delete newsletters and reads
+  const newsletters = await ctx.db
+    .query('newsletters')
+    .withIndex('by_circle', (q) => q.eq('circleId', circleId))
+    .collect()
+  for (const nl of newsletters) {
+    // Full scan for reads matching this newsletter (no direct index by newsletter alone)
+    const nlReads = (await ctx.db.query('newsletterReads').collect()).filter(
+      (r) => r.newsletterId === nl._id
+    )
+    for (const r of nlReads) {
+      await ctx.db.delete(r._id)
+    }
+    await ctx.db.delete(nl._id)
+  }
+
+  // 4. Delete videos
+  const videos = await ctx.db
+    .query('videos')
+    .withIndex('by_circle', (q) => q.eq('circleId', circleId))
+    .collect()
+  for (const v of videos) {
+    await ctx.db.delete(v._id)
+  }
+
+  // 5. Delete admin reminders
+  const reminders = await ctx.db
+    .query('adminReminders')
+    .withIndex('by_circle_cycle', (q) => q.eq('circleId', circleId))
+    .collect()
+  for (const r of reminders) {
+    await ctx.db.delete(r._id)
+  }
+
+  // 6. Delete all memberships
+  const memberships = await ctx.db
+    .query('memberships')
+    .withIndex('by_circle', (q) => q.eq('circleId', circleId))
+    .collect()
+  for (const m of memberships) {
+    await ctx.db.delete(m._id)
+  }
+
+  // 7. Delete circle storage blobs and the circle itself
+  const circle = await ctx.db.get(circleId)
+  if (circle) {
+    if (circle.iconImageId) await ctx.storage.delete(circle.iconImageId)
+    if (circle.coverImageId) await ctx.storage.delete(circle.coverImageId)
+    await ctx.db.delete(circleId)
+  }
+}
+
 export const leaveCircle = mutation({
   args: { circleId: v.id('circles') },
   handler: async (ctx, args) => {
@@ -280,12 +368,25 @@ export const leaveCircle = mutation({
     const membership = await getActiveMembership(ctx, user._id, args.circleId)
     if (!membership) throw new Error('Not a member of this circle')
 
-    if (membership.role === 'admin') {
+    // Count active members
+    const allMemberships = await ctx.db
+      .query('memberships')
+      .withIndex('by_circle', (q) => q.eq('circleId', args.circleId))
+      .collect()
+    const activeMembers = allMemberships.filter((m) => !m.leftAt)
+
+    if (membership.role === 'admin' && activeMembers.length > 1) {
       throw new Error('Transfer admin role before leaving')
     }
 
+    // Last member leaving — cascade delete the entire circle
+    if (activeMembers.length === 1) {
+      await cascadeDeleteCircle(ctx, args.circleId)
+      return { success: true, circleDeleted: true }
+    }
+
     await ctx.db.patch(membership._id, { leftAt: Date.now() })
-    return { success: true }
+    return { success: true, circleDeleted: false }
   },
 })
 

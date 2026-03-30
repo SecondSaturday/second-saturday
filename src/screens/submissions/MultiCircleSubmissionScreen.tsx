@@ -447,7 +447,7 @@ export function MultiCircleSubmissionScreen({
 
       {/* Submit footer - outside scroll area, always visible */}
       {!isLoading && (
-        <div className="shrink-0 border-t border-border bg-background px-4 py-3 safe-area-bottom">
+        <div className="shrink-0 border-t border-border bg-background px-4 py-3 safe-area-bottom overflow-hidden">
           {activeCircle?.status === 'submitted' ? (
             <div className="flex items-center justify-center gap-2 text-sm font-medium text-green-600">
               <Check className="size-4" />

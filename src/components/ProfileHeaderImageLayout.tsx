@@ -11,6 +11,8 @@ interface ProfileHeaderImageLayoutProps {
   onCoverUpload?: (file: File) => void
   onIconUpload?: (file: File) => void
   editable?: boolean
+  centered?: boolean
+  fallbackInitial?: string
   className?: string
 }
 
@@ -20,6 +22,8 @@ export function ProfileHeaderImageLayout({
   onCoverUpload,
   onIconUpload,
   editable = false,
+  centered = false,
+  fallbackInitial,
   className,
 }: ProfileHeaderImageLayoutProps) {
   const coverInputRef = useRef<HTMLInputElement>(null)
@@ -41,11 +45,11 @@ export function ProfileHeaderImageLayout({
       <div className="relative h-[150px] w-full bg-muted md:h-[200px]">
         {coverImageUrl ? (
           <img src={coverImageUrl} alt="Cover" className="size-full object-cover" />
-        ) : (
+        ) : editable ? (
           <div className="flex size-full items-center justify-center">
             <Camera className="size-8 text-muted-foreground/40" />
           </div>
-        )}
+        ) : null}
 
         {editable && (
           <>
@@ -69,12 +73,20 @@ export function ProfileHeaderImageLayout({
       </div>
 
       {/* Circle icon overlapping cover bottom edge */}
-      <div className="relative -mt-10 ml-4">
+      <div className={cn('relative -mt-10', centered ? 'flex justify-center' : 'ml-4')}>
         <div className="relative inline-block">
           <Avatar size="lg" className="size-20 border-4 border-background shadow-md">
             <AvatarImage src={iconUrl ?? undefined} alt="Circle icon" />
             <AvatarFallback>
-              <Camera className="size-6 text-muted-foreground/40" />
+              {editable ? (
+                <Camera className="size-6 text-muted-foreground/40" />
+              ) : fallbackInitial ? (
+                <span className="text-2xl font-semibold text-muted-foreground">
+                  {fallbackInitial}
+                </span>
+              ) : (
+                <span className="size-full bg-muted" />
+              )}
             </AvatarFallback>
           </Avatar>
 

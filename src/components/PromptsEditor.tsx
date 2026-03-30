@@ -247,7 +247,7 @@ export function PromptsEditor({ circleId, mode, onComplete, stepIndicator }: Pro
         {error && <p className="text-sm text-destructive">{error}</p>}
       </div>
 
-      <div className="safe-area-bottom fixed bottom-0 left-0 right-0 border-t border-border bg-background px-4 py-4">
+      <div className="safe-area-bottom fixed bottom-0 left-0 right-0 border-t border-border bg-background px-4 py-4 overflow-hidden">
         <Button
           onClick={handleSave}
           className="w-full"

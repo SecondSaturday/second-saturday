@@ -7,7 +7,7 @@ export default function CircleError({ error, reset }: { error: Error; reset: () 
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-4 text-center">
       <h2 className="text-xl font-semibold text-foreground">Something went wrong</h2>
       <p className="text-sm text-muted-foreground">
-        {error.message || 'An unexpected error occurred.'}
+        We couldn&apos;t load this circle. It may not exist or you may not have access.
       </p>
       <div className="flex gap-3">
         <button

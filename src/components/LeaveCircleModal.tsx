@@ -80,7 +80,7 @@ export function LeaveCircleModal({
     }
   }
 
-  // Admin flow: must transfer first
+  // Admin flow: must transfer first, or delete if last member
   if (isAdmin) {
     const noOtherMembers = otherMembers !== undefined && otherMembers.length === 0
 
@@ -88,10 +88,12 @@ export function LeaveCircleModal({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Transfer admin & leave</DialogTitle>
+            <DialogTitle>
+              {noOtherMembers ? 'Delete circle & leave' : 'Transfer admin & leave'}
+            </DialogTitle>
             <DialogDescription>
               {noOtherMembers
-                ? 'You are the only member. You must delete the circle to leave.'
+                ? 'You are the only member. Leaving will permanently delete this circle and all its data (newsletters, submissions, media). This cannot be undone.'
                 : 'Select a new admin before leaving. They will manage the circle after you leave.'}
             </DialogDescription>
           </DialogHeader>
@@ -123,7 +125,11 @@ export function LeaveCircleModal({
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
               Cancel
             </Button>
-            {!noOtherMembers && (
+            {noOtherMembers ? (
+              <Button variant="destructive" onClick={handleLeave} disabled={loading}>
+                {loading ? 'Deleting...' : 'Delete & Leave'}
+              </Button>
+            ) : (
               <Button
                 variant="destructive"
                 onClick={handleTransferAndLeave}

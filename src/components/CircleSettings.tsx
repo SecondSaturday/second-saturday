@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
@@ -64,7 +64,18 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
     null
   )
 
-  if (circle === undefined || members === undefined || currentUser === undefined) {
+  const shouldRedirect =
+    circle !== undefined && currentUser !== undefined && (!circle || !currentUser)
+  useEffect(() => {
+    if (shouldRedirect) router.replace('/dashboard')
+  }, [shouldRedirect, router])
+
+  if (
+    circle === undefined ||
+    members === undefined ||
+    currentUser === undefined ||
+    shouldRedirect
+  ) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -72,13 +83,7 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
     )
   }
 
-  if (!circle || !currentUser) {
-    return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <p className="text-muted-foreground">Circle not found</p>
-      </div>
-    )
-  }
+  if (!circle || !currentUser) return null
 
   const isAdmin = circle.role === 'admin'
   const displayName = name ?? circle.name
@@ -287,7 +292,12 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
             <Label>Invite Link</Label>
             <div className="flex items-center gap-2 rounded-lg border border-border bg-card p-3">
               <p className="flex-1 truncate text-sm text-muted-foreground">{inviteLink}</p>
-              <Button variant="ghost" size="icon" onClick={handleCopyLink} aria-label="Copy invite link">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleCopyLink}
+                aria-label="Copy invite link"
+              >
                 {copied ? <Check className="size-4 text-green-600" /> : <Copy className="size-4" />}
               </Button>
             </div>
@@ -401,7 +411,12 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
                     {canRemove && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="size-8" aria-label="Member actions">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8"
+                            aria-label="Member actions"
+                          >
                             <MoreVertical className="size-4" />
                           </Button>
                         </DropdownMenuTrigger>
