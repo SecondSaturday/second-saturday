@@ -12,6 +12,15 @@ const getResend = () => {
 
 const FROM = process.env.RESEND_FROM_EMAIL || 'noreply@secondsaturday.app'
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 export const sendWelcomeEmail = internalAction({
   args: {
     email: v.string(),
@@ -24,7 +33,7 @@ export const sendWelcomeEmail = internalAction({
       to: [email],
       subject: 'Welcome to Second Saturday!',
       html: `
-        <h1>Welcome${name ? `, ${name}` : ''}!</h1>
+        <h1>Welcome${name ? `, ${escapeHtml(name)}` : ''}!</h1>
         <p>Thanks for joining Second Saturday. We're excited to have you!</p>
         <p>Get started by creating or joining a circle with your friends and family.</p>
       `,
@@ -45,7 +54,7 @@ export const sendAccountDeletionEmail = internalAction({
       subject: 'Your Second Saturday account has been deleted',
       html: `
         <h1>Account Deleted</h1>
-        <p>Hi${name ? ` ${name}` : ''},</p>
+        <p>Hi${name ? ` ${escapeHtml(name)}` : ''},</p>
         <p>Your Second Saturday account has been successfully deleted. All your data has been removed.</p>
         <p>If you didn't request this, please contact us immediately.</p>
       `,

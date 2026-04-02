@@ -340,6 +340,8 @@ const MINIMUM_MEMBERS = 3
 export const hasMinimumMembers = query({
   args: { circleId: v.id('circles') },
   handler: async (ctx, args) => {
+    await getAuthUser(ctx)
+
     const members = await ctx.db
       .query('memberships')
       .withIndex('by_circle', (q) => q.eq('circleId', args.circleId))

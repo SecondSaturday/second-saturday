@@ -140,6 +140,11 @@ export const updatePrompts = mutation({
     // Create or update prompts
     for (const p of args.prompts) {
       if (p.id) {
+        // Verify the prompt belongs to this circle
+        const existingPrompt = await ctx.db.get(p.id)
+        if (!existingPrompt || existingPrompt.circleId !== args.circleId) {
+          throw new Error('Prompt does not belong to this circle')
+        }
         await ctx.db.patch(p.id, {
           text: p.text,
           order: p.order,
