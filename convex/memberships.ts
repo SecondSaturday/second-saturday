@@ -2,6 +2,7 @@ import { mutation, query } from './_generated/server'
 import type { MutationCtx, QueryCtx } from './_generated/server'
 import { v } from 'convex/values'
 import type { Doc, Id } from './_generated/dataModel'
+import { internal } from './_generated/api'
 
 /** Get the authenticated user or throw (safe for queries) */
 async function getAuthUser(ctx: QueryCtx | MutationCtx): Promise<Doc<'users'>> {
@@ -314,23 +315,28 @@ async function cascadeDeleteCircle(ctx: MutationCtx, circleId: Id<'circles'>) {
     .withIndex('by_circle', (q) => q.eq('circleId', circleId))
     .collect()
   for (const nl of newsletters) {
-    // Full scan for reads matching this newsletter (no direct index by newsletter alone)
-    const nlReads = (await ctx.db.query('newsletterReads').collect()).filter(
-      (r) => r.newsletterId === nl._id
-    )
+    const nlReads = await ctx.db
+      .query('newsletterReads')
+      .withIndex('by_newsletter', (q) => q.eq('newsletterId', nl._id))
+      .collect()
     for (const r of nlReads) {
       await ctx.db.delete(r._id)
     }
     await ctx.db.delete(nl._id)
   }
 
-  // 4. Delete videos
+  // 4. Delete videos (and schedule Mux asset cleanup)
   const videos = await ctx.db
     .query('videos')
     .withIndex('by_circle', (q) => q.eq('circleId', circleId))
     .collect()
-  for (const v of videos) {
-    await ctx.db.delete(v._id)
+  for (const vid of videos) {
+    if (vid.assetId) {
+      await ctx.scheduler.runAfter(0, internal.videoActions.deleteMuxAsset, {
+        assetId: vid.assetId,
+      })
+    }
+    await ctx.db.delete(vid._id)
   }
 
   // 5. Delete admin reminders

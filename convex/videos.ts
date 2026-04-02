@@ -234,6 +234,18 @@ export const deleteVideo = mutation({
       })
     }
 
+    // Clean up linked media records that reference this video
+    const linkedMedia = await ctx.db
+      .query('media')
+      .withIndex('by_video', (q) => q.eq('videoId', args.id))
+      .collect()
+    for (const m of linkedMedia) {
+      if (m.storageId) {
+        await ctx.storage.delete(m.storageId)
+      }
+      await ctx.db.delete(m._id)
+    }
+
     await ctx.db.delete(args.id)
     return { success: true }
   },

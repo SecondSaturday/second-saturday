@@ -2,6 +2,7 @@ import { mutation, query } from './_generated/server'
 import type { MutationCtx, QueryCtx } from './_generated/server'
 import { v } from 'convex/values'
 import type { Doc, Id } from './_generated/dataModel'
+import { internal } from './_generated/api'
 
 /** Get the authenticated user or throw */
 async function getAuthUser(ctx: QueryCtx | MutationCtx): Promise<Doc<'users'>> {
@@ -437,7 +438,22 @@ export const removeMediaFromResponse = mutation({
       throw new Error('Cannot modify locked submission')
     }
 
-    // Delete the media
+    // Delete the storage blob if it exists
+    if (media.storageId) {
+      await ctx.storage.delete(media.storageId)
+    }
+
+    // If video media, schedule Mux asset cleanup
+    if (media.type === 'video' && media.videoId) {
+      const video = await ctx.db.get(media.videoId)
+      if (video?.assetId) {
+        await ctx.scheduler.runAfter(0, internal.videoActions.deleteMuxAsset, {
+          assetId: video.assetId,
+        })
+      }
+    }
+
+    // Delete the media record
     await ctx.db.delete(args.mediaId)
 
     // Reorder remaining media
