@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@clerk/nextjs'
 import { useMutation } from 'convex/react'
@@ -15,9 +16,9 @@ import { trackEvent } from '@/lib/analytics'
 
 function navigateToDeepLink(
   router: ReturnType<typeof useRouter>,
-  payload: NotificationClickPayload
+  payload: NotificationClickPayload,
+  isDesktop: boolean
 ) {
-  const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768
   switch (payload.type) {
     case 'submission_reminder':
       router.push(`/dashboard/circles/${payload.circleId}/submit`)
@@ -37,15 +38,20 @@ function navigateToDeepLink(
 export function OneSignalProvider({ children }: { children: React.ReactNode }) {
   const { isSignedIn } = useAuth()
   const router = useRouter()
+  const isDesktop = useIsDesktop()
   const registerPlayerId = useMutation(api.notifications.registerOneSignalPlayerId)
   const lastPlayerIdRef = useRef<string | null>(null)
   const handlersRegisteredRef = useRef(false)
   const pendingDeepLinkRef = useRef<NotificationClickPayload | null>(null)
+  const isDesktopRef = useRef(isDesktop)
+  useEffect(() => {
+    isDesktopRef.current = isDesktop
+  }, [isDesktop])
 
   // Process any pending deep link once signed in
   useEffect(() => {
     if (isSignedIn && pendingDeepLinkRef.current) {
-      navigateToDeepLink(router, pendingDeepLinkRef.current)
+      navigateToDeepLink(router, pendingDeepLinkRef.current, isDesktopRef.current)
       pendingDeepLinkRef.current = null
     }
   }, [isSignedIn, router])
@@ -85,7 +91,7 @@ export function OneSignalProvider({ children }: { children: React.ReactNode }) {
             })
 
             if (isSignedIn) {
-              navigateToDeepLink(router, payload)
+              navigateToDeepLink(router, payload, isDesktopRef.current)
             } else {
               // Store for processing after auth completes (cold start)
               pendingDeepLinkRef.current = payload

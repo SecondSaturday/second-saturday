@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
+import { useIsDesktop } from '@/hooks/useMediaQuery'
 import type { Id } from '../../../../../convex/_generated/dataModel'
 import { ArrowLeft, Settings } from 'lucide-react'
 import Link from 'next/link'
@@ -17,14 +18,15 @@ export default function CircleLandingPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const circleId = params.circleId as Id<'circles'>
+  const isDesktop = useIsDesktop()
 
   const handleBack = useCallback(() => {
-    if (window.innerWidth >= 768) {
+    if (isDesktop) {
       router.push(`/dashboard?circle=${circleId}`)
     } else {
       router.push('/dashboard')
     }
-  }, [router, circleId])
+  }, [router, circleId, isDesktop])
 
   // Parse month from searchParams or default to last second Saturday
   const monthParam = searchParams.get('month') // e.g., "2026-02"

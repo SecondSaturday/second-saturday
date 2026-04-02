@@ -1,6 +1,7 @@
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
+import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { useQuery } from 'convex/react'
 import { api } from '../../../../../../convex/_generated/api'
 import type { Id } from '../../../../../../convex/_generated/dataModel'
@@ -13,6 +14,7 @@ export default function SubmitPage() {
   const params = useParams()
   const router = useRouter()
   const circleId = params.circleId as Id<'circles'>
+  const isDesktop = useIsDesktop()
 
   const cycleId = useMemo(() => {
     const now = new Date()
@@ -60,7 +62,7 @@ export default function SubmitPage() {
       <header className="flex shrink-0 items-center gap-3 border-b border-border bg-background px-4 py-3">
         <button
           onClick={() => {
-            if (window.innerWidth >= 768) {
+            if (isDesktop) {
               router.push(`/dashboard?circle=${circleId}`)
             } else {
               router.push(`/dashboard/circles/${circleId}`)

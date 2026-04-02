@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../../../../../../convex/_generated/api'
 import type { Id } from '../../../../../../../convex/_generated/dataModel'
@@ -16,14 +17,15 @@ export default function NewsletterPage() {
   const router = useRouter()
   const circleId = params.circleId as Id<'circles'>
   const newsletterId = params.newsletterId as Id<'newsletters'>
+  const isDesktop = useIsDesktop()
 
   const handleBack = useCallback(() => {
-    if (window.innerWidth >= 768) {
+    if (isDesktop) {
       router.push(`/dashboard?circle=${circleId}`)
     } else {
       router.push(`/dashboard/circles/${circleId}`)
     }
-  }, [router, circleId])
+  }, [router, circleId, isDesktop])
 
   const searchParams = useSearchParams()
   const newsletter = useQuery(api.newsletters.getNewsletterById, { newsletterId })

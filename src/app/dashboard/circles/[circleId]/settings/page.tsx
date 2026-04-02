@@ -1,6 +1,7 @@
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
+import { useIsDesktop } from '@/hooks/useMediaQuery'
 import type { Id } from '../../../../../../convex/_generated/dataModel'
 import { ArrowLeft } from 'lucide-react'
 import { CircleSettings } from '@/components/CircleSettings'
@@ -9,9 +10,10 @@ export default function CircleSettingsPage() {
   const params = useParams()
   const router = useRouter()
   const circleId = params.circleId as Id<'circles'>
+  const isDesktop = useIsDesktop()
 
   const handleBack = () => {
-    if (window.innerWidth >= 768) {
+    if (isDesktop) {
       router.push(`/dashboard?circle=${circleId}`)
     } else {
       router.push(`/dashboard/circles/${circleId}`)

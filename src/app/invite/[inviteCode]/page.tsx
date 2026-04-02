@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { useQuery, useMutation } from 'convex/react'
 import { useAuth } from '@clerk/nextjs'
 import { api } from '../../../../convex/_generated/api'
@@ -22,6 +23,7 @@ export default function InvitePreviewPage() {
   const inviteStatus = useQuery(api.memberships.getInviteStatus, { inviteCode })
   const joinCircle = useMutation(api.memberships.joinCircle)
 
+  const isDesktop = useIsDesktop()
   const [joining, setJoining] = useState(false)
   const [alreadyMember, setAlreadyMember] = useState(false)
 
@@ -44,7 +46,7 @@ export default function InvitePreviewPage() {
       } else {
         trackEvent('circle_joined', { circleId: result.circleId, source: 'invite_link' })
         toast.success('Successfully joined circle!')
-        if (window.innerWidth >= 768) {
+        if (isDesktop) {
           router.push(`/dashboard?circle=${result.circleId}`)
         } else {
           router.push(`/dashboard/circles/${result.circleId}`)
@@ -159,7 +161,7 @@ export default function InvitePreviewPage() {
             <Button
               className="w-full"
               onClick={() => {
-                if (window.innerWidth >= 768) {
+                if (isDesktop) {
                   router.push(`/dashboard?circle=${circle._id}`)
                 } else {
                   router.push(`/dashboard/circles/${circle._id}`)

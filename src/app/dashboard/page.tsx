@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader'
 import { CircleList } from '@/components/dashboard/CircleList'
@@ -22,25 +23,26 @@ export default function DashboardPage() {
   const selectedCircleId = searchParams.get('circle')
   const [selectedDate, setSelectedDate] = useState(() => getLastSecondSaturday())
   const [datePickerOpen, setDatePickerOpen] = useState(false)
+  const isDesktop = useIsDesktop()
 
   // Redirect mobile users who land on /dashboard?circle=[id] to the full-page route
   useEffect(() => {
-    if (selectedCircleId && window.innerWidth < 768) {
+    if (selectedCircleId && !isDesktop) {
       router.replace(`/dashboard/circles/${selectedCircleId}`)
     }
-  }, [selectedCircleId, router])
+  }, [selectedCircleId, router, isDesktop])
 
   const handleCircleSelect = useCallback(
     (id: string) => {
       // On mobile (sidebar is full-width), navigate to the dedicated page
-      if (window.innerWidth < 768) {
+      if (!isDesktop) {
         router.push(`/dashboard/circles/${id}`)
       } else {
         // On desktop, update URL with query param for split view
         router.push(`/dashboard?circle=${id}`, { scroll: false })
       }
     },
-    [router]
+    [router, isDesktop]
   )
 
   useEffect(() => {

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
@@ -39,6 +40,7 @@ export function MultiCircleSubmissionScreen({
   cycleId,
 }: MultiCircleSubmissionScreenProps) {
   const router = useRouter()
+  const isDesktop = useIsDesktop()
   const [activeCircleId, setActiveCircleId] = useState<string>(circles[0]?.id ?? '')
   const [draftTexts, setDraftTexts] = useState<Map<string, Map<string, string>>>(new Map())
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
@@ -114,12 +116,13 @@ export function MultiCircleSubmissionScreen({
         trackEvent('submission_locked', { circle_id: activeCircleId, cycle_id: cycleId })
       } catch {}
       toast.success('Submission locked! See you on newsletter day.')
-      if (window.innerWidth >= 768) {
+      if (isDesktop) {
         router.push(`/dashboard?circle=${activeCircleId}`)
       } else {
         router.push(`/dashboard/circles/${activeCircleId}`)
       }
     } catch (err) {
+      isLockedRef.current = false
       toast.error('Failed to submit. Please try again.')
     } finally {
       setIsSubmitting(false)
@@ -133,6 +136,8 @@ export function MultiCircleSubmissionScreen({
     promptsData,
     draftTexts,
     updateResponse,
+    isDesktop,
+    router,
   ])
 
   // Initialise draft texts from server data when data loads
