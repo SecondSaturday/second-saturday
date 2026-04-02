@@ -37,7 +37,7 @@ export const uploadVideoToMux = action({
 
       // Create a direct upload
       const upload = await mux.video.uploads.create({
-        cors_origin: '*', // Configure based on your domain in production
+        cors_origin: process.env.SITE_URL || '*',
         new_asset_settings: {
           playback_policy: ['public'],
         },

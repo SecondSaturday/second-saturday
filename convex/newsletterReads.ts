@@ -79,10 +79,15 @@ export const markNewsletterRead = mutation({
 export const getNewslettersByDate = query({
   args: {
     circleId: v.id('circles'),
+    /** Full year (e.g. 2026) */
     year: v.number(),
+    /** 0-indexed month (0 = January, 11 = December) */
     month: v.number(),
   },
   handler: async (ctx, args) => {
+    if (args.month < 0 || args.month > 11) {
+      throw new Error('month must be 0-indexed (0 = January, 11 = December)')
+    }
     const user = await getAuthUser(ctx)
 
     // Verify membership

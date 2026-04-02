@@ -310,7 +310,10 @@ export const compileNewsletter = internalMutation({
       .query('newsletters')
       .withIndex('by_circle', (q) => q.eq('circleId', circleId))
       .collect()
-    const issueNumber = existingNewsletters.length + 1
+    const issueNumber =
+      existingNewsletters.length > 0
+        ? Math.max(...existingNewsletters.map((n) => n.issueNumber ?? 0)) + 1
+        : 1
 
     // Format title
     const [year, month] = cycleId.split('-')
