@@ -130,6 +130,17 @@ export default function InvitePreviewPage() {
     )
   }
 
+  if (inviteStatus?.status === 'archived') {
+    return (
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-2 bg-background px-6">
+        <p className="text-muted-foreground">This circle has been archived</p>
+        <Link href="/dashboard" className="text-sm text-primary hover:underline">
+          Go to dashboard
+        </Link>
+      </div>
+    )
+  }
+
   if (alreadyMember) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-background px-6">
