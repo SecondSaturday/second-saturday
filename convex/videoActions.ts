@@ -32,6 +32,10 @@ export const uploadVideoToMux = action({
     uploadId: string
     videoId: Id<'videos'>
   }> => {
+    // Verify authentication before creating Mux resources
+    const user = await ctx.runQuery(api.users.getCurrentUser, {})
+    if (!user) throw new Error('Not authenticated')
+
     try {
       const mux = getMuxClient()
 
@@ -40,6 +44,7 @@ export const uploadVideoToMux = action({
         cors_origin: process.env.SITE_URL || '*',
         new_asset_settings: {
           playback_policy: ['public'],
+          max_resolution_tier: '1080p',
         },
       })
 
