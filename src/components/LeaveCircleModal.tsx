@@ -35,7 +35,7 @@ export function LeaveCircleModal({
 }: LeaveCircleModalProps) {
   const router = useRouter()
   const leaveCircle = useMutation(api.memberships.leaveCircle)
-  const transferAdmin = useMutation(api.memberships.transferAdmin)
+  const transferAdminAndLeave = useMutation(api.memberships.transferAdminAndLeave)
   const members = useQuery(
     api.memberships.getCircleMembers,
     open && isAdmin ? { circleId } : 'skip'
@@ -66,8 +66,7 @@ export function LeaveCircleModal({
     if (!selectedNewAdmin) return
     setLoading(true)
     try {
-      await transferAdmin({ circleId, newAdminUserId: selectedNewAdmin })
-      await leaveCircle({ circleId })
+      await transferAdminAndLeave({ circleId, newAdminUserId: selectedNewAdmin })
       toast.success('Admin transferred and left circle')
       trackEvent('circle_left', { circleId, adminTransferred: true })
       onOpenChange(false)

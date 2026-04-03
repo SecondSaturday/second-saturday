@@ -345,6 +345,35 @@ export const leaveCircle = mutation({
   },
 })
 
+export const transferAdminAndLeave = mutation({
+  args: {
+    circleId: v.id('circles'),
+    newAdminUserId: v.id('users'),
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthUser(ctx)
+
+    const callerMembership = await getActiveMembership(ctx, user._id, args.circleId)
+    if (!callerMembership || callerMembership.role !== 'admin') {
+      throw new Error('Admin access required')
+    }
+
+    if (args.newAdminUserId === user._id) {
+      throw new Error('Cannot transfer admin to yourself')
+    }
+
+    const targetMembership = await getActiveMembership(ctx, args.newAdminUserId, args.circleId)
+    if (!targetMembership) throw new Error('Target user is not an active member')
+
+    // Transfer admin and leave atomically
+    await ctx.db.patch(targetMembership._id, { role: 'admin' })
+    await ctx.db.patch(args.circleId, { adminId: args.newAdminUserId, updatedAt: Date.now() })
+    await ctx.db.patch(callerMembership._id, { leftAt: Date.now() })
+
+    return { success: true }
+  },
+})
+
 export const removeMember = mutation({
   args: {
     circleId: v.id('circles'),
