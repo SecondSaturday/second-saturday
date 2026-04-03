@@ -60,7 +60,7 @@ export default function InvitePreviewPage() {
     }
   }
 
-  if (circle === undefined) {
+  if (circle === undefined || inviteStatus === undefined) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-background">
         <div className="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />

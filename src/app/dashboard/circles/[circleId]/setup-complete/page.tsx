@@ -7,6 +7,7 @@ import { api } from '../../../../../../convex/_generated/api'
 import { Button } from '@/components/ui/button'
 import { Copy, Check, Users, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import type { Id } from '../../../../../../convex/_generated/dataModel'
 import { StepProgressIndicator } from '@/components/ui/StepProgressIndicator'
 
@@ -38,9 +39,14 @@ export default function SetupCompletePage() {
   const inviteLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/invite/${circle.inviteCode}`
 
   const handleCopyLink = async () => {
-    await navigator.clipboard.writeText(inviteLink)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    try {
+      await navigator.clipboard.writeText(inviteLink)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // Fallback for browsers that don't support clipboard API
+      toast.error('Failed to copy link')
+    }
   }
 
   const needsMoreMembers = memberCount !== undefined && memberCount < 3
