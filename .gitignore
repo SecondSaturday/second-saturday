@@ -61,3 +61,8 @@ e2e-auth-debug*.png
 .claude/epics/epic-1-analysis.md
 .claude/epics/epic-3-audit.md
 .claude/v0-plumbing-bugs.md
+
+# bmad
+/_bmad/
+/_bmad-output/
+skills-lock.json
