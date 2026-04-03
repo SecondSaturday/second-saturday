@@ -31,14 +31,10 @@ export const lockPastDeadlineSubmissions = internalMutation({
       const deadlineMs = Date.UTC(year, month, secondSaturdayDay, 10, 59, 0)
 
       if (now >= deadlineMs) {
-        const patch: { lockedAt: number; updatedAt: number; submittedAt?: number } = {
+        await ctx.db.patch(submission._id, {
           lockedAt: now,
           updatedAt: now,
-        }
-        if (submission.submittedAt) {
-          patch.submittedAt = submission.submittedAt
-        }
-        await ctx.db.patch(submission._id, patch)
+        })
         lockedCount++
       }
     }
