@@ -30,7 +30,7 @@ interface MediaUploaderProps {
   responseId?: Id<'responses'>
   onUploadComplete?: (mediaId: Id<'media'>, type: 'image' | 'video') => void
   onUploadError?: (error: string) => void
-  onEnsureResponse?: () => Promise<void>
+  onEnsureResponse?: () => Promise<Id<'responses'> | undefined>
   maxMedia?: number
   currentMediaCount?: number
   className?: string
@@ -56,6 +56,7 @@ export function MediaUploader({
   const [mediaType, setMediaType] = useState<MediaType | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const videoIdRef = useRef<Id<'videos'> | null>(null)
+  const ensuredResponseIdRef = useRef<Id<'responses'> | undefined>(undefined)
 
   // Mutations and actions
   const generateUploadUrl = useMutation(api.files.generateUploadUrl)
@@ -112,7 +113,8 @@ export function MediaUploader({
 
     try {
       // Ensure response exists before starting upload
-      await onEnsureResponse?.()
+      const ensuredId = await onEnsureResponse?.()
+      if (ensuredId) ensuredResponseIdRef.current = ensuredId
 
       setStage('selecting')
       setError(null)
@@ -229,8 +231,10 @@ export function MediaUploader({
       setProgress(80)
 
       // Save media record to database
+      const resolvedResponseId = responseId ?? ensuredResponseIdRef.current
+      if (!resolvedResponseId) throw new Error('No response ID available')
       const mediaId = await addMediaToResponse({
-        responseId: responseId!,
+        responseId: resolvedResponseId,
         storageId,
         type: 'image',
       })
@@ -275,7 +279,8 @@ export function MediaUploader({
       return
     }
     // Ensure response exists before starting upload
-    await onEnsureResponse?.()
+    const ensuredId = await onEnsureResponse?.()
+    if (ensuredId) ensuredResponseIdRef.current = ensuredId
     videoInputRef.current?.click()
   }
 
@@ -386,8 +391,10 @@ export function MediaUploader({
 
       // Save media record linked to the video record
       // muxAssetId will be populated via webhook when Mux finishes processing
+      const resolvedResponseId = responseId ?? ensuredResponseIdRef.current
+      if (!resolvedResponseId) throw new Error('No response ID available')
       const mediaId = await addMediaToResponse({
-        responseId: responseId!,
+        responseId: resolvedResponseId,
         type: 'video',
         videoId,
       })

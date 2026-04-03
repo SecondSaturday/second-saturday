@@ -18,7 +18,7 @@ interface PromptResponseCardProps {
   onMediaUpload?: (mediaId: Id<'media'>, type: 'image' | 'video') => void
   onMediaRemove?: (mediaId: Id<'media'>) => void
   onMediaError?: (error: string) => void
-  onEnsureResponse?: () => Promise<void>
+  onEnsureResponse?: () => Promise<Id<'responses'> | undefined>
   disabled?: boolean
   maxLength?: number
   maxMedia?: number

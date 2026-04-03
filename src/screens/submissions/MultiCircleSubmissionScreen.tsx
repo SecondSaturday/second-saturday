@@ -333,9 +333,9 @@ export function MultiCircleSubmissionScreen({
   // Handler: ensure a response exists before media upload (on-demand creation)
   const handleEnsureResponse = useCallback(
     async (promptId: string) => {
-      // If response already exists, nothing to do
+      // If response already exists, return its ID
       const serverResponse = submissionData?.responses.find((r) => r.promptId === promptId)
-      if (serverResponse?._id) return
+      if (serverResponse?._id) return serverResponse._id
 
       // Create submission if needed, then create empty response
       let submissionId = submissionData?._id
@@ -345,11 +345,12 @@ export function MultiCircleSubmissionScreen({
           cycleId,
         })
       }
-      await updateResponse({
+      const newResponseId = await updateResponse({
         submissionId: submissionId as Id<'submissions'>,
         promptId: promptId as Id<'prompts'>,
         text: '',
       })
+      return newResponseId
     },
     [submissionData, activeCircleId, cycleId, createSubmission, updateResponse]
   )
@@ -440,7 +441,10 @@ export function MultiCircleSubmissionScreen({
                     onValueChange={(value) => handleValueChange(activeCircleId, prompt._id, value)}
                     onMediaUpload={handleMediaUpload}
                     onMediaRemove={isDisabled ? undefined : handleMediaRemove}
-                    onEnsureResponse={() => handleEnsureResponse(prompt._id)}
+                    onEnsureResponse={async () => {
+                      const id = await handleEnsureResponse(prompt._id)
+                      return id
+                    }}
                     disabled={isDisabled}
                   />
                 )
