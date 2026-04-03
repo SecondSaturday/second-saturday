@@ -286,4 +286,31 @@ http.route({
   }),
 })
 
+// E2E cleanup endpoint — gated by secret, only usable by test scripts
+http.route({
+  path: '/e2e-cleanup',
+  method: 'POST',
+  handler: httpAction(async (ctx, request) => {
+    const secret = process.env.E2E_CLEANUP_SECRET
+    if (!secret) {
+      return new Response('E2E cleanup not configured', { status: 404 })
+    }
+
+    const authHeader = request.headers.get('authorization')
+    if (authHeader !== `Bearer ${secret}`) {
+      return new Response('Unauthorized', { status: 401 })
+    }
+
+    const body = (await request.json()) as { dryRun?: boolean }
+    const result = await ctx.runMutation(internal.e2eCleanup.cleanupE2EData, {
+      dryRun: body.dryRun,
+    })
+
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }),
+})
+
 export default http

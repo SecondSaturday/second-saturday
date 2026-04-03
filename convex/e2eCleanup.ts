@@ -1,4 +1,4 @@
-import { mutation } from './_generated/server'
+import { internalMutation } from './_generated/server'
 import { v } from 'convex/values'
 
 /**
@@ -46,7 +46,7 @@ function isTestCircle(name: string): boolean {
   return E2E_EXACT_NAMES.has(name) || name.startsWith('E2E ') || name.startsWith('QA ')
 }
 
-export const cleanupE2EData = mutation({
+export const cleanupE2EData = internalMutation({
   args: {
     dryRun: v.optional(v.boolean()),
   },

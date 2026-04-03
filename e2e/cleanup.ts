@@ -9,8 +9,6 @@
  *   pnpm e2e:cleanup --dry-run    # Preview what would be deleted
  */
 
-import { ConvexHttpClient } from 'convex/browser'
-import { api } from '../convex/_generated/api'
 import dotenv from 'dotenv'
 import path from 'path'
 
@@ -18,23 +16,47 @@ import path from 'path'
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') })
 
 const CONVEX_URL = process.env.NEXT_PUBLIC_CONVEX_URL
+const CLEANUP_SECRET = process.env.E2E_CLEANUP_SECRET
 
 if (!CONVEX_URL) {
   console.error('❌ NEXT_PUBLIC_CONVEX_URL not set in .env.local')
   process.exit(1)
 }
 
+if (!CLEANUP_SECRET) {
+  console.error('❌ E2E_CLEANUP_SECRET not set in .env.local')
+  process.exit(1)
+}
+
 const dryRun = process.argv.includes('--dry-run')
 
-async function main() {
-  const client = new ConvexHttpClient(CONVEX_URL!)
+// Derive HTTP endpoint from Convex URL (e.g., https://foo.convex.cloud -> https://foo.convex.site)
+const httpUrl = CONVEX_URL.replace('.convex.cloud', '.convex.site')
 
+async function main() {
   console.log(
     dryRun ? '🔍 Dry run — previewing E2E data to clean up...' : '🧹 Cleaning up E2E test data...'
   )
 
   try {
-    const result = await client.mutation(api.e2eCleanup.cleanupE2EData, { dryRun })
+    const response = await fetch(`${httpUrl}/e2e-cleanup`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${CLEANUP_SECRET}`,
+      },
+      body: JSON.stringify({ dryRun }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${await response.text()}`)
+    }
+
+    const result = (await response.json()) as {
+      matchedCircles: string[]
+      deleted: Record<string, number>
+      dryRun: boolean
+    }
 
     if (result.matchedCircles.length === 0) {
       console.log('✅ No E2E test data found — nothing to clean up.')
