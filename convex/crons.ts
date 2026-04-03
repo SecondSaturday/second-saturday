@@ -10,32 +10,46 @@ export const lockPastDeadlineSubmissions = internalMutation({
   args: {},
   handler: async (ctx) => {
     const now = Date.now()
+    const d = new Date(now)
+    const year = d.getUTCFullYear()
+    const month = d.getUTCMonth() // 0-indexed
 
-    // Fetch all submissions that have not been locked yet
-    const unlocked = await ctx.db
-      .query('submissions')
-      .filter((q) => q.eq(q.field('lockedAt'), undefined))
-      .collect()
+    // Build current and previous cycle IDs to scope the query
+    const currentCycleId = `${year}-${String(month + 1).padStart(2, '0')}`
+    const prevMonth = month === 0 ? 11 : month - 1
+    const prevYear = month === 0 ? year - 1 : year
+    const prevCycleId = `${prevYear}-${String(prevMonth + 1).padStart(2, '0')}`
+
+    // Only scan current and previous cycle instead of the entire table
+    const cyclesToCheck = [currentCycleId, prevCycleId]
 
     let lockedCount = 0
-    for (const submission of unlocked) {
-      // Derive deadline for this submission's cycle (YYYY-MM)
-      const [yearStr, monthStr] = submission.cycleId.split('-')
-      const year = parseInt(yearStr!, 10)
-      const month = parseInt(monthStr!, 10) - 1 // 0-indexed
+    for (const cycleId of cyclesToCheck) {
+      const submissions = await ctx.db
+        .query('submissions')
+        .withIndex('by_cycle', (q) => q.eq('cycleId', cycleId))
+        .collect()
 
-      const firstDayOfMonth = new Date(Date.UTC(year, month, 1))
+      const unlocked = submissions.filter((s) => !s.lockedAt)
+
+      // Derive deadline for this cycle
+      const [yearStr, monthStr] = cycleId.split('-')
+      const cYear = parseInt(yearStr!, 10)
+      const cMonth = parseInt(monthStr!, 10) - 1
+      const firstDayOfMonth = new Date(Date.UTC(cYear, cMonth, 1))
       const dayOfWeek = firstDayOfMonth.getUTCDay()
       const daysToFirstSaturday = (6 - dayOfWeek + 7) % 7
       const secondSaturdayDay = 1 + daysToFirstSaturday + 7
-      const deadlineMs = Date.UTC(year, month, secondSaturdayDay, 10, 59, 0)
+      const deadlineMs = Date.UTC(cYear, cMonth, secondSaturdayDay, 10, 59, 0)
 
       if (now >= deadlineMs) {
-        await ctx.db.patch(submission._id, {
-          lockedAt: now,
-          updatedAt: now,
-        })
-        lockedCount++
+        for (const submission of unlocked) {
+          await ctx.db.patch(submission._id, {
+            lockedAt: now,
+            updatedAt: now,
+          })
+          lockedCount++
+        }
       }
     }
 

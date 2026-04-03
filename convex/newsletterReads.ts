@@ -18,6 +18,12 @@ export const markNewsletterRead = mutation({
 
     if (!membership || membership.leftAt) throw new Error('Not a member of this circle')
 
+    // Verify newsletter belongs to this circle
+    const newsletter = await ctx.db.get(args.newsletterId)
+    if (!newsletter || newsletter.circleId !== args.circleId) {
+      throw new Error('Newsletter does not belong to this circle')
+    }
+
     // Check if already read
     const existing = await ctx.db
       .query('newsletterReads')

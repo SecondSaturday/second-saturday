@@ -315,7 +315,7 @@ export const compileNewsletter = internalMutation({
       title,
       htmlContent,
       issueNumber,
-      status: 'published',
+      status: submissionCount > 0 ? 'published' : 'skipped',
       submissionCount,
       memberCount,
       publishedAt: now,
