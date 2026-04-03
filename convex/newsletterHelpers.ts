@@ -86,8 +86,10 @@ export const getCircleSendData = internalQuery({
 export const getAllActiveCircles = internalQuery({
   args: {},
   handler: async (ctx) => {
-    const allCircles = await ctx.db.query('circles').collect()
-    return allCircles.filter((c) => !c.archivedAt)
+    return await ctx.db
+      .query('circles')
+      .withIndex('by_archived', (q) => q.eq('archivedAt', undefined))
+      .collect()
   },
 })
 

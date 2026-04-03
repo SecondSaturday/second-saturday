@@ -48,7 +48,8 @@ export default defineSchema({
     archivedAt: v.optional(v.number()),
   })
     .index('by_admin', ['adminId'])
-    .index('by_invite_code', ['inviteCode']),
+    .index('by_invite_code', ['inviteCode'])
+    .index('by_archived', ['archivedAt']),
 
   prompts: defineTable({
     circleId: v.id('circles'),
