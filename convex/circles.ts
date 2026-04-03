@@ -25,15 +25,6 @@ export const createCircle = mutation({
       throw new Error('Circle name must be 3-50 characters')
     }
 
-    // Limit to 10 active circles per user
-    const existingCircles = await ctx.db
-      .query('circles')
-      .withIndex('by_admin', (q) => q.eq('adminId', user._id))
-      .collect()
-    if (existingCircles.filter((c) => !c.archivedAt).length >= 10) {
-      throw new Error('Maximum of 10 active circles per user')
-    }
-
     const now = Date.now()
     const inviteCode = crypto.randomUUID()
 
