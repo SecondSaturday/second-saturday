@@ -1,37 +1,7 @@
 import { v } from 'convex/values'
 import { mutation, query, internalMutation } from './_generated/server'
-import type { MutationCtx, QueryCtx } from './_generated/server'
-import type { Doc, Id } from './_generated/dataModel'
 import { internal } from './_generated/api'
-
-/** Get the authenticated user or throw */
-async function getAuthUser(ctx: QueryCtx | MutationCtx): Promise<Doc<'users'>> {
-  const identity = await ctx.auth.getUserIdentity()
-  if (!identity) throw new Error('Not authenticated')
-
-  const user = await ctx.db
-    .query('users')
-    .withIndex('by_clerk_id', (q) => q.eq('clerkId', identity.subject))
-    .first()
-
-  if (!user) throw new Error('User not found')
-  return user
-}
-
-/** Check if user is a member of the circle */
-async function requireMembership(
-  ctx: QueryCtx | MutationCtx,
-  userId: Id<'users'>,
-  circleId: Id<'circles'>
-): Promise<Doc<'memberships'>> {
-  const membership = await ctx.db
-    .query('memberships')
-    .withIndex('by_user_circle', (q) => q.eq('userId', userId).eq('circleId', circleId))
-    .first()
-
-  if (!membership || membership.leftAt) throw new Error('Not a member of this circle')
-  return membership
-}
+import { getAuthUser, requireMembership } from './authHelpers'
 
 // Create a new video record when upload starts
 export const createVideo = mutation({

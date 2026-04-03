@@ -1,46 +1,9 @@
-import { mutation, query } from './_generated/server'
-import type { MutationCtx, QueryCtx } from './_generated/server'
+import { mutation, query, internalMutation } from './_generated/server'
+import type { MutationCtx } from './_generated/server'
 import { v } from 'convex/values'
-import type { Doc, Id } from './_generated/dataModel'
+import type { Id } from './_generated/dataModel'
 import { internal } from './_generated/api'
-
-/** Get the authenticated user or throw (safe for queries) */
-async function getAuthUser(ctx: QueryCtx | MutationCtx): Promise<Doc<'users'>> {
-  const identity = await ctx.auth.getUserIdentity()
-  if (!identity) throw new Error('Not authenticated')
-
-  const user = await ctx.db
-    .query('users')
-    .withIndex('by_clerk_id', (q) => q.eq('clerkId', identity.subject))
-    .first()
-
-  if (!user) throw new Error('User not found')
-  return user
-}
-
-/** Get the authenticated user, auto-creating if needed (mutations only) */
-async function getOrCreateAuthUser(ctx: MutationCtx): Promise<Doc<'users'>> {
-  const identity = await ctx.auth.getUserIdentity()
-  if (!identity) throw new Error('Not authenticated')
-
-  const existing = await ctx.db
-    .query('users')
-    .withIndex('by_clerk_id', (q) => q.eq('clerkId', identity.subject))
-    .first()
-
-  if (existing) return existing
-
-  const now = Date.now()
-  const id = await ctx.db.insert('users', {
-    clerkId: identity.subject,
-    email: identity.email ?? '',
-    name: identity.name,
-    imageUrl: identity.pictureUrl,
-    createdAt: now,
-    updatedAt: now,
-  })
-  return (await ctx.db.get(id)) as Doc<'users'>
-}
+import { getAuthUser, getOrCreateAuthUser, getActiveMembership } from './authHelpers'
 
 export const getCircleMembers = query({
   args: { circleId: v.id('circles') },
@@ -225,20 +188,6 @@ export const getSubmissionStatus = query({
     return { members, deadline }
   },
 })
-
-/** Helper to get active membership */
-async function getActiveMembership(
-  ctx: QueryCtx | MutationCtx,
-  userId: Id<'users'>,
-  circleId: Id<'circles'>
-): Promise<Doc<'memberships'> | null> {
-  const membership = await ctx.db
-    .query('memberships')
-    .withIndex('by_user_circle', (q) => q.eq('userId', userId).eq('circleId', circleId))
-    .first()
-  if (!membership || membership.leftAt) return null
-  return membership
-}
 
 export const transferAdmin = mutation({
   args: {
@@ -484,6 +433,7 @@ export const getInviteStatus = query({
       .first()
 
     if (!circle) return { status: 'invalid_invite' as const }
+    if (circle.archivedAt) return { status: 'archived' as const }
 
     const membership = await ctx.db
       .query('memberships')
@@ -495,5 +445,46 @@ export const getInviteStatus = query({
     if (!membership.leftAt) return { status: 'already_member' as const, circleId: circle._id }
 
     return { status: 'can_rejoin' as const }
+  },
+})
+
+/**
+ * Clean up orphaned circles after a user is deleted via Clerk webhook.
+ * Normal leave flow (leaveCircle) already handles admin transfer and
+ * last-member cascade-delete, but the Clerk webhook bypasses that.
+ * This handles two cases:
+ * 1. Deleted user was the last active member → cascade-delete the circle
+ * 2. Deleted user was the admin with other members → promote another member
+ */
+export const cleanupOrphanedCircles = internalMutation({
+  args: { deletedUserId: v.id('users') },
+  handler: async (ctx, args) => {
+    const memberships = await ctx.db
+      .query('memberships')
+      .withIndex('by_user', (q) => q.eq('userId', args.deletedUserId))
+      .collect()
+
+    for (const membership of memberships) {
+      const allMembers = await ctx.db
+        .query('memberships')
+        .withIndex('by_circle', (q) => q.eq('circleId', membership.circleId))
+        .collect()
+
+      const activeMembers = allMembers.filter((m) => !m.leftAt && m.userId !== args.deletedUserId)
+
+      if (activeMembers.length === 0) {
+        await cascadeDeleteCircle(ctx, membership.circleId)
+      } else {
+        const circle = await ctx.db.get(membership.circleId)
+        if (circle && circle.adminId === args.deletedUserId) {
+          const newAdmin = activeMembers[0]!
+          await ctx.db.patch(newAdmin._id, { role: 'admin' })
+          await ctx.db.patch(membership.circleId, {
+            adminId: newAdmin.userId,
+            updatedAt: Date.now(),
+          })
+        }
+      }
+    }
   },
 })

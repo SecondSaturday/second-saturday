@@ -1,61 +1,6 @@
 import { mutation, query } from './_generated/server'
-import type { MutationCtx, QueryCtx } from './_generated/server'
 import { v } from 'convex/values'
-import type { Doc, Id } from './_generated/dataModel'
-
-/** Get the authenticated user or throw (safe for queries) */
-async function getAuthUser(ctx: QueryCtx | MutationCtx): Promise<Doc<'users'>> {
-  const identity = await ctx.auth.getUserIdentity()
-  if (!identity) throw new Error('Not authenticated')
-
-  const user = await ctx.db
-    .query('users')
-    .withIndex('by_clerk_id', (q) => q.eq('clerkId', identity.subject))
-    .first()
-
-  if (!user) throw new Error('User not found')
-  return user
-}
-
-/** Get the authenticated user, auto-creating if needed (mutations only) */
-async function getOrCreateAuthUser(ctx: MutationCtx): Promise<Doc<'users'>> {
-  const identity = await ctx.auth.getUserIdentity()
-  if (!identity) throw new Error('Not authenticated')
-
-  const existing = await ctx.db
-    .query('users')
-    .withIndex('by_clerk_id', (q) => q.eq('clerkId', identity.subject))
-    .first()
-
-  if (existing) return existing
-
-  const now = Date.now()
-  const id = await ctx.db.insert('users', {
-    clerkId: identity.subject,
-    email: identity.email ?? '',
-    name: identity.name,
-    imageUrl: identity.pictureUrl,
-    createdAt: now,
-    updatedAt: now,
-  })
-  return (await ctx.db.get(id)) as Doc<'users'>
-}
-
-async function requireAdmin(
-  ctx: QueryCtx | MutationCtx,
-  userId: Id<'users'>,
-  circleId: Id<'circles'>
-) {
-  const membership = await ctx.db
-    .query('memberships')
-    .withIndex('by_user_circle', (q) => q.eq('userId', userId).eq('circleId', circleId))
-    .first()
-
-  if (!membership || membership.leftAt || membership.role !== 'admin') {
-    throw new Error('Admin access required')
-  }
-  return membership
-}
+import { getAuthUser, getOrCreateAuthUser, requireAdmin } from './authHelpers'
 
 const PROMPT_LIBRARY: Record<string, string[]> = {
   reflection: ['What did you do this month?', "What's something you learned recently?"],

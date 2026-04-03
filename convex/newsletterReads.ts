@@ -1,45 +1,6 @@
 import { mutation, query } from './_generated/server'
-import type { MutationCtx, QueryCtx } from './_generated/server'
 import { v } from 'convex/values'
-import type { Doc } from './_generated/dataModel'
-
-/** Get the authenticated user or throw (safe for queries) */
-async function getAuthUser(ctx: QueryCtx | MutationCtx): Promise<Doc<'users'>> {
-  const identity = await ctx.auth.getUserIdentity()
-  if (!identity) throw new Error('Not authenticated')
-
-  const user = await ctx.db
-    .query('users')
-    .withIndex('by_clerk_id', (q) => q.eq('clerkId', identity.subject))
-    .first()
-
-  if (!user) throw new Error('User not found')
-  return user
-}
-
-/** Get the authenticated user, auto-creating if needed (mutations only) */
-async function getOrCreateAuthUser(ctx: MutationCtx): Promise<Doc<'users'>> {
-  const identity = await ctx.auth.getUserIdentity()
-  if (!identity) throw new Error('Not authenticated')
-
-  const existing = await ctx.db
-    .query('users')
-    .withIndex('by_clerk_id', (q) => q.eq('clerkId', identity.subject))
-    .first()
-
-  if (existing) return existing
-
-  const now = Date.now()
-  const id = await ctx.db.insert('users', {
-    clerkId: identity.subject,
-    email: identity.email ?? '',
-    name: identity.name,
-    imageUrl: identity.pictureUrl,
-    createdAt: now,
-    updatedAt: now,
-  })
-  return (await ctx.db.get(id)) as Doc<'users'>
-}
+import { getAuthUser, getOrCreateAuthUser } from './authHelpers'
 
 export const markNewsletterRead = mutation({
   args: {

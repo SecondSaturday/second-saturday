@@ -1,37 +1,7 @@
 import { mutation, query, internalMutation } from './_generated/server'
-import type { MutationCtx, QueryCtx } from './_generated/server'
 import { internal } from './_generated/api'
 import { v } from 'convex/values'
-import type { Doc } from './_generated/dataModel'
-
-/** Get the authenticated user or throw */
-async function getAuthUser(ctx: QueryCtx | MutationCtx): Promise<Doc<'users'>> {
-  const identity = await ctx.auth.getUserIdentity()
-  if (!identity) throw new Error('Not authenticated')
-
-  const user = await ctx.db
-    .query('users')
-    .withIndex('by_clerk_id', (q) => q.eq('clerkId', identity.subject))
-    .first()
-
-  if (!user) throw new Error('User not found')
-  return user
-}
-
-/** Check if user is an active member of the circle */
-async function requireMembership(
-  ctx: QueryCtx | MutationCtx,
-  userId: Doc<'users'>['_id'],
-  circleId: Doc<'circles'>['_id']
-): Promise<Doc<'memberships'>> {
-  const membership = await ctx.db
-    .query('memberships')
-    .withIndex('by_user_circle', (q) => q.eq('userId', userId).eq('circleId', circleId))
-    .first()
-
-  if (!membership || membership.leftAt) throw new Error('Not a member of this circle')
-  return membership
-}
+import { getAuthUser, requireMembership } from './authHelpers'
 
 export const getNewsletterById = query({
   args: { newsletterId: v.id('newsletters') },
@@ -211,7 +181,7 @@ export const compileNewsletter = internalMutation({
       .query('submissions')
       .withIndex('by_circle', (q) => q.eq('circleId', circleId))
       .collect()
-    const submissions = allSubmissions.filter((s) => s.cycleId === cycleId && s.lockedAt)
+    const submissions = allSubmissions.filter((s) => s.cycleId === cycleId && s.submittedAt)
     const submissionCount = submissions.length
 
     // Build a map of userId -> user for member names

@@ -1,7 +1,7 @@
 import { mutation, query } from './_generated/server'
-import type { MutationCtx, QueryCtx } from './_generated/server'
 import { v } from 'convex/values'
-import type { Doc, Id } from './_generated/dataModel'
+import type { Id } from './_generated/dataModel'
+import { getAuthUser, getOrCreateAuthUser, requireAdmin } from './authHelpers'
 
 const DEFAULT_PROMPTS = [
   'What did you do this month?',
@@ -9,70 +9,6 @@ const DEFAULT_PROMPTS = [
   'On Your Mind',
   'What are you listening to?',
 ]
-
-/** Get the authenticated user or throw (safe for queries) */
-async function getAuthUser(ctx: QueryCtx | MutationCtx): Promise<Doc<'users'>> {
-  const identity = await ctx.auth.getUserIdentity()
-  if (!identity) throw new Error('Not authenticated')
-
-  const user = await ctx.db
-    .query('users')
-    .withIndex('by_clerk_id', (q) => q.eq('clerkId', identity.subject))
-    .first()
-
-  if (!user) throw new Error('User not found')
-  return user
-}
-
-/** Get the authenticated user, auto-creating if not yet synced via webhook (mutations only) */
-async function getOrCreateAuthUser(ctx: MutationCtx): Promise<Doc<'users'>> {
-  const identity = await ctx.auth.getUserIdentity()
-  if (!identity) throw new Error('Not authenticated')
-
-  const existing = await ctx.db
-    .query('users')
-    .withIndex('by_clerk_id', (q) => q.eq('clerkId', identity.subject))
-    .first()
-
-  if (existing) return existing
-
-  const now = Date.now()
-  const id = await ctx.db.insert('users', {
-    clerkId: identity.subject,
-    email: identity.email ?? '',
-    name: identity.name,
-    imageUrl: identity.pictureUrl,
-    createdAt: now,
-    updatedAt: now,
-  })
-  return (await ctx.db.get(id)) as Doc<'users'>
-}
-
-/** Check if user is a member of the circle */
-async function requireMembership(
-  ctx: QueryCtx | MutationCtx,
-  userId: Id<'users'>,
-  circleId: Id<'circles'>
-): Promise<Doc<'memberships'>> {
-  const membership = await ctx.db
-    .query('memberships')
-    .withIndex('by_user_circle', (q) => q.eq('userId', userId).eq('circleId', circleId))
-    .first()
-
-  if (!membership || membership.leftAt) throw new Error('Not a member of this circle')
-  return membership
-}
-
-/** Check if user is the admin of the circle */
-async function requireAdmin(
-  ctx: QueryCtx | MutationCtx,
-  userId: Id<'users'>,
-  circleId: Id<'circles'>
-) {
-  const membership = await requireMembership(ctx, userId, circleId)
-  if (membership.role !== 'admin') throw new Error('Admin access required')
-  return membership
-}
 
 export const createCircle = mutation({
   args: {
@@ -87,6 +23,15 @@ export const createCircle = mutation({
 
     if (args.name.length < 3 || args.name.length > 50) {
       throw new Error('Circle name must be 3-50 characters')
+    }
+
+    // Limit to 10 active circles per user
+    const existingCircles = await ctx.db
+      .query('circles')
+      .withIndex('by_admin', (q) => q.eq('adminId', user._id))
+      .collect()
+    if (existingCircles.filter((c) => !c.archivedAt).length >= 10) {
+      throw new Error('Maximum of 10 active circles per user')
     }
 
     const now = Date.now()
@@ -309,7 +254,7 @@ export const getCircleByInviteCode = query({
       .withIndex('by_invite_code', (q) => q.eq('inviteCode', args.inviteCode))
       .first()
 
-    if (!circle) return null
+    if (!circle || circle.archivedAt) return null
 
     const iconUrl = circle.iconImageId ? await ctx.storage.getUrl(circle.iconImageId) : null
     const coverUrl = circle.coverImageId ? await ctx.storage.getUrl(circle.coverImageId) : null
