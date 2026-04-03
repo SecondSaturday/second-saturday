@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as authHelpers from '../authHelpers.js'
 import type * as circles from '../circles.js'
 import type * as crons from '../crons.js'
 import type * as e2eCleanup from '../e2eCleanup.js'
@@ -31,6 +32,7 @@ import type * as videos from '../videos.js'
 import type { ApiFromModules, FilterApi, FunctionReference } from 'convex/server'
 
 declare const fullApi: ApiFromModules<{
+  authHelpers: typeof authHelpers
   circles: typeof circles
   crons: typeof crons
   e2eCleanup: typeof e2eCleanup
