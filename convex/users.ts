@@ -61,6 +61,11 @@ export const deleteUser = internalMutation({
       }
     }
 
+    // Clean up orphaned circles (cascade-delete if last member, transfer admin otherwise)
+    await ctx.scheduler.runAfter(0, internal.memberships.cleanupOrphanedCircles, {
+      deletedUserId: user._id,
+    })
+
     // Delete all user-generated content
     const submissions = await ctx.db
       .query('submissions')
