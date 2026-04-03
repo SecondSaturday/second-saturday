@@ -162,12 +162,10 @@ export function CircleSubmissionTabs({
         </TabsList>
       </div>
 
-      {/* Content area for each circle's prompts */}
-      {circles.map((circle) => (
-        <TabsContent key={circle.id} value={circle.id} className="mt-0">
-          {children}
-        </TabsContent>
-      ))}
+      {/* Content area — only render for active circle to avoid stale data flash */}
+      <TabsContent key={activeCircleId} value={activeCircleId} className="mt-0">
+        {children}
+      </TabsContent>
     </Tabs>
   )
 }

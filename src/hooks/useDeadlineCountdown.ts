@@ -15,12 +15,17 @@ export function useDeadlineCountdown(deadlineTimestamp: number): DeadlineCountdo
   const [, setTick] = useState(0)
 
   useEffect(() => {
+    if (Date.now() >= deadlineTimestamp) return
+
     const interval = setInterval(() => {
+      if (Date.now() >= deadlineTimestamp) {
+        clearInterval(interval)
+      }
       setTick((t) => t + 1)
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [deadlineTimestamp])
 
   return compute(deadlineTimestamp)
 }
