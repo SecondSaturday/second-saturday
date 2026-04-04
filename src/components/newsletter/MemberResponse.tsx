@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Play } from 'lucide-react'
+import { Play, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
@@ -35,6 +35,7 @@ export function MemberResponse({
   showDivider = false,
 }: MemberResponseProps) {
   const [expandedImage, setExpandedImage] = useState<string | null>(null)
+  const [playingVideo, setPlayingVideo] = useState<string | null>(null)
 
   return (
     <div className={cn(showDivider && 'border-t border-border pt-4')}>
@@ -57,7 +58,8 @@ export function MemberResponse({
                 <div
                   key={index}
                   className={cn(
-                    'relative aspect-square overflow-hidden rounded-lg bg-muted',
+                    'relative overflow-hidden rounded-lg bg-muted',
+                    item.type === 'video' ? 'aspect-video max-w-xs' : 'aspect-square',
                     media.length === 3 && index === 0 && 'col-span-2'
                   )}
                 >
@@ -76,11 +78,10 @@ export function MemberResponse({
                       />
                     </button>
                   ) : (
-                    <a
-                      href={item.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      type="button"
                       className="block size-full"
+                      onClick={() => setPlayingVideo(item.url)}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -94,7 +95,7 @@ export function MemberResponse({
                           <Play className="size-6 text-black" fill="black" />
                         </div>
                       </div>
-                    </a>
+                    </button>
                   )}
                 </div>
               ))}
@@ -117,6 +118,30 @@ export function MemberResponse({
             className="max-h-full max-w-full rounded-lg object-contain"
           />
         </button>
+      )}
+
+      {/* Video player modal */}
+      {playingVideo && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setPlayingVideo(null)}
+        >
+          <button
+            type="button"
+            className="absolute right-4 top-4 rounded-full bg-white/20 p-2 text-white hover:bg-white/30"
+            onClick={() => setPlayingVideo(null)}
+          >
+            <X className="size-6" />
+          </button>
+          {}
+          <video
+            src={playingVideo}
+            controls
+            autoPlay
+            className="max-h-[80vh] max-w-full rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
       )}
     </div>
   )

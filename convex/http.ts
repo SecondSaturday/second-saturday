@@ -148,6 +148,7 @@ http.route({
       data: {
         id: string
         upload_id?: string
+        asset_id?: string
         playback_ids?: Array<{ id: string; policy: string }>
         duration?: number
         aspect_ratio?: string
@@ -161,8 +162,11 @@ http.route({
     switch (payload.type) {
       case 'video.upload.asset_created': {
         // Upload completed, asset created
-        const uploadId = payload.data.upload_id
-        const assetId = payload.data.id
+        // For this event type, data represents the upload object:
+        //   data.id = upload ID, data.asset_id = asset ID
+        const uploadId = payload.data.id
+        const assetId = payload.data.asset_id
+        console.log('Mux upload.asset_created:', { uploadId, assetId })
         if (uploadId && assetId) {
           await ctx.runMutation(internalVideos.updateVideoAsset, {
             uploadId,

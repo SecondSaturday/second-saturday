@@ -21,7 +21,7 @@ export default function DashboardPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const selectedCircleId = searchParams.get('circle')
-  const [selectedDate, setSelectedDate] = useState(() => getLastSecondSaturday())
+  const [selectedDate, setSelectedDate] = useState(() => new Date())
   const [datePickerOpen, setDatePickerOpen] = useState(false)
   const isDesktop = useIsDesktop()
 

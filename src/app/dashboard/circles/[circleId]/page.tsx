@@ -28,12 +28,18 @@ export default function CircleLandingPage() {
     }
   }, [router, circleId, isDesktop])
 
-  // Parse month from searchParams or default to last second Saturday
+  // Parse month from searchParams or default to latest newsletter's month
   const monthParam = searchParams.get('month') // e.g., "2026-02"
-  const selectedDate = monthParam ? new Date(monthParam + '-01') : getLastSecondSaturday()
 
   const circle = useQuery(api.circles.getCircle, { circleId })
   const newsletters = useQuery(api.newsletters.getNewslettersByCircle, { circleId })
+
+  // Default to the latest newsletter's month, or fall back to last second Saturday
+  const selectedDate = monthParam
+    ? new Date(monthParam + '-01')
+    : newsletters?.length
+      ? new Date(newsletters[0].publishedAt ?? newsletters[0].createdAt)
+      : getLastSecondSaturday()
 
   // Find newsletter matching selected month
   const matchedNewsletter = newsletters?.find((n) => {
