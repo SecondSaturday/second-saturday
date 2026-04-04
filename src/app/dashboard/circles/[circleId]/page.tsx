@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
-import { useParams, useSearchParams } from 'next/navigation'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { useParams } from 'next/navigation'
 import type { Id } from '../../../../../convex/_generated/dataModel'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
@@ -10,41 +10,47 @@ import { api } from '../../../../../convex/_generated/api'
 import { NewsletterView } from '@/components/newsletter/NewsletterView'
 import { parseNewsletterContent } from '@/lib/newsletter'
 import { trackEvent } from '@/lib/analytics'
-import { getLastSecondSaturday } from '@/lib/dates'
 
 export default function CircleLandingPage() {
   const params = useParams()
-  const searchParams = useSearchParams()
   const circleId = params.circleId as Id<'circles'>
-
-  // Parse month from searchParams or default to last second Saturday
-  const monthParam = searchParams.get('month') // e.g., "2026-02"
-  const selectedDate = monthParam ? new Date(monthParam + '-01') : getLastSecondSaturday()
 
   const circle = useQuery(api.circles.getCircle, { circleId })
   const newsletters = useQuery(api.newsletters.getNewslettersByCircle, { circleId })
+  const [selectedNewsletterId, setSelectedNewsletterId] = useState<string | null>(null)
 
-  // Find newsletter matching selected month
-  const matchedNewsletter = newsletters?.find((n) => {
-    const pubDate = new Date(n.publishedAt ?? n.createdAt)
-    return (
-      pubDate.getMonth() === selectedDate.getMonth() &&
-      pubDate.getFullYear() === selectedDate.getFullYear()
-    )
-  })
+  // Auto-select latest newsletter
+  const defaultId = newsletters && newsletters.length > 0 ? newsletters[0]!._id : null
+  const activeId =
+    selectedNewsletterId && newsletters?.some((n) => n._id === selectedNewsletterId)
+      ? selectedNewsletterId
+      : defaultId
 
-  // Get full newsletter data with htmlContent
   const newsletter = useQuery(
     api.newsletters.getNewsletterById,
-    matchedNewsletter ? { newsletterId: matchedNewsletter._id } : 'skip'
+    activeId ? { newsletterId: activeId as Id<'newsletters'> } : 'skip'
   )
-  const markRead = useMutation(api.newsletterReads.markNewsletterRead)
-  const hasMarkedRead = useRef(false)
 
-  // Mark newsletter as read on mount
+  const markRead = useMutation(api.newsletterReads.markNewsletterRead)
+  const hasMarkedRead = useRef<string | null>(null)
+
+  // Auto-hide header on scroll
+  const [headerVisible, setHeaderVisible] = useState(true)
+  const lastScrollTop = useRef(0)
+  const mainRef = useRef<HTMLElement>(null)
+
+  const handleScroll = useCallback(() => {
+    const el = mainRef.current
+    if (!el) return
+    const st = el.scrollTop
+    setHeaderVisible(st <= 10 || st < lastScrollTop.current)
+    lastScrollTop.current = st
+  }, [])
+
+  // Mark newsletter as read
   useEffect(() => {
-    if (newsletter && !newsletter.isRead && !hasMarkedRead.current) {
-      hasMarkedRead.current = true
+    if (newsletter && !newsletter.isRead && hasMarkedRead.current !== newsletter._id) {
+      hasMarkedRead.current = newsletter._id
       markRead({ circleId, newsletterId: newsletter._id }).catch(() => {})
       trackEvent('newsletter_opened', {
         circle_id: circleId,
@@ -55,11 +61,7 @@ export default function CircleLandingPage() {
   }, [newsletter, circleId, markRead])
 
   // Loading
-  if (
-    circle === undefined ||
-    newsletters === undefined ||
-    (matchedNewsletter && newsletter === undefined)
-  ) {
+  if (circle === undefined || newsletters === undefined || (activeId && newsletter === undefined)) {
     return (
       <div className="safe-area-top flex h-dvh flex-col bg-background">
         <header className="flex shrink-0 items-center gap-3 border-b border-border bg-background px-4 py-3">
@@ -92,8 +94,8 @@ export default function CircleLandingPage() {
     )
   }
 
-  // No newsletter for selected month
-  if (!newsletter) {
+  // No newsletters
+  if (newsletters.length === 0 || !newsletter) {
     return (
       <div className="safe-area-top flex h-dvh flex-col bg-background">
         <header className="absolute left-0 top-0 z-10 p-4">
@@ -105,10 +107,8 @@ export default function CircleLandingPage() {
           </Link>
         </header>
         <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 text-center">
-          <p className="text-lg font-medium text-foreground">No newsletter for this month</p>
-          <p className="text-sm text-muted-foreground">
-            Try selecting a different month from the date picker.
-          </p>
+          <p className="text-lg font-medium text-foreground">No newsletters yet</p>
+          <p className="text-sm text-muted-foreground">Editions will appear here once published.</p>
         </div>
       </div>
     )
@@ -122,24 +122,38 @@ export default function CircleLandingPage() {
     timezone: 'UTC',
   }
 
-  return (
-    <div className="safe-area-top relative flex h-dvh flex-col bg-background">
-      <header className="absolute left-0 top-0 z-10 p-4">
-        <Link
-          href="/dashboard"
-          className="flex size-9 items-center justify-center rounded-full bg-background/80 shadow-sm backdrop-blur-sm"
-        >
-          <ArrowLeft className="size-5 text-foreground" />
-        </Link>
-      </header>
+  const availableNewsletters = newsletters
+    .filter((n) => n.publishedAt)
+    .map((n) => ({
+      id: n._id,
+      issueNumber: n.issueNumber,
+      publishedAt: n.publishedAt!,
+    }))
 
-      <main className="safe-area-bottom flex-1 overflow-y-auto">
+  return (
+    <div className="safe-area-top flex h-dvh flex-col bg-background">
+      <main
+        ref={mainRef}
+        onScroll={handleScroll}
+        className="safe-area-bottom relative flex-1 overflow-y-auto"
+      >
+        {/* Sticky auto-hide header */}
+        <header
+          className="sticky top-0 z-10 bg-background px-4 py-3 transition-transform duration-300"
+          style={{ transform: headerVisible ? 'translateY(0)' : 'translateY(-100%)' }}
+        >
+          <Link href="/dashboard" className="flex size-9 items-center justify-center rounded-full">
+            <ArrowLeft className="size-5 text-foreground" />
+          </Link>
+        </header>
         <NewsletterView
           circle={circleInfo}
           circleId={circleId}
           issueNumber={newsletter.issueNumber}
           publishedAt={newsletter.publishedAt}
           sections={sections}
+          availableNewsletters={availableNewsletters}
+          onNewsletterSelect={setSelectedNewsletterId}
         />
       </main>
     </div>

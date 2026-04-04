@@ -107,6 +107,7 @@ export default function DashboardPage() {
         style={{ width: isDesktop ? `${sidebarWidth}vw` : '100%' }}
       >
         <DashboardHeader />
+        <h1 className="px-4 pb-2 pt-1 font-serif text-4xl text-foreground">Circles</h1>
         <CircleList onCircleSelect={handleCircleSelect} />
         <SubmitFAB sidebarWidthVw={isDesktop ? sidebarWidth : undefined} />
       </div>

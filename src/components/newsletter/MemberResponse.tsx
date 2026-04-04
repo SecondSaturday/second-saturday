@@ -37,69 +37,79 @@ export function MemberResponse({
   const [expandedImage, setExpandedImage] = useState<string | null>(null)
 
   return (
-    <div className={cn(showDivider && 'border-t border-border pt-4')}>
-      <div className="flex gap-3">
-        <Avatar className="size-10 shrink-0">
-          <AvatarImage src={memberAvatarUrl ?? undefined} alt={memberName} />
-          <AvatarFallback className="bg-primary/10 text-sm font-medium text-primary">
-            {getInitials(memberName)}
-          </AvatarFallback>
-        </Avatar>
-        <div className="min-w-0 flex-1 space-y-1">
-          <p className="text-base font-semibold text-foreground">{memberName}</p>
-          <p className="whitespace-pre-wrap text-base leading-relaxed text-foreground/90">{text}</p>
+    <div>
+      {/* Inset divider between responses */}
+      {showDivider && (
+        <div className="px-6">
+          <div className="h-px bg-border" />
+        </div>
+      )}
 
-          {media && media.length > 0 && (
-            <div
-              className={cn('grid gap-2 pt-1', media.length === 1 ? 'grid-cols-1' : 'grid-cols-2')}
-            >
-              {media.map((item, index) => (
-                <div
-                  key={index}
-                  className={cn(
-                    'relative aspect-square overflow-hidden rounded-lg bg-muted',
-                    media.length === 3 && index === 0 && 'col-span-2'
-                  )}
-                >
-                  {item.type === 'image' ? (
-                    <button
-                      type="button"
-                      className="size-full"
-                      onClick={() => setExpandedImage(item.url)}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={item.url}
-                        alt={`Photo by ${memberName}`}
-                        className="size-full object-cover"
-                        loading="lazy"
-                      />
-                    </button>
-                  ) : (
-                    <a
-                      href={item.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block size-full"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={item.thumbnailUrl ?? item.url}
-                        alt={`Video by ${memberName}`}
-                        className="size-full object-cover"
-                        loading="lazy"
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                        <div className="rounded-full bg-white/90 p-3">
-                          <Play className="size-6 text-black" fill="black" />
-                        </div>
+      <div className="flex flex-col gap-3 px-6 py-5">
+        {/* Media on top */}
+        {media && media.length > 0 && (
+          <div className="flex gap-1.5 overflow-hidden rounded-lg">
+            {media.map((item, index) => (
+              <div
+                key={index}
+                className="relative h-[220px] shrink-0 overflow-hidden rounded-lg bg-muted"
+                style={{
+                  flex: media.length === 1 ? '1 1 100%' : undefined,
+                  width: media.length > 1 ? `${100 / media.length}%` : undefined,
+                }}
+              >
+                {item.type === 'image' ? (
+                  <button
+                    type="button"
+                    className="size-full"
+                    onClick={() => setExpandedImage(item.url)}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={item.url}
+                      alt={`Photo by ${memberName}`}
+                      className="size-full object-cover"
+                      loading="lazy"
+                    />
+                  </button>
+                ) : (
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block size-full"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={item.thumbnailUrl ?? item.url}
+                      alt={`Video by ${memberName}`}
+                      className="size-full object-cover"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                      <div className="rounded-full bg-white/90 p-3">
+                        <Play className="size-6 text-black" fill="black" />
                       </div>
-                    </a>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+                    </div>
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Response text */}
+        <p className="whitespace-pre-wrap text-base leading-relaxed text-foreground/90">{text}</p>
+
+        {/* Avatar + name at bottom */}
+        <div className="flex items-center gap-2">
+          <Avatar className="size-6">
+            <AvatarImage src={memberAvatarUrl ?? undefined} alt={memberName} />
+            <AvatarFallback className="bg-primary/10 text-[9px] font-semibold text-primary">
+              {getInitials(memberName)}
+            </AvatarFallback>
+          </Avatar>
+          <span className="text-xs text-muted-foreground">{memberName}</span>
         </div>
       </div>
 
@@ -113,7 +123,7 @@ export function MemberResponse({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={expandedImage}
-            alt="Full size"
+            alt="Expanded"
             className="max-h-full max-w-full rounded-lg object-contain"
           />
         </button>

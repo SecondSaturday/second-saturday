@@ -38,7 +38,7 @@ export function ProfileHeaderImageLayout({
   return (
     <div className={cn('relative', className)}>
       {/* Cover image */}
-      <div className="relative h-[150px] w-full bg-muted md:h-[200px]">
+      <div className="relative mx-4 mt-4 h-[150px] overflow-hidden rounded-2xl bg-muted md:mx-8 md:mt-6 md:h-[180px]">
         {coverImageUrl ? (
           <img src={coverImageUrl} alt="Cover" className="size-full object-cover" />
         ) : (
@@ -69,9 +69,9 @@ export function ProfileHeaderImageLayout({
       </div>
 
       {/* Circle icon overlapping cover bottom edge */}
-      <div className="relative -mt-10 ml-4">
-        <div className="relative inline-block">
-          <Avatar size="lg" className="size-20 border-4 border-background shadow-md">
+      <div className="relative -mt-[30px] flex justify-center">
+        <div className="relative">
+          <Avatar className="!size-[100px] border-4 border-background">
             <AvatarImage src={iconUrl ?? undefined} alt="Circle icon" />
             <AvatarFallback>
               <Camera className="size-6 text-muted-foreground/40" />

@@ -43,19 +43,13 @@ export function CircleListItem({
         )}
       </div>
 
-      <div
-        className="relative shrink-0 flex items-center justify-center"
-        style={{ width: 20, height: 20 }}
-      >
+      <div className="relative shrink-0 flex items-center justify-center size-6">
         <Image
           src={hasUnread ? '/indicators/unread.svg' : '/indicators/read.svg'}
           alt={hasUnread ? 'Unread' : 'Read'}
-          width={20}
-          height={20}
+          width={hasUnread ? 24 : 20}
+          height={hasUnread ? 24 : 20}
           className="object-contain"
-          style={{
-            transform: hasUnread ? 'scale(1.2)' : 'none',
-          }}
         />
       </div>
     </button>

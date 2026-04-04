@@ -13,7 +13,7 @@ import Link from 'next/link'
 
 export function DashboardHeader() {
   return (
-    <header className="flex shrink-0 items-center justify-between bg-background px-4 py-3">
+    <header className="flex shrink-0 items-center justify-between bg-background pl-4 pr-2.5 py-3">
       <UserButton
         appearance={{
           elements: {
