@@ -11,6 +11,17 @@ import { v } from 'convex/values'
 import type { Doc } from './_generated/dataModel'
 import { getAuthUser, requireAdmin } from './authHelpers'
 
+/**
+ * Collect all OneSignal player IDs (native + web) for a user.
+ */
+function collectPlayerIds(user: Doc<'users'> | null): string[] {
+  if (!user) return []
+  const ids: string[] = []
+  if (user.oneSignalPlayerId) ids.push(user.oneSignalPlayerId)
+  if (user.oneSignalWebPlayerId) ids.push(user.oneSignalWebPlayerId)
+  return ids
+}
+
 // ---------------------------------------------------------------------------
 // Queries
 // ---------------------------------------------------------------------------
@@ -104,13 +115,25 @@ export const updateNotificationPreferences = mutation({
 })
 
 /**
- * Registers a OneSignal player ID on the authenticated user's record.
+ * Registers a OneSignal player ID (native) on the authenticated user's record.
  */
 export const registerOneSignalPlayerId = mutation({
   args: { playerId: v.string() },
   handler: async (ctx, args) => {
     const user = await getAuthUser(ctx)
     await ctx.db.patch(user._id, { oneSignalPlayerId: args.playerId })
+    return { success: true }
+  },
+})
+
+/**
+ * Registers a OneSignal web player ID (browser) on the authenticated user's record.
+ */
+export const registerOneSignalWebPlayerId = mutation({
+  args: { playerId: v.string() },
+  handler: async (ctx, args) => {
+    const user = await getAuthUser(ctx)
+    await ctx.db.patch(user._id, { oneSignalWebPlayerId: args.playerId })
     return { success: true }
   },
 })
@@ -161,12 +184,13 @@ export const sendAdminReminder = mutation({
       throw new Error('Target user is not an active member of this circle')
     }
 
-    // Get target user's player ID for push notification
+    // Get target user's player IDs for push notification (native + web)
     const targetUser = await ctx.db.get(args.targetUserId)
-    if (targetUser?.oneSignalPlayerId) {
+    const targetPlayerIds = collectPlayerIds(targetUser)
+    if (targetPlayerIds.length > 0) {
       const circle = await ctx.db.get(args.circleId)
       await ctx.scheduler.runAfter(0, internal.notificationPush.sendPushNotification, {
-        playerIds: [targetUser.oneSignalPlayerId],
+        playerIds: targetPlayerIds,
         title: 'Submission Reminder',
         message: `Your admin in ${circle?.name ?? 'your circle'} is reminding you to submit!`,
         data: { type: 'admin_reminder', circleId: args.circleId, cycleId: args.cycleId },
@@ -210,15 +234,13 @@ export const sendBulkAdminReminder = mutation({
       sentAt: Date.now(),
     })
 
-    // Get non-submitters and their player IDs
+    // Get non-submitters and their player IDs (native + web)
     const nonSubmitters = await getNonSubmittersInternal(ctx, args.circleId, args.cycleId)
     const playerIds: string[] = []
 
     for (const member of nonSubmitters) {
       const memberUser = await ctx.db.get(member.userId)
-      if (memberUser?.oneSignalPlayerId) {
-        playerIds.push(memberUser.oneSignalPlayerId)
-      }
+      playerIds.push(...collectPlayerIds(memberUser))
     }
 
     if (playerIds.length > 0) {
@@ -347,9 +369,8 @@ export const sendSubmissionReminder = internalAction({
             const user = await ctx.runQuery(internal.notifications.getUserById, {
               userId: member.userId,
             })
-            if (user?.oneSignalPlayerId) {
-              playerIds.push(user.oneSignalPlayerId)
-            }
+            if (user?.oneSignalPlayerId) playerIds.push(user.oneSignalPlayerId)
+            if (user?.oneSignalWebPlayerId) playerIds.push(user.oneSignalWebPlayerId)
           }
         }
 
@@ -403,9 +424,8 @@ export const sendNewsletterReadyNotification = internalAction({
         const user = await ctx.runQuery(internal.notifications.getUserById, {
           userId: member.userId,
         })
-        if (user?.oneSignalPlayerId) {
-          playerIds.push(user.oneSignalPlayerId)
-        }
+        if (user?.oneSignalPlayerId) playerIds.push(user.oneSignalPlayerId)
+        if (user?.oneSignalWebPlayerId) playerIds.push(user.oneSignalWebPlayerId)
       }
     }
 

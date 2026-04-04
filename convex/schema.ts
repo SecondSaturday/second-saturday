@@ -10,6 +10,7 @@ export default defineSchema({
     avatarStorageId: v.optional(v.id('_storage')),
     timezone: v.optional(v.string()),
     oneSignalPlayerId: v.optional(v.string()),
+    oneSignalWebPlayerId: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })

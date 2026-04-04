@@ -1,6 +1,6 @@
-// OneSignal SDK v5 initialization and helpers for Capacitor native builds
-// Note: This only works in Capacitor native context, not in web browsers
-// Uses onesignal-cordova-plugin v5.x API (not the @awesome-cordova-plugins wrapper)
+// OneSignal SDK initialization for both Capacitor native and web browsers
+// Native: uses onesignal-cordova-plugin v5.x API
+// Web: uses react-onesignal (OneSignal Web SDK)
 
 import { Capacitor } from '@capacitor/core'
 
@@ -39,6 +39,16 @@ interface NotificationEvent {
   }
 }
 
+// OneSignal Web SDK v16 types
+interface OneSignalWebSDK {
+  init(options: { appId: string; allowLocalhostAsSecureOrigin?: boolean }): Promise<void>
+  User: {
+    PushSubscription: {
+      id: string | null
+    }
+  }
+}
+
 /**
  * Check if we're running in a Capacitor native context
  */
@@ -65,8 +75,7 @@ function getOneSignalPlugin(): OneSignalPlugin | null {
 }
 
 /**
- * Initialize OneSignal SDK v5 using Capacitor plugin.
- * Only works in Capacitor native context (not web browser).
+ * Initialize OneSignal on native (Capacitor).
  * Returns subscription ID on success, null otherwise.
  */
 export async function initOneSignal(): Promise<string | null> {
@@ -104,7 +113,88 @@ export async function initOneSignal(): Promise<string | null> {
 }
 
 /**
- * Get current subscription ID.
+ * Initialize OneSignal on web (browser).
+ * Returns web subscription ID on success, null otherwise.
+ */
+export async function initOneSignalWeb(): Promise<string | null> {
+  if (isNative()) return null
+  if (typeof window === 'undefined') return null
+
+  if (!ONESIGNAL_APP_ID) {
+    console.warn('OneSignal: NEXT_PUBLIC_ONESIGNAL_APP_ID not set')
+    return null
+  }
+
+  try {
+    console.log('OneSignal Web: initializing with appId', ONESIGNAL_APP_ID)
+
+    // Load the OneSignal Web SDK v16 script if not already loaded
+    if (!document.querySelector('script[src*="OneSignalSDK.page.js"]')) {
+      await new Promise<void>((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js'
+        script.defer = true
+        script.onload = () => resolve()
+        script.onerror = () => reject(new Error('Failed to load OneSignal SDK'))
+        document.head.appendChild(script)
+      })
+    }
+
+    // Use the deferred initialization pattern from OneSignal v16
+    const win = window as unknown as {
+      OneSignalDeferred?: Array<(OneSignal: OneSignalWebSDK) => void>
+    }
+    win.OneSignalDeferred = win.OneSignalDeferred || []
+
+    await new Promise<void>((resolve, reject) => {
+      win.OneSignalDeferred!.push(async (OneSignal) => {
+        try {
+          await OneSignal.init({
+            appId: ONESIGNAL_APP_ID!,
+            allowLocalhostAsSecureOrigin: true,
+            serviceWorkerParam: { scope: '/' },
+            path: '/',
+            promptOptions: {
+              slidedown: {
+                prompts: [
+                  {
+                    type: 'push',
+                    autoPrompt: true,
+                    delay: { pageViews: 1, timeDelay: 3 },
+                    text: {
+                      actionMessage:
+                        'Get notified when your newsletter is ready and submission deadlines are coming up.',
+                      acceptButton: 'Allow',
+                      cancelButton: 'Maybe Later',
+                    },
+                  },
+                ],
+              },
+            },
+          } as Parameters<typeof OneSignal.init>[0])
+          console.log('OneSignal Web: init complete')
+          resolve()
+        } catch (err) {
+          reject(err)
+        }
+      })
+    })
+
+    // Wait briefly for subscription to register
+    await new Promise((resolve) => setTimeout(resolve, 1500))
+
+    const onesignal = (window as unknown as { OneSignal?: OneSignalWebSDK }).OneSignal
+    const subscriptionId = onesignal?.User?.PushSubscription?.id
+    console.log('OneSignal Web: subscription ID =', subscriptionId)
+    return subscriptionId ?? null
+  } catch (err) {
+    console.error('OneSignal Web: initialization failed:', err)
+    return null
+  }
+}
+
+/**
+ * Get current subscription ID (native only).
  * Returns null if not in native context or not initialized.
  */
 export async function getOneSignalPlayerId(): Promise<string | null> {
@@ -122,8 +212,8 @@ export async function getOneSignalPlayerId(): Promise<string | null> {
 }
 
 /**
- * Register foreground notification handler.
- * Callback fires when a notification is received while app is in foreground.
+ * Register foreground notification handler (native only).
+ * Web notifications are handled by the browser/service worker automatically.
  */
 export async function onNotificationReceived(
   callback: (notification: { title: string; body: string; data?: Record<string, string> }) => void
@@ -147,8 +237,8 @@ export async function onNotificationReceived(
 }
 
 /**
- * Register click handler for notifications.
- * Extracts payload with { type, circleId } from notification data.
+ * Register click handler for notifications (native only).
+ * Web notification clicks are handled by the service worker.
  */
 export async function onNotificationClicked(
   callback: (payload: NotificationClickPayload | null) => void
