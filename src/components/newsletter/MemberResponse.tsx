@@ -48,27 +48,26 @@ export function MemberResponse({
       <div className="flex flex-col gap-3 px-6 py-5">
         {/* Media on top */}
         {media && media.length > 0 && (
-          <div className="flex gap-1.5 overflow-hidden rounded-lg">
+          <div
+            className="flex gap-1.5 overflow-x-auto rounded-lg"
+            style={{ scrollbarWidth: 'none' }}
+          >
             {media.map((item, index) => (
               <div
                 key={index}
-                className="relative h-[220px] shrink-0 overflow-hidden rounded-lg bg-muted"
-                style={{
-                  flex: media.length === 1 ? '1 1 100%' : undefined,
-                  width: media.length > 1 ? `${100 / media.length}%` : undefined,
-                }}
+                className="relative h-[160px] shrink-0 overflow-hidden rounded-lg bg-muted md:h-[220px]"
               >
                 {item.type === 'image' ? (
                   <button
                     type="button"
-                    className="size-full"
+                    className="h-full"
                     onClick={() => setExpandedImage(item.url)}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={item.url}
                       alt={`Photo by ${memberName}`}
-                      className="size-full object-cover"
+                      className="h-full w-auto object-cover"
                       loading="lazy"
                     />
                   </button>
@@ -77,13 +76,13 @@ export function MemberResponse({
                     href={item.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block size-full"
+                    className="block h-full"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={item.thumbnailUrl ?? item.url}
                       alt={`Video by ${memberName}`}
-                      className="size-full object-cover"
+                      className="h-full w-auto object-cover"
                       loading="lazy"
                     />
                     <div className="absolute inset-0 flex items-center justify-center bg-black/20">
