@@ -17,6 +17,194 @@ const TEST_RESPONSES_2 = [
   "Started a new habit I've been meaning to build for years. Day 18. Still going. Quietly proud of myself.",
 ]
 
+/**
+ * Clean up test data: delete submissions, responses, and newsletter for a circle + cycle.
+ */
+export const cleanupTestData = internalMutation({
+  args: {
+    circleId: v.id('circles'),
+    cycleId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { circleId, cycleId } = args
+    const deleted = { submissions: 0, responses: 0, media: 0, newsletters: 0, reads: 0 }
+
+    // Delete submissions, their responses, and any media for this cycle
+    const submissions = await ctx.db
+      .query('submissions')
+      .withIndex('by_circle', (q) => q.eq('circleId', circleId))
+      .collect()
+
+    for (const sub of submissions) {
+      if (sub.cycleId !== cycleId) continue
+
+      // Delete responses and their media
+      const responses = await ctx.db
+        .query('responses')
+        .withIndex('by_submission', (q) => q.eq('submissionId', sub._id))
+        .collect()
+      for (const resp of responses) {
+        // Delete media attached to this response
+        const mediaItems = await ctx.db
+          .query('media')
+          .withIndex('by_response', (q) => q.eq('responseId', resp._id))
+          .collect()
+        for (const m of mediaItems) {
+          if (m.storageId) {
+            await ctx.storage.delete(m.storageId)
+          }
+          await ctx.db.delete(m._id)
+          deleted.media++
+        }
+
+        await ctx.db.delete(resp._id)
+        deleted.responses++
+      }
+
+      await ctx.db.delete(sub._id)
+      deleted.submissions++
+    }
+
+    // Delete newsletter and reads
+    const newsletter = await ctx.db
+      .query('newsletters')
+      .withIndex('by_circle_cycle', (q) => q.eq('circleId', circleId).eq('cycleId', cycleId))
+      .first()
+
+    if (newsletter) {
+      const reads = await ctx.db
+        .query('newsletterReads')
+        .withIndex('by_newsletter', (q) => q.eq('newsletterId', newsletter._id))
+        .collect()
+      for (const read of reads) {
+        await ctx.db.delete(read._id)
+        deleted.reads++
+      }
+      await ctx.db.delete(newsletter._id)
+      deleted.newsletters++
+    }
+
+    return deleted
+  },
+})
+
+/**
+ * Delete a newsletter for a given circle + cycle (used by test script to force recompilation).
+ */
+export const deleteNewsletter = internalMutation({
+  args: {
+    circleId: v.id('circles'),
+    cycleId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const newsletter = await ctx.db
+      .query('newsletters')
+      .withIndex('by_circle_cycle', (q) =>
+        q.eq('circleId', args.circleId).eq('cycleId', args.cycleId)
+      )
+      .first()
+
+    if (!newsletter) throw new Error('No newsletter found for this cycle')
+
+    // Delete associated reads
+    const reads = await ctx.db
+      .query('newsletterReads')
+      .withIndex('by_newsletter', (q) => q.eq('newsletterId', newsletter._id))
+      .collect()
+    for (const read of reads) {
+      await ctx.db.delete(read._id)
+    }
+
+    await ctx.db.delete(newsletter._id)
+    return { deleted: newsletter._id }
+  },
+})
+
+/**
+ * Create test submissions for all active members of a circle.
+ * Each member gets a submission with responses to all active prompts.
+ * Used by the newsletter pipeline test script.
+ */
+export const createTestSubmissions = internalMutation({
+  args: {
+    circleId: v.id('circles'),
+    cycleId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { circleId, cycleId } = args
+
+    const circle = await ctx.db.get(circleId)
+    if (!circle) throw new Error('Circle not found')
+
+    // Get active prompts
+    const allPrompts = await ctx.db
+      .query('prompts')
+      .withIndex('by_circle', (q) => q.eq('circleId', circleId))
+      .collect()
+    const prompts = allPrompts.filter((p) => p.active).sort((a, b) => a.order - b.order)
+
+    if (prompts.length === 0) throw new Error('No active prompts in circle')
+
+    // Get active members
+    const allMemberships = await ctx.db
+      .query('memberships')
+      .withIndex('by_circle', (q) => q.eq('circleId', circleId))
+      .collect()
+    const activeMembers = allMemberships.filter((m) => !m.leftAt && !m.blocked)
+
+    if (activeMembers.length === 0) throw new Error('No active members in circle')
+
+    const now = Date.now()
+    let created = 0
+
+    for (let mi = 0; mi < activeMembers.length; mi++) {
+      const membership = activeMembers[mi]!
+
+      // Skip if submission already exists for this user+circle+cycle
+      const existing = await ctx.db
+        .query('submissions')
+        .withIndex('by_user_circle_cycle', (q) =>
+          q.eq('userId', membership.userId).eq('circleId', circleId).eq('cycleId', cycleId)
+        )
+        .first()
+
+      if (existing) continue
+
+      // Create submission
+      const submissionId = await ctx.db.insert('submissions', {
+        circleId,
+        userId: membership.userId,
+        cycleId,
+        submittedAt: now,
+        lockedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      })
+
+      // Create responses for each prompt
+      for (let pi = 0; pi < prompts.length; pi++) {
+        const prompt = prompts[pi]!
+        const text =
+          pi % 2 === 0
+            ? TEST_RESPONSES[(mi + pi) % TEST_RESPONSES.length]!
+            : TEST_RESPONSES_2[(mi + pi) % TEST_RESPONSES_2.length]!
+
+        await ctx.db.insert('responses', {
+          submissionId,
+          promptId: prompt._id,
+          text,
+          createdAt: now,
+          updatedAt: now,
+        })
+      }
+
+      created++
+    }
+
+    return { created, totalMembers: activeMembers.length, promptCount: prompts.length }
+  },
+})
+
 export const createTestNewsletter = internalMutation({
   args: {
     circleId: v.id('circles'),
