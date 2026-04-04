@@ -224,7 +224,7 @@ export const getCirclesByUser = query({
           .first()
 
         let hasUnread = false
-        if (latestNewsletter) {
+        if (latestNewsletter && (latestNewsletter.submissionCount ?? 0) > 0) {
           const read = await ctx.db
             .query('newsletterReads')
             .withIndex('by_user_newsletter', (q) =>
