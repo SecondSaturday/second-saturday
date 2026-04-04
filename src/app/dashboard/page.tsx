@@ -1,36 +1,94 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useSyncExternalStore } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader'
 import { CircleList } from '@/components/dashboard/CircleList'
 import { SubmitFAB } from '@/components/dashboard/SubmitFAB'
-import { DatePicker } from '@/components/dashboard/DatePicker'
-import { getLastSecondSaturday, formatMonthYear } from '@/lib/dates'
 import { trackEvent } from '@/lib/analytics'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import type { Id } from '../../../convex/_generated/dataModel'
 import { useQuery } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
 import { NewsletterView } from '@/components/newsletter/NewsletterView'
 import { parseNewsletterContent } from '@/lib/newsletter'
 
+const SIDEBAR_MIN = 16
+const SIDEBAR_MAX = 50
+const SIDEBAR_DEFAULT = 25
+const STORAGE_KEY = 'dashboard-sidebar-width'
+
+function clampWidth(v: number) {
+  return Math.max(SIDEBAR_MIN, Math.min(SIDEBAR_MAX, v))
+}
+
+function readSavedWidth(): number {
+  const saved = localStorage.getItem(STORAGE_KEY)
+  if (saved) {
+    const val = parseFloat(saved)
+    if (!isNaN(val)) return clampWidth(val)
+  }
+  return SIDEBAR_DEFAULT
+}
+
+function useSidebarWidth() {
+  // Live dragging width — only used during drag, otherwise null
+  const [dragWidth, setDragWidth] = useState<number | null>(null)
+
+  // Persisted width from localStorage
+  const savedWidth = useSyncExternalStore(
+    (callback) => {
+      window.addEventListener('storage', callback)
+      return () => window.removeEventListener('storage', callback)
+    },
+    readSavedWidth,
+    () => SIDEBAR_DEFAULT
+  )
+
+  const width = dragWidth ?? savedWidth
+
+  const startDrag = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+
+    const onMove = (ev: MouseEvent) => {
+      setDragWidth(clampWidth((ev.clientX / window.innerWidth) * 100))
+    }
+
+    const onUp = () => {
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+      setDragWidth((w) => {
+        if (w !== null) localStorage.setItem(STORAGE_KEY, String(w))
+        return null
+      })
+    }
+
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }, [])
+
+  return { width, startDrag }
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const isDesktop = useMediaQuery('(min-width: 768px)')
   const [selectedCircleId, setSelectedCircleId] = useState<string | null>(() =>
     searchParams.get('circle')
   )
-  const [selectedDate, setSelectedDate] = useState(() => getLastSecondSaturday())
-  const [datePickerOpen, setDatePickerOpen] = useState(false)
+  const { width: sidebarWidth, startDrag } = useSidebarWidth()
 
   const handleCircleSelect = useCallback(
     (id: string) => {
       setSelectedCircleId(id)
-      // On mobile (sidebar is full-width), navigate to the dedicated page
       if (window.innerWidth < 768) {
         router.push(`/dashboard/circles/${id}`)
       } else {
-        // On desktop, update URL with query param for split view
         router.push(`/dashboard?circle=${id}`, { scroll: false })
       }
     },
@@ -41,74 +99,57 @@ export default function DashboardPage() {
     trackEvent('dashboard_viewed')
   }, [])
 
-  const handleDateSelect = (date: Date) => {
-    setSelectedDate(date)
-    trackEvent('date_filter_changed', {
-      date: date.toISOString(),
-      month: date.getMonth(),
-      year: date.getFullYear(),
-    })
-  }
-
   return (
-    <div className="safe-area-top flex h-dvh bg-background">
-      {/* Sidebar (full-screen on mobile, fixed-width on desktop) */}
-      <div className="flex min-h-0 w-full flex-col md:w-[380px] md:border-r md:border-border">
-        <DashboardHeader
-          dateLabel={formatMonthYear(selectedDate)}
-          onDatePickerOpen={() => setDatePickerOpen(true)}
-        />
+    <div className="safe-area-top relative flex h-dvh bg-background">
+      {/* Sidebar: full-width on mobile, resizable on desktop */}
+      <div
+        className="flex min-h-0 shrink-0 flex-col md:border-r md:border-border"
+        style={{ width: isDesktop ? `${sidebarWidth}vw` : '100%' }}
+      >
+        <DashboardHeader />
         <CircleList onCircleSelect={handleCircleSelect} />
-        <SubmitFAB />
+        <SubmitFAB sidebarWidthVw={isDesktop ? sidebarWidth : undefined} />
       </div>
+
+      {/* Resize handle (desktop only) */}
+      {isDesktop && (
+        <div
+          className="absolute top-0 bottom-0 z-20 w-2 -ml-1 cursor-col-resize transition-colors hover:bg-primary/20 active:bg-primary/30"
+          style={{ left: `${sidebarWidth}vw` }}
+          onMouseDown={startDrag}
+        />
+      )}
 
       {/* Content area (desktop only) */}
       <div className="hidden min-h-0 flex-1 flex-col md:flex">
         {selectedCircleId ? (
-          <DesktopCircleNewsletter
-            circleId={selectedCircleId as Id<'circles'>}
-            selectedDate={selectedDate}
-          />
+          <DesktopCircleNewsletter circleId={selectedCircleId as Id<'circles'>} />
         ) : (
           <div className="flex flex-1 items-center justify-center">
             <p className="text-muted-foreground">Select a circle</p>
           </div>
         )}
       </div>
-
-      <DatePicker
-        open={datePickerOpen}
-        onOpenChange={setDatePickerOpen}
-        selectedDate={selectedDate}
-        onSelect={handleDateSelect}
-      />
     </div>
   )
 }
 
-function DesktopCircleNewsletter({
-  circleId,
-  selectedDate,
-}: {
-  circleId: Id<'circles'>
-  selectedDate: Date
-}) {
+function DesktopCircleNewsletter({ circleId }: { circleId: Id<'circles'> }) {
   const circle = useQuery(api.circles.getCircle, { circleId })
   const newsletters = useQuery(api.newsletters.getNewslettersByCircle, { circleId })
+  const [selectedNewsletterId, setSelectedNewsletterId] = useState<string | null>(null)
 
-  // Find newsletter matching selected month
-  const newsletter = newsletters?.find((n) => {
-    const pubDate = new Date(n.publishedAt ?? n.createdAt)
-    return (
-      pubDate.getMonth() === selectedDate.getMonth() &&
-      pubDate.getFullYear() === selectedDate.getFullYear()
-    )
-  })
+  // Derive the active newsletter: use explicit selection if valid, otherwise latest
+  const defaultId = newsletters && newsletters.length > 0 ? newsletters[0]!._id : null
+  const activeId =
+    selectedNewsletterId && newsletters?.some((n) => n._id === selectedNewsletterId)
+      ? selectedNewsletterId
+      : defaultId
+  const currentNewsletter = newsletters?.find((n) => n._id === activeId)
 
-  // Need full newsletter data with htmlContent
   const fullNewsletter = useQuery(
     api.newsletters.getNewsletterById,
-    newsletter ? { newsletterId: newsletter._id } : 'skip'
+    currentNewsletter ? { newsletterId: currentNewsletter._id } : 'skip'
   )
 
   if (circle === undefined || newsletters === undefined) {
@@ -127,14 +168,30 @@ function DesktopCircleNewsletter({
     )
   }
 
-  // Loading full newsletter content
-  if (newsletter && fullNewsletter === undefined) {
+  if (newsletters.length === 0) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 text-center">
+        <p className="text-lg font-medium text-foreground">No newsletters yet</p>
+        <p className="text-sm text-muted-foreground">Editions will appear here once published.</p>
+      </div>
+    )
+  }
+
+  if (currentNewsletter && fullNewsletter === undefined) {
     return (
       <div className="flex flex-1 items-center justify-center">
         <div className="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     )
   }
+
+  const availableNewsletters = newsletters
+    .filter((n) => n.publishedAt)
+    .map((n) => ({
+      id: n._id,
+      issueNumber: n.issueNumber,
+      publishedAt: n.publishedAt!,
+    }))
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -151,14 +208,13 @@ function DesktopCircleNewsletter({
             issueNumber={fullNewsletter.issueNumber}
             publishedAt={fullNewsletter.publishedAt}
             sections={parseNewsletterContent(fullNewsletter.htmlContent)}
+            availableNewsletters={availableNewsletters}
+            onNewsletterSelect={setSelectedNewsletterId}
           />
         </main>
       ) : (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 text-center">
-          <p className="text-lg font-medium text-foreground">No newsletter for this month</p>
-          <p className="text-sm text-muted-foreground">
-            Try selecting a different month from the date picker.
-          </p>
+          <p className="text-lg font-medium text-foreground">No newsletter selected</p>
         </div>
       )}
     </div>

@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 
 interface CircleListItemProps {
@@ -42,26 +43,20 @@ export function CircleListItem({
         )}
       </div>
 
-      <div className="shrink-0">
-        <svg
-          width="32"
-          height="32"
-          viewBox="0 0 100 100"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className={hasUnread ? 'drop-shadow-md' : 'drop-shadow-sm'}
-        >
-          <path
-            d="M50 8 C56 8, 58 18, 62 22 C66 26, 76 24, 78 30 C80 36, 72 42, 72 48 C72 54, 80 60, 78 66 C76 72, 66 70, 62 74 C58 78, 56 88, 50 88 C44 88, 42 78, 38 74 C34 70, 24 72, 22 66 C20 60, 28 54, 28 48 C28 42, 20 36, 22 30 C24 24, 34 26, 38 22 C42 18, 44 8, 50 8Z"
-            className={hasUnread ? 'fill-primary' : 'fill-muted-foreground/30'}
-          />
-          <path
-            d="M50 8 C56 8, 58 18, 62 22 C66 26, 76 24, 78 30 C80 36, 72 42, 72 48 C72 54, 80 60, 78 66 C76 72, 66 70, 62 74 C58 78, 56 88, 50 88 C44 88, 42 78, 38 74 C34 70, 24 72, 22 66 C20 60, 28 54, 28 48 C28 42, 20 36, 22 30 C24 24, 34 26, 38 22 C42 18, 44 8, 50 8Z"
-            fill="white"
-            opacity={hasUnread ? 0.2 : 0.15}
-            clipPath="inset(0 0 50% 0)"
-          />
-        </svg>
+      <div
+        className="relative shrink-0 flex items-center justify-center"
+        style={{ width: 20, height: 20 }}
+      >
+        <Image
+          src={hasUnread ? '/indicators/unread.svg' : '/indicators/read.svg'}
+          alt={hasUnread ? 'Unread' : 'Read'}
+          width={20}
+          height={20}
+          className="object-contain"
+          style={{
+            transform: hasUnread ? 'scale(1.2)' : 'none',
+          }}
+        />
       </div>
     </button>
   )
