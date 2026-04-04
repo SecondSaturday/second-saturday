@@ -229,8 +229,8 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
         </div>
       </div>
 
-      {/* 3-member warning (admin only, above tabs) */}
-      {isAdmin && circle.memberCount < 3 && (
+      {/* 3-member warning (admin only, above tabs) — stubbed to < 1 for testing */}
+      {isAdmin && circle.memberCount < 1 && (
         <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/30">
           <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
           <p className="text-sm text-amber-700 dark:text-amber-400">

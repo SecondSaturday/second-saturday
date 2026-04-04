@@ -144,11 +144,13 @@ function DesktopCircleNewsletter({
     )
   }
 
-  const needsMoreMembers = circle.memberCount < 3
+  const needsMoreMembers = circle.memberCount < 1 // TODO: restore to < 3 after testing
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {fullNewsletter && !needsMoreMembers ? (
+      {fullNewsletter &&
+      !needsMoreMembers &&
+      parseNewsletterContent(fullNewsletter.htmlContent).length > 0 ? (
         <main className="flex-1 overflow-y-auto">
           <NewsletterView
             circle={{

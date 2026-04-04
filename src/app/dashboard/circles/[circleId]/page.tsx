@@ -103,9 +103,10 @@ export default function CircleLandingPage() {
     )
   }
 
-  // No newsletter for selected month or needs more members
-  const needsMoreMembers = circle.memberCount < 3
-  if (!newsletter || needsMoreMembers) {
+  // No newsletter for selected month, needs more members, or newsletter has no content
+  const needsMoreMembers = circle.memberCount < 1 // TODO: restore to < 3 after testing
+  const hasContent = newsletter && parseNewsletterContent(newsletter.htmlContent).length > 0
+  if (!newsletter || needsMoreMembers || !hasContent) {
     return (
       <div className="safe-area-top flex h-dvh flex-col bg-background">
         <header className="flex shrink-0 items-center justify-between border-b border-border bg-background px-4 py-3">

@@ -35,7 +35,8 @@ export function CircleListItem({
       <div className="min-w-0 flex-1">
         <h3 className="truncate text-base font-semibold text-foreground">{name}</h3>
         <p className="truncate text-sm text-muted-foreground">{membersText}</p>
-        {memberCount < 3 && (
+        {/* TODO: restore to < 3 after testing */}
+        {memberCount < 1 && (
           <p className="text-xs text-amber-600">
             Invite {3 - memberCount} more to start newsletter
           </p>

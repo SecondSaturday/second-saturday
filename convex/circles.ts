@@ -232,7 +232,9 @@ export const getCircle = query({
       coverUrl,
       memberCount: members.length,
       role: membership.role,
-      newsletterCount: newsletters.filter((n) => n.status === 'published').length,
+      newsletterCount: newsletters.filter(
+        (n) => n.status === 'published' && (n.submissionCount ?? 0) > 0
+      ).length,
     }
   },
 })

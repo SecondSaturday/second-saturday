@@ -49,7 +49,7 @@ export default function SetupCompletePage() {
     }
   }
 
-  const needsMoreMembers = memberCount !== undefined && memberCount < 3
+  const needsMoreMembers = memberCount !== undefined && memberCount < 1 // TODO: restore to < 3 after testing
   const membersNeeded = 3 - (memberCount ?? 1)
 
   return (
