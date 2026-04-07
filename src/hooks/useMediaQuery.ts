@@ -13,3 +13,7 @@ export function useMediaQuery(query: string): boolean {
     () => false // SSR fallback
   )
 }
+
+export function useIsDesktop(): boolean {
+  return useMediaQuery('(min-width: 768px)')
+}
