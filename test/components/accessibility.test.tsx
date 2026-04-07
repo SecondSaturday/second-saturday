@@ -30,6 +30,12 @@ vi.mock('next/link', () => ({
   ),
 }))
 
+// Mock next/image
+vi.mock('next/image', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  default: (props: any) => <img {...props} />,
+}))
+
 // Mock Clerk
 vi.mock('@clerk/nextjs', () => ({
   UserButton: () => <button data-testid="clerk-user-button">User</button>,

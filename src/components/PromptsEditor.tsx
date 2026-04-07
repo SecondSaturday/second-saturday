@@ -5,8 +5,7 @@ import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Plus, GripVertical, X, ChevronRight } from 'lucide-react'
-import Link from 'next/link'
+import { Plus, GripVertical, X } from 'lucide-react'
 import type { Id } from '../../convex/_generated/dataModel'
 import {
   DndContext,
@@ -37,7 +36,6 @@ interface PromptsEditorProps {
   circleId: Id<'circles'>
   mode: 'setup' | 'settings'
   onComplete?: () => void
-  onBrowseLibrary?: () => void
   stepIndicator?: React.ReactNode
 }
 
@@ -93,13 +91,7 @@ function SortablePrompt({
   )
 }
 
-export function PromptsEditor({
-  circleId,
-  mode,
-  onComplete,
-  onBrowseLibrary,
-  stepIndicator,
-}: PromptsEditorProps) {
+export function PromptsEditor({ circleId, mode, onComplete, stepIndicator }: PromptsEditorProps) {
   const existingPrompts = useQuery(api.prompts.getCirclePrompts, { circleId })
   const updatePrompts = useMutation(api.prompts.updatePrompts)
 

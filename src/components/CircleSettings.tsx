@@ -27,7 +27,6 @@ import { trackEvent } from '@/lib/analytics'
 import { LeaveCircleModal } from '@/components/LeaveCircleModal'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { PromptsEditor } from '@/components/PromptsEditor'
-import { PromptLibrary } from '@/components/PromptLibrary'
 import { AdminSubmissionDashboard } from '@/components/AdminSubmissionDashboard'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import {
@@ -64,7 +63,6 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
   const [removeTarget, setRemoveTarget] = useState<{ userId: Id<'users'>; name: string } | null>(
     null
   )
-  const [showLibrary, setShowLibrary] = useState(false)
 
   if (circle === undefined || members === undefined || currentUser === undefined) {
     return (
@@ -217,7 +215,7 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
       )}
 
       {/* Tab layout */}
-      <Tabs defaultValue="details" onValueChange={() => setShowLibrary(false)}>
+      <Tabs defaultValue="details">
         <TabsList variant="line">
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="prompts">Prompts</TabsTrigger>
