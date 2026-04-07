@@ -27,6 +27,7 @@ interface MultiCircleSubmissionScreenProps {
   variant?: 'legacy' | 'redesign'
   activeCircleId?: string
   onCircleChange?: (circleId: string) => void
+  onAnswerStateChange?: (hasAnswers: boolean) => void
 }
 
 function getDeadlineTimestamp(): number {
@@ -45,6 +46,7 @@ export function MultiCircleSubmissionScreen({
   variant = 'legacy',
   activeCircleId: controlledCircleId,
   onCircleChange: controlledOnChange,
+  onAnswerStateChange,
 }: MultiCircleSubmissionScreenProps) {
   const router = useRouter()
   const [internalCircleId, setInternalCircleId] = useState<string>(circles[0]?.id ?? '')
@@ -406,6 +408,12 @@ export function MultiCircleSubmissionScreen({
     const answered = prompts.filter((p) => (draftMap.get(p._id) ?? '').trim().length > 0).length
     return answered / prompts.length
   }, [promptsData, draftTexts, activeCircleId])
+
+  // Report answer state to parent
+  const hasAnswers = (circleProgress ?? 0) > 0
+  useEffect(() => {
+    onAnswerStateChange?.(hasAnswers)
+  }, [hasAnswers, onAnswerStateChange])
 
   // Build circles with computed progress
   const circlesWithProgress = useMemo(

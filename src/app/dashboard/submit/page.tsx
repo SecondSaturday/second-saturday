@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useCallback } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '../../../../convex/_generated/api'
 import { MultiCircleSubmissionScreen } from '@/screens/submissions/MultiCircleSubmissionScreen'
@@ -9,6 +9,7 @@ import { ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
 import { getSecondSaturdayDeadline } from '@/lib/dates'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { cn } from '@/lib/utils'
 import { CircleSidebar } from '@/components/submissions/CircleSidebar'
 
 function getDueLabel(): string {
@@ -40,6 +41,8 @@ export default function SubmitPage() {
 
   // Lifted state — must be before any early returns
   const [desktopActiveCircle, setDesktopActiveCircle] = useState('')
+  const [hasAnswers, setHasAnswers] = useState(false)
+  const handleAnswerStateChange = useCallback((has: boolean) => setHasAnswers(has), [])
 
   if (userCircles === undefined) {
     return (
@@ -110,12 +113,24 @@ export default function SubmitPage() {
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           {/* Top bar with submit button */}
           <div className="flex shrink-0 items-center justify-end border-b border-border bg-card px-8 py-2.5">
-            <Link
-              href="/dashboard/submit/review"
-              className="rounded-lg bg-primary px-4 py-2 text-[15px] font-semibold text-primary-foreground"
-            >
-              Submit
-            </Link>
+            {dueLabel === 'Submissions locked' ? (
+              <span className="text-sm font-medium text-muted-foreground">Submissions locked</span>
+            ) : (
+              <Link
+                href={hasAnswers ? '/dashboard/submit/review' : '#'}
+                onClick={(e) => {
+                  if (!hasAnswers) e.preventDefault()
+                }}
+                className={cn(
+                  'rounded-lg px-4 py-2 text-[15px] font-semibold transition-opacity',
+                  hasAnswers
+                    ? 'bg-primary text-primary-foreground'
+                    : 'pointer-events-none bg-primary/50 text-primary-foreground/70'
+                )}
+              >
+                Submit
+              </Link>
+            )}
           </div>
 
           <MultiCircleSubmissionScreen
@@ -124,6 +139,7 @@ export default function SubmitPage() {
             variant="redesign"
             activeCircleId={effectiveActiveCircle}
             onCircleChange={setDesktopActiveCircle}
+            onAnswerStateChange={handleAnswerStateChange}
           />
         </div>
       </div>
@@ -141,12 +157,24 @@ export default function SubmitPage() {
             <ChevronLeft className="size-6" />
             <span className="text-[17px]">Back</span>
           </Link>
-          <Link
-            href="/dashboard/submit/review"
-            className="rounded-lg bg-primary px-4 py-2 text-[15px] font-semibold text-primary-foreground"
-          >
-            Submit
-          </Link>
+          {dueLabel === 'Submissions locked' ? (
+            <span className="text-sm font-medium text-muted-foreground">Locked</span>
+          ) : (
+            <Link
+              href={hasAnswers ? '/dashboard/submit/review' : '#'}
+              onClick={(e) => {
+                if (!hasAnswers) e.preventDefault()
+              }}
+              className={cn(
+                'rounded-lg px-4 py-2 text-[15px] font-semibold transition-opacity',
+                hasAnswers
+                  ? 'bg-primary text-primary-foreground'
+                  : 'pointer-events-none bg-primary/50 text-primary-foreground/70'
+              )}
+            >
+              Submit
+            </Link>
+          )}
         </div>
         {/* Title area */}
         <div className="flex items-center justify-between px-5 pb-2 pt-1">
@@ -156,7 +184,12 @@ export default function SubmitPage() {
       </div>
 
       {/* Content — will be rebuilt in later stories */}
-      <MultiCircleSubmissionScreen circles={circles} cycleId={cycleId} variant="redesign" />
+      <MultiCircleSubmissionScreen
+        circles={circles}
+        cycleId={cycleId}
+        variant="redesign"
+        onAnswerStateChange={handleAnswerStateChange}
+      />
     </div>
   )
 }

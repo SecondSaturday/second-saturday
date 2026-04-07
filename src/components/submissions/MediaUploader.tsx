@@ -493,8 +493,8 @@ export function MediaUploader({
               className={cn(
                 'flex size-14 items-center justify-center rounded-lg transition-all duration-200',
                 menuOpen
-                  ? 'border-2 border-primary bg-muted hover:bg-muted/80'
-                  : 'bg-muted/60 hover:bg-muted',
+                  ? 'border-2 border-primary bg-destructive/10 hover:bg-muted/50'
+                  : 'bg-card border border-border/60 hover:bg-muted',
                 !canUploadMore && !menuOpen && 'opacity-30'
               )}
               aria-label={menuOpen ? 'Close media menu' : 'Add media'}
