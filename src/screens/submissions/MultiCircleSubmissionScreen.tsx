@@ -1,7 +1,14 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { useIsDesktop } from '@/hooks/useMediaQuery'
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+  useImperativeHandle,
+  forwardRef,
+} from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
@@ -12,6 +19,8 @@ import {
   PromptResponseCard,
   DeadlineCountdown,
 } from '@/components/submissions'
+import { CircleRow } from '@/components/submissions/CircleRow'
+import { SnapScrollCards } from '@/components/submissions/SnapScrollCards'
 import type { Circle, SaveStatus } from '@/components/submissions'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useDeadlineCountdown } from '@/hooks/useDeadlineCountdown'
@@ -20,9 +29,16 @@ import { trackEvent } from '@/lib/analytics'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
+export interface MultiCircleSubmissionScreenHandle {
+  flushPendingChanges: () => Promise<void>
+}
+
 interface MultiCircleSubmissionScreenProps {
   circles: Circle[]
   cycleId: string
+  variant?: 'legacy' | 'redesign'
+  activeCircleId?: string
+  onCircleChange?: (circleId: string) => void
 }
 
 function getDeadlineTimestamp(): number {
@@ -35,13 +51,23 @@ function getDeadlineTimestamp(): number {
   return deadline.getTime()
 }
 
-export function MultiCircleSubmissionScreen({
-  circles,
-  cycleId,
-}: MultiCircleSubmissionScreenProps) {
+export const MultiCircleSubmissionScreen = forwardRef<
+  MultiCircleSubmissionScreenHandle,
+  MultiCircleSubmissionScreenProps
+>(function MultiCircleSubmissionScreen(
+  {
+    circles,
+    cycleId,
+    variant = 'legacy',
+    activeCircleId: controlledCircleId,
+    onCircleChange: controlledOnChange,
+  },
+  ref
+) {
   const router = useRouter()
-  const isDesktop = useIsDesktop()
-  const [activeCircleId, setActiveCircleId] = useState<string>(circles[0]?.id ?? '')
+  const [internalCircleId, setInternalCircleId] = useState<string>(circles[0]?.id ?? '')
+  const activeCircleId = controlledCircleId ?? internalCircleId
+  const setActiveCircleId = controlledOnChange ?? setInternalCircleId
   const [draftTexts, setDraftTexts] = useState<Map<string, Map<string, string>>>(new Map())
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
   const [lastSaved, setLastSaved] = useState<Date | undefined>(undefined)
@@ -78,6 +104,51 @@ export function MultiCircleSubmissionScreen({
   const lockSubmission = useMutation(api.submissions.lockSubmission)
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Flush all pending draft changes for all circles
+  const flushAllPendingChanges = useCallback(async () => {
+    for (const [circleId, circleMap] of draftTexts.entries()) {
+      // We only have server data for the active circle, so only flush that
+      if (circleId !== activeCircleId) continue
+      if (!submissionData) continue
+
+      const serverResponses = submissionData.responses ?? []
+      const pendingChanges: Array<{ promptId: string; text: string }> = []
+      circleMap.forEach((text, promptId) => {
+        const serverText = serverResponses.find((r) => r.promptId === promptId)?.text ?? ''
+        if (text !== serverText) {
+          pendingChanges.push({ promptId, text })
+        }
+      })
+
+      if (pendingChanges.length > 0) {
+        let submissionId = submissionData._id
+        if (!submissionId) {
+          submissionId = await createSubmission({
+            circleId: circleId as Id<'circles'>,
+            cycleId,
+          })
+        }
+        await Promise.all(
+          pendingChanges.map(({ promptId, text }) =>
+            updateResponse({
+              submissionId: submissionId as Id<'submissions'>,
+              promptId: promptId as Id<'prompts'>,
+              text,
+            })
+          )
+        )
+      }
+    }
+  }, [draftTexts, activeCircleId, submissionData, createSubmission, updateResponse, cycleId])
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      flushPendingChanges: flushAllPendingChanges,
+    }),
+    [flushAllPendingChanges]
+  )
 
   const handleSubmit = useCallback(async () => {
     if (!submissionData?._id || isSubmitting) return
@@ -116,13 +187,8 @@ export function MultiCircleSubmissionScreen({
         trackEvent('submission_locked', { circle_id: activeCircleId, cycle_id: cycleId })
       } catch {}
       toast.success('Submission locked! See you on newsletter day.')
-      if (isDesktop) {
-        router.push(`/dashboard?circle=${activeCircleId}`)
-      } else {
-        router.push(`/dashboard/circles/${activeCircleId}`)
-      }
+      router.push('/dashboard')
     } catch (err) {
-      isLockedRef.current = false
       toast.error('Failed to submit. Please try again.')
     } finally {
       setIsSubmitting(false)
@@ -136,8 +202,6 @@ export function MultiCircleSubmissionScreen({
     promptsData,
     draftTexts,
     updateResponse,
-    isDesktop,
-    router,
   ])
 
   // Initialise draft texts from server data when data loads
@@ -286,6 +350,49 @@ export function MultiCircleSubmissionScreen({
     }
   }, [])
 
+  // Handler: switch circle with flush-save
+  const handleCircleSwitch = useCallback(
+    async (newCircleId: string) => {
+      if (newCircleId === activeCircleId) return
+
+      // Flush pending text for current circle
+      const currentDrafts = draftTexts.get(activeCircleId)
+      if (currentDrafts && submissionData) {
+        const serverResponses = submissionData.responses ?? []
+        const pendingChanges: Array<{ promptId: string; text: string }> = []
+        currentDrafts.forEach((text, promptId) => {
+          const serverText = serverResponses.find((r) => r.promptId === promptId)?.text ?? ''
+          if (text !== serverText) {
+            pendingChanges.push({ promptId, text })
+          }
+        })
+        if (pendingChanges.length > 0) {
+          setSaveStatus('saving')
+          try {
+            await Promise.all(
+              pendingChanges.map(({ promptId, text }) =>
+                updateResponse({
+                  submissionId: submissionData._id,
+                  promptId: promptId as Id<'prompts'>,
+                  text,
+                })
+              )
+            )
+            setSaveStatus('saved')
+            setLastSaved(new Date())
+            if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current)
+            savedTimeoutRef.current = setTimeout(() => setSaveStatus('idle'), 3000)
+          } catch {
+            setSaveStatus('error')
+          }
+        }
+      }
+
+      setActiveCircleId(newCircleId)
+    },
+    [activeCircleId, draftTexts, submissionData, updateResponse]
+  )
+
   // Handler: text change for a prompt
   const handleValueChange = useCallback((circleId: string, promptId: string, value: string) => {
     setDraftTexts((prev) => {
@@ -333,9 +440,9 @@ export function MultiCircleSubmissionScreen({
   // Handler: ensure a response exists before media upload (on-demand creation)
   const handleEnsureResponse = useCallback(
     async (promptId: string) => {
-      // If response already exists, return its ID
+      // If response already exists, nothing to do
       const serverResponse = submissionData?.responses.find((r) => r.promptId === promptId)
-      if (serverResponse?._id) return serverResponse._id
+      if (serverResponse?._id) return
 
       // Create submission if needed, then create empty response
       let submissionId = submissionData?._id
@@ -345,12 +452,11 @@ export function MultiCircleSubmissionScreen({
           cycleId,
         })
       }
-      const newResponseId = await updateResponse({
+      await updateResponse({
         submissionId: submissionId as Id<'submissions'>,
         promptId: promptId as Id<'prompts'>,
         text: '',
       })
-      return newResponseId
     },
     [submissionData, activeCircleId, cycleId, createSubmission, updateResponse]
   )
@@ -379,19 +485,109 @@ export function MultiCircleSubmissionScreen({
 
   const isLoading = submissionData === undefined || promptsData === undefined
 
+  const prompts = promptsData ?? []
+  const totalPrompts = prompts.length
+
+  function renderPromptCards(cardVariant: 'legacy' | 'card') {
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="size-8 animate-spin text-muted-foreground" />
+        </div>
+      )
+    }
+    if (submissionData === null && promptsData !== undefined && promptsData.length === 0) {
+      return (
+        <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
+          No prompts available for this circle.
+        </div>
+      )
+    }
+    return prompts.map((prompt, index) => {
+      const serverResponse = submissionData?.responses.find((r) => r.promptId === prompt._id)
+      const draftValue =
+        draftTexts.get(activeCircleId)?.get(prompt._id) ?? serverResponse?.text ?? ''
+      const existingMedia = (serverResponse?.media ?? [])
+        .filter((m) => m.url !== null)
+        .map((m) => ({
+          _id: m._id,
+          type: m.type as 'image' | 'video',
+          url: m.url as string,
+          thumbnailUrl: m.thumbnailUrl,
+        }))
+
+      return (
+        <PromptResponseCard
+          key={prompt._id}
+          promptId={prompt._id}
+          promptText={prompt.text}
+          promptLabel={
+            cardVariant === 'card' ? `Prompt ${index + 1} of ${totalPrompts}` : undefined
+          }
+          responseId={serverResponse?._id}
+          initialValue={draftValue}
+          existingMedia={existingMedia}
+          onValueChange={(value) => handleValueChange(activeCircleId, prompt._id, value)}
+          onMediaUpload={handleMediaUpload}
+          onMediaRemove={isDisabled ? undefined : handleMediaRemove}
+          onEnsureResponse={() => handleEnsureResponse(prompt._id)}
+          disabled={isDisabled}
+          variant={cardVariant}
+        />
+      )
+    })
+  }
+
+  if (variant === 'redesign') {
+    const cards = renderPromptCards('card')
+    const isCardArray = Array.isArray(cards)
+
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        {/* Mobile circle row */}
+        <div className="md:hidden">
+          <CircleRow
+            circles={circles}
+            activeCircleId={activeCircleId}
+            onCircleChange={handleCircleSwitch}
+          />
+        </div>
+
+        {/* Late submission note */}
+        {deadlineIsPast && (
+          <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/50 px-4 py-2.5">
+            <Lock className="size-4 shrink-0 text-muted-foreground" />
+            <p className="text-sm font-medium text-muted-foreground">
+              The deadline for this cycle has passed. Your submission will be included in next
+              month&apos;s newsletter.
+            </p>
+          </div>
+        )}
+
+        {/* Snap-scroll prompt cards + dots */}
+        <SnapScrollCards
+          cards={isCardArray ? cards : [cards]}
+          cardKeys={isCardArray ? prompts.map((p) => p._id) : ['empty']}
+          totalPrompts={totalPrompts}
+        />
+      </div>
+    )
+  }
+
+  // Legacy layout
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {/* Header */}
-      <div className="flex shrink-0 items-center justify-end gap-3 px-4 py-2 border-b border-border/50">
+      <div className="flex shrink-0 items-center justify-end gap-3 border-b border-border/50 px-4 py-2">
         <AutoSaveIndicator status={saveStatus} lastSaved={lastSaved} />
         <DeadlineCountdown deadlineTimestamp={deadlineTimestamp} />
       </div>
 
       {/* Late submission info note */}
       {deadlineIsPast && (
-        <div className="flex shrink-0 items-center gap-2 bg-muted/50 border-b border-border px-4 py-2.5">
-          <Lock className="size-4 text-muted-foreground shrink-0" />
-          <p className="text-sm text-muted-foreground font-medium">
+        <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/50 px-4 py-2.5">
+          <Lock className="size-4 shrink-0 text-muted-foreground" />
+          <p className="text-sm font-medium text-muted-foreground">
             The deadline for this cycle has passed. Your submission will be included in next
             month&apos;s newsletter.
           </p>
@@ -405,58 +601,13 @@ export function MultiCircleSubmissionScreen({
           activeCircleId={activeCircleId}
           onCircleChange={setActiveCircleId}
         >
-          {isLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="size-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : submissionData === null && promptsData !== undefined && promptsData.length === 0 ? (
-            <div className="flex items-center justify-center py-16 text-muted-foreground text-sm">
-              No prompts available for this circle.
-            </div>
-          ) : (
-            <div className="flex flex-col gap-4 p-4">
-              {(promptsData ?? []).map((prompt) => {
-                const serverResponse = submissionData?.responses.find(
-                  (r) => r.promptId === prompt._id
-                )
-                const draftValue =
-                  draftTexts.get(activeCircleId)?.get(prompt._id) ?? serverResponse?.text ?? ''
-                const existingMedia = (serverResponse?.media ?? [])
-                  .filter((m) => m.url !== null)
-                  .map((m) => ({
-                    _id: m._id,
-                    type: m.type as 'image' | 'video',
-                    url: m.url as string,
-                    thumbnailUrl: m.thumbnailUrl,
-                  }))
-
-                return (
-                  <PromptResponseCard
-                    key={prompt._id}
-                    promptId={prompt._id}
-                    promptText={prompt.text}
-                    responseId={serverResponse?._id}
-                    initialValue={draftValue}
-                    existingMedia={existingMedia}
-                    onValueChange={(value) => handleValueChange(activeCircleId, prompt._id, value)}
-                    onMediaUpload={handleMediaUpload}
-                    onMediaRemove={isDisabled ? undefined : handleMediaRemove}
-                    onEnsureResponse={async () => {
-                      const id = await handleEnsureResponse(prompt._id)
-                      return id
-                    }}
-                    disabled={isDisabled}
-                  />
-                )
-              })}
-            </div>
-          )}
+          <div className="flex flex-col gap-4 p-4">{renderPromptCards('legacy')}</div>
         </CircleSubmissionTabs>
       </div>
 
-      {/* Submit footer - outside scroll area, always visible */}
+      {/* Submit footer */}
       {!isLoading && (
-        <div className="shrink-0 border-t border-border bg-background px-4 py-3 safe-area-bottom overflow-hidden">
+        <div className="safe-area-bottom shrink-0 border-t border-border bg-background px-4 py-3">
           {activeCircle?.status === 'submitted' ? (
             <div className="flex items-center justify-center gap-2 text-sm font-medium text-green-600">
               <Check className="size-4" />
@@ -475,4 +626,4 @@ export function MultiCircleSubmissionScreen({
       )}
     </div>
   )
-}
+})

@@ -21,8 +21,8 @@ interface PromptSectionProps {
 export function PromptSection({ promptTitle, responses }: PromptSectionProps) {
   return (
     <div className="space-y-4">
-      <h3 className="font-serif text-lg font-normal text-foreground">{promptTitle}</h3>
-      <div className="space-y-4 rounded-xl bg-card p-4">
+      <h3 className="font-serif text-xl font-normal text-foreground">{promptTitle}</h3>
+      <div className="rounded-2xl bg-card">
         {responses.map((response, index) => (
           <MemberResponse
             key={index}

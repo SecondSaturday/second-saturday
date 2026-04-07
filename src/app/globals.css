@@ -36,6 +36,15 @@ body {
   padding-right: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));
 }
 
+/* Prevent iOS auto-zoom on input focus — ensure minimum 16px font on mobile */
+@media screen and (max-width: 767px) {
+  input,
+  textarea,
+  select {
+    font-size: max(16px, 1em) !important;
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

@@ -1,7 +1,7 @@
 'use client'
 
 import { UserButton } from '@clerk/nextjs'
-import { MoreVertical, ChevronDown, PlusCircle, Bell } from 'lucide-react'
+import { MoreVertical, PlusCircle, Bell } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -11,17 +11,9 @@ import {
 } from '@/components/ui/dropdown-menu'
 import Link from 'next/link'
 
-interface DashboardHeaderProps {
-  onDatePickerOpen?: () => void
-  dateLabel?: string
-}
-
-export function DashboardHeader({ onDatePickerOpen, dateLabel }: DashboardHeaderProps) {
-  const displayDate =
-    dateLabel ?? new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-
+export function DashboardHeader() {
   return (
-    <header className="flex shrink-0 items-center justify-between bg-background px-4 py-3">
+    <header className="flex shrink-0 items-center justify-between bg-background pl-4 pr-2.5 py-3">
       <UserButton
         appearance={{
           elements: {
@@ -30,15 +22,7 @@ export function DashboardHeader({ onDatePickerOpen, dateLabel }: DashboardHeader
         }}
       />
 
-      <div className="flex flex-1 justify-center">
-        <button
-          onClick={onDatePickerOpen}
-          className="flex items-center gap-1 rounded-lg bg-muted/60 px-3 py-1.5 text-sm font-medium text-foreground"
-        >
-          {displayDate}
-          <ChevronDown className="size-4 text-muted-foreground" />
-        </button>
-      </div>
+      <div className="flex-1" />
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

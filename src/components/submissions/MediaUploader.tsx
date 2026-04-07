@@ -6,33 +6,28 @@ import { useMutation, useAction } from 'convex/react'
 import { useUser } from '@clerk/nextjs'
 import { api } from '../../../convex/_generated/api'
 import { compressImage } from '@/lib/image'
-import {
-  Camera as CameraIcon,
-  Image as ImageIcon,
-  Video as VideoIcon,
-  X,
-  Loader2,
-  Plus,
-} from 'lucide-react'
+import { Camera as CameraIcon, Image as ImageIcon, X, Loader2, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Id } from '../../../convex/_generated/dataModel'
 import { BlockingModal } from '../ui/blocking-modal'
 import { useBlockingUpload } from '@/hooks/useBlockingUpload'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+
+interface MediaThumbnail {
+  _id: Id<'media'>
+  type: 'image' | 'video'
+  url: string
+  thumbnailUrl?: string | null
+}
 
 interface MediaUploaderProps {
   responseId?: Id<'responses'>
   onUploadComplete?: (mediaId: Id<'media'>, type: 'image' | 'video') => void
   onUploadError?: (error: string) => void
-  onEnsureResponse?: () => Promise<Id<'responses'> | undefined>
+  onEnsureResponse?: () => Promise<void>
+  onMediaRemove?: (mediaId: Id<'media'>) => void
   maxMedia?: number
   currentMediaCount?: number
+  existingMedia?: MediaThumbnail[]
   className?: string
 }
 
@@ -44,8 +39,10 @@ export function MediaUploader({
   onUploadComplete,
   onUploadError,
   onEnsureResponse,
+  onMediaRemove,
   maxMedia = 3,
   currentMediaCount = 0,
+  existingMedia = [],
   className,
 }: MediaUploaderProps) {
   const { user } = useUser()
@@ -56,7 +53,6 @@ export function MediaUploader({
   const [mediaType, setMediaType] = useState<MediaType | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const videoIdRef = useRef<Id<'videos'> | null>(null)
-  const ensuredResponseIdRef = useRef<Id<'responses'> | undefined>(undefined)
 
   // Mutations and actions
   const generateUploadUrl = useMutation(api.files.generateUploadUrl)
@@ -67,7 +63,6 @@ export function MediaUploader({
   const videoUpload = useBlockingUpload({
     onComplete: () => {
       setStage('idle')
-      if (preview) URL.revokeObjectURL(preview)
       setPreview(null)
       setMediaType(null)
       videoIdRef.current = null
@@ -85,7 +80,6 @@ export function MediaUploader({
     setStage('idle')
     setProgress(0)
     setError(null)
-    if (preview) URL.revokeObjectURL(preview)
     setPreview(null)
     setMediaType(null)
     videoIdRef.current = null
@@ -113,8 +107,7 @@ export function MediaUploader({
 
     try {
       // Ensure response exists before starting upload
-      const ensuredId = await onEnsureResponse?.()
-      if (ensuredId) ensuredResponseIdRef.current = ensuredId
+      await onEnsureResponse?.()
 
       setStage('selecting')
       setError(null)
@@ -231,17 +224,14 @@ export function MediaUploader({
       setProgress(80)
 
       // Save media record to database
-      const resolvedResponseId = responseId ?? ensuredResponseIdRef.current
-      if (!resolvedResponseId) throw new Error('No response ID available')
       const mediaId = await addMediaToResponse({
-        responseId: resolvedResponseId,
+        responseId: responseId!,
         storageId,
         type: 'image',
       })
 
       setProgress(100)
       setStage('idle')
-      if (preview) URL.revokeObjectURL(preview)
       setPreview(null)
       onUploadComplete?.(mediaId, 'image')
     } catch (err: unknown) {
@@ -279,8 +269,7 @@ export function MediaUploader({
       return
     }
     // Ensure response exists before starting upload
-    const ensuredId = await onEnsureResponse?.()
-    if (ensuredId) ensuredResponseIdRef.current = ensuredId
+    await onEnsureResponse?.()
     videoInputRef.current?.click()
   }
 
@@ -389,14 +378,13 @@ export function MediaUploader({
       videoUpload.setProgress(80)
       setProgress(80)
 
-      // Save media record linked to the video record
-      // muxAssetId will be populated via webhook when Mux finishes processing
-      const resolvedResponseId = responseId ?? ensuredResponseIdRef.current
-      if (!resolvedResponseId) throw new Error('No response ID available')
+      // Save media record to database
+      // Note: muxAssetId will be updated via webhook when Mux processes the video
+      // For now, we store the uploadId to track the video
       const mediaId = await addMediaToResponse({
-        responseId: resolvedResponseId,
+        responseId: responseId!,
         type: 'video',
-        videoId,
+        // Asset ID will be updated via Mux webhook when video is processed
       })
 
       videoUpload.setProgress(100)
@@ -454,43 +442,152 @@ export function MediaUploader({
   const showProgress = isUploading && progress > 0 && mediaType === 'photo'
   const showBlockingModal = isUploading && mediaType === 'video'
 
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  const MAX_VISIBLE_THUMBS = 3
+
   return (
-    <div className={cn('space-y-2', className)}>
-      {/* Upload Controls */}
+    <div className={cn('flex items-end gap-2', className)}>
+      {/* Upload Controls — vertical expand + thumbnails row */}
       {!isUploading && !error && (
         <>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-8"
-                disabled={!canUploadMore}
-                aria-label="Add media"
+          <div className="flex flex-col items-center gap-1.5">
+            {/* Expanded options (above the + button) */}
+            <div
+              className={cn(
+                'flex flex-col items-center gap-1.5 overflow-hidden transition-all duration-200',
+                menuOpen ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'
+              )}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false)
+                  handlePhotoCapture(CameraSource.Camera)
+                }}
+                className="flex size-12 items-center justify-center rounded-lg border border-border/60 bg-card transition-colors hover:bg-muted/50"
+                aria-label="Take photo"
               >
-                <Plus className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuItem onClick={() => handlePhotoCapture(CameraSource.Camera)}>
-                <CameraIcon className="mr-2 size-4" /> Take Photo
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handlePhotoCapture(CameraSource.Photos)}>
-                <ImageIcon className="mr-2 size-4" /> Choose Photo
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleVideoSelect}>
-                <VideoIcon className="mr-2 size-4" /> Choose Video
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <input
-            ref={videoInputRef}
-            type="file"
-            accept="video/mp4,video/quicktime,video/x-m4v"
-            className="hidden"
-            onChange={handleVideoFileChange}
-          />
+                <CameraIcon className="size-6 text-primary" />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false)
+                  handlePhotoCapture(CameraSource.Photos)
+                }}
+                className="flex size-12 items-center justify-center rounded-lg border border-border/60 bg-card transition-colors hover:bg-muted/50"
+                aria-label="Choose photo"
+              >
+                <ImageIcon className="size-6 text-primary" />
+              </button>
+            </div>
+
+            {/* Main + / X button */}
+            <button
+              type="button"
+              onClick={() => {
+                if (!canUploadMore && !menuOpen) return
+                setMenuOpen(!menuOpen)
+              }}
+              className={cn(
+                'flex size-14 items-center justify-center rounded-lg transition-all duration-200',
+                menuOpen
+                  ? 'border-2 border-primary bg-destructive/10 hover:bg-muted/50'
+                  : 'bg-card border border-border/60 hover:bg-muted',
+                !canUploadMore && !menuOpen && 'opacity-30'
+              )}
+              aria-label={menuOpen ? 'Close media menu' : 'Add media'}
+            >
+              <div
+                className="transition-transform duration-200"
+                style={{ transform: menuOpen ? 'rotate(45deg)' : 'rotate(0deg)' }}
+              >
+                <Plus className="size-7 text-muted-foreground" />
+              </div>
+            </button>
+
+            {/* Limit reached label */}
+            {!canUploadMore && !menuOpen && (
+              <span className="text-[10px] text-muted-foreground">Media limit reached</span>
+            )}
+          </div>
+
+          {/* Thumbnails row beside the + button */}
+          {existingMedia.length > 0 && (
+            <div className="flex items-end gap-1.5">
+              {existingMedia.slice(0, MAX_VISIBLE_THUMBS).map((media) => (
+                <div key={media._id} className="group relative size-14 rounded-lg bg-muted">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={media.thumbnailUrl ?? media.url}
+                    alt="Media"
+                    className="size-full rounded-lg object-cover"
+                  />
+                  {onMediaRemove && (
+                    <button
+                      type="button"
+                      onClick={() => onMediaRemove(media._id)}
+                      className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-destructive text-white md:opacity-0 md:transition-opacity md:group-hover:opacity-100"
+                      aria-label="Remove media"
+                    >
+                      <X className="size-3" />
+                    </button>
+                  )}
+                </div>
+              ))}
+              {existingMedia.length > MAX_VISIBLE_THUMBS && (
+                <span className="text-xs text-muted-foreground">
+                  +{existingMedia.length - MAX_VISIBLE_THUMBS}
+                </span>
+              )}
+            </div>
+          )}
         </>
+      )}
+
+      {/* Hidden video input */}
+      <input
+        ref={videoInputRef}
+        type="file"
+        accept="video/mp4,video/quicktime,video/x-m4v"
+        className="hidden"
+        onChange={handleVideoFileChange}
+      />
+
+      {/* Uploading indicator (inline, compact) */}
+      {isUploading && (
+        <div className="flex items-center gap-2">
+          <Loader2 className="size-5 animate-spin text-primary" />
+          <span className="text-xs text-muted-foreground">
+            {stage === 'selecting' && 'Selecting...'}
+            {stage === 'compressing' && 'Compressing...'}
+            {stage === 'uploading' && 'Uploading...'}
+            {stage === 'processing' && 'Processing...'}
+          </span>
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="rounded p-0.5 hover:bg-muted"
+            aria-label="Cancel upload"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Error (inline) */}
+      {error && (
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-destructive">{error}</span>
+          <button
+            type="button"
+            onClick={resetUpload}
+            className="text-xs font-medium text-foreground underline"
+          >
+            Retry
+          </button>
+        </div>
       )}
 
       {/* Blocking Modal for Video Upload */}
@@ -511,75 +608,6 @@ export function MediaUploader({
         onCancel={handleCancel}
         showCancelButton={videoUpload.stage !== 'processing'}
       />
-
-      {/* Upload Progress */}
-      {showProgress && (
-        <div className="space-y-2 rounded-lg border border-border bg-muted/50 p-4">
-          {preview && (
-            <div className="relative aspect-video w-full overflow-hidden rounded-md bg-muted">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={preview} alt="Preview" className="size-full object-cover" />
-            </div>
-          )}
-
-          <div className="flex items-center gap-3">
-            <Loader2 className="size-5 animate-spin text-primary" />
-            <div className="flex-1">
-              <div className="mb-1 text-sm font-medium">
-                {stage === 'selecting' && 'Selecting photo...'}
-                {stage === 'compressing' && 'Compressing image...'}
-                {stage === 'uploading' && 'Uploading...'}
-                {stage === 'processing' && 'Processing...'}
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full bg-primary transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="rounded-md p-1 hover:bg-muted"
-              aria-label="Cancel upload"
-            >
-              <X className="size-5" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Error Display */}
-      {error && (
-        <div className="space-y-2 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
-          <div className="flex items-start gap-2">
-            <div className="flex-1 text-sm text-destructive">{error}</div>
-            <button
-              type="button"
-              onClick={resetUpload}
-              className="rounded-md p-1 hover:bg-destructive/20"
-              aria-label="Dismiss error"
-            >
-              <X className="size-5" />
-            </button>
-          </div>
-          <button
-            type="button"
-            onClick={resetUpload}
-            className="w-full rounded-md bg-background px-4 py-2 text-sm font-medium hover:bg-muted"
-          >
-            Try Again
-          </button>
-        </div>
-      )}
-
-      {/* Media Count Indicator */}
-      {!canUploadMore && !isUploading && !error && (
-        <div className="text-center text-sm text-muted-foreground">
-          Maximum {maxMedia} media items reached
-        </div>
-      )}
     </div>
   )
 }

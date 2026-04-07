@@ -11,8 +11,6 @@ interface ProfileHeaderImageLayoutProps {
   onCoverUpload?: (file: File) => void
   onIconUpload?: (file: File) => void
   editable?: boolean
-  centered?: boolean
-  fallbackInitial?: string
   className?: string
 }
 
@@ -22,8 +20,6 @@ export function ProfileHeaderImageLayout({
   onCoverUpload,
   onIconUpload,
   editable = false,
-  centered = false,
-  fallbackInitial,
   className,
 }: ProfileHeaderImageLayoutProps) {
   const coverInputRef = useRef<HTMLInputElement>(null)
@@ -42,14 +38,14 @@ export function ProfileHeaderImageLayout({
   return (
     <div className={cn('relative', className)}>
       {/* Cover image */}
-      <div className="relative h-[150px] w-full bg-muted md:h-[200px]">
+      <div className="relative mx-4 mt-4 h-[150px] overflow-hidden rounded-2xl bg-muted md:mx-8 md:mt-6 md:h-[180px]">
         {coverImageUrl ? (
           <img src={coverImageUrl} alt="Cover" className="size-full object-cover" />
-        ) : editable ? (
+        ) : (
           <div className="flex size-full items-center justify-center">
             <Camera className="size-8 text-muted-foreground/40" />
           </div>
-        ) : null}
+        )}
 
         {editable && (
           <>
@@ -73,20 +69,12 @@ export function ProfileHeaderImageLayout({
       </div>
 
       {/* Circle icon overlapping cover bottom edge */}
-      <div className={cn('relative -mt-10', centered ? 'flex justify-center' : 'ml-4')}>
-        <div className="relative inline-block">
-          <Avatar size="lg" className="size-20 border-4 border-background shadow-md">
+      <div className="relative -mt-[30px] flex justify-center">
+        <div className="relative">
+          <Avatar className="!size-[100px] border-4 border-background">
             <AvatarImage src={iconUrl ?? undefined} alt="Circle icon" />
             <AvatarFallback>
-              {editable ? (
-                <Camera className="size-6 text-muted-foreground/40" />
-              ) : fallbackInitial ? (
-                <span className="text-2xl font-semibold text-muted-foreground">
-                  {fallbackInitial}
-                </span>
-              ) : (
-                <span className="size-full bg-muted" />
-              )}
+              <Camera className="size-6 text-muted-foreground/40" />
             </AvatarFallback>
           </Avatar>
 

@@ -30,6 +30,12 @@ vi.mock('next/link', () => ({
   ),
 }))
 
+// Mock next/image
+vi.mock('next/image', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  default: (props: any) => <img {...props} />,
+}))
+
 // Mock Clerk
 vi.mock('@clerk/nextjs', () => ({
   UserButton: () => <button data-testid="clerk-user-button">User</button>,
@@ -124,19 +130,8 @@ describe('EmptyState accessibility', () => {
 
 describe('DashboardHeader accessibility', () => {
   it('all interactive elements are buttons', () => {
-    render(<DashboardHeader dateLabel="Sep 13" />)
+    render(<DashboardHeader />)
     const buttons = screen.getAllByRole('button')
-    expect(buttons.length).toBeGreaterThanOrEqual(2)
-  })
-
-  it('date picker button is keyboard accessible', async () => {
-    const user = userEvent.setup()
-    const onOpen = vi.fn()
-    render(<DashboardHeader dateLabel="Sep 13" onDatePickerOpen={onOpen} />)
-    // First tab lands on the UserButton; second tab reaches the date picker button
-    await user.tab()
-    await user.tab()
-    await user.keyboard('{Enter}')
-    expect(onOpen).toHaveBeenCalled()
+    expect(buttons.length).toBeGreaterThanOrEqual(1)
   })
 })

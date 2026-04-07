@@ -8,7 +8,7 @@ import type { CapacitorConfig } from '@capacitor/cli'
 // Run: cloudflared tunnel --url http://localhost:3000
 // Then update this URL with your cloudflared domain
 const serverUrl =
-  process.env.CAPACITOR_SERVER_URL || 'https://toolbar-easy-decades-handling.trycloudflare.com'
+  process.env.CAPACITOR_SERVER_URL || 'https://sticky-limitations-stockings-papua.trycloudflare.com'
 
 const config: CapacitorConfig = {
   appId: 'com.secondsaturday.app',
@@ -21,7 +21,7 @@ const config: CapacitorConfig = {
     cleartext: true, // Allow HTTP for local development
     // Keep authentication flows within the WebView (don't open Safari)
     allowNavigation: [
-      'toolbar-easy-decades-handling.trycloudflare.com',
+      'sticky-limitations-stockings-papua.trycloudflare.com',
       '*.trycloudflare.com',
       '*.clerk.dev',
       '*.clerk.com',
@@ -55,6 +55,8 @@ const config: CapacitorConfig = {
     contentInset: 'never', // Let CSS env(safe-area-inset-*) handle safe areas
     scheme: 'Second Saturday',
     // No custom User-Agent - let Clerk see standard browser UA
+    preferredContentMode: 'mobile',
+    scrollEnabled: false, // Prevent WebView-level scroll/zoom
   },
   android: {
     allowMixedContent: true, // Allow HTTP for local development

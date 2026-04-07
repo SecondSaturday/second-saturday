@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
@@ -60,22 +60,14 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
   const [regenerating, setRegenerating] = useState(false)
   const [showRegenDialog, setShowRegenDialog] = useState(false)
   const [showLeaveDialog, setShowLeaveDialog] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const deleteCircle = useMutation(api.circles.deleteCircle)
   const [removeTarget, setRemoveTarget] = useState<{ userId: Id<'users'>; name: string } | null>(
     null
   )
 
-  const shouldRedirect =
-    circle !== undefined && currentUser !== undefined && (!circle || !currentUser)
-  useEffect(() => {
-    if (shouldRedirect) router.replace('/dashboard')
-  }, [shouldRedirect, router])
-
-  if (
-    circle === undefined ||
-    members === undefined ||
-    currentUser === undefined ||
-    shouldRedirect
-  ) {
+  if (circle === undefined || members === undefined || currentUser === undefined) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -83,7 +75,13 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
     )
   }
 
-  if (!circle || !currentUser) return null
+  if (!circle || !currentUser) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <p className="text-muted-foreground">Circle not found</p>
+      </div>
+    )
+  }
 
   const isAdmin = circle.role === 'admin'
   const displayName = name ?? circle.name
@@ -208,29 +206,8 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Stats tiles (ABOVE tabs — always visible) */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-lg bg-card p-4 text-center">
-          <p className="text-2xl font-bold text-foreground">{circle.memberCount}</p>
-          <p className="text-sm text-muted-foreground">Members</p>
-        </div>
-        <div className="rounded-lg bg-card p-4 text-center">
-          <p className="text-2xl font-bold text-foreground">{circle.newsletterCount}</p>
-          <p className="text-sm text-muted-foreground">Issues Sent</p>
-        </div>
-        <div className="rounded-lg bg-card p-4 text-center">
-          <p className="text-2xl font-bold text-foreground">
-            {new Date(circle.createdAt).toLocaleDateString('en-US', {
-              month: 'short',
-              year: 'numeric',
-            })}
-          </p>
-          <p className="text-sm text-muted-foreground">Created</p>
-        </div>
-      </div>
-
-      {/* 3-member warning (admin only, above tabs) — stubbed to < 1 for testing */}
-      {isAdmin && circle.memberCount < 1 && (
+      {/* 3-member warning (admin only, above tabs) */}
+      {isAdmin && circle.memberCount < 3 && (
         <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/30">
           <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
           <p className="text-sm text-amber-700 dark:text-amber-400">
@@ -246,7 +223,7 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="prompts">Prompts</TabsTrigger>
           <TabsTrigger value="members">Members ({members?.length ?? 0})</TabsTrigger>
-          {isAdmin && <TabsTrigger value="status">Status</TabsTrigger>}
+          {/* Status tab hidden until redesigned */}
         </TabsList>
 
         <TabsContent value="details" className="flex flex-col gap-6">
@@ -338,8 +315,8 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
             )}
           </div>
 
-          {/* Leave Circle section */}
-          <div className="border-t border-border pt-4">
+          {/* Leave / Delete Circle section */}
+          <div className="flex flex-col gap-3 border-t border-border pt-4">
             <Button
               variant="destructive"
               className="w-full"
@@ -347,6 +324,53 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
             >
               Leave this circle
             </Button>
+
+            {isAdmin && (
+              <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full border-destructive text-destructive hover:bg-destructive/10"
+                  >
+                    Delete this circle
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Delete Circle?</DialogTitle>
+                    <DialogDescription>
+                      This will permanently remove <strong>{circle.name}</strong> and all its data
+                      including newsletters, submissions, and media. This action cannot be undone.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      disabled={deleting}
+                      onClick={async () => {
+                        setDeleting(true)
+                        try {
+                          await deleteCircle({ circleId })
+                          toast.success('Circle deleted')
+                          router.push('/dashboard')
+                        } catch (err) {
+                          toast.error(
+                            err instanceof Error ? err.message : 'Failed to delete circle'
+                          )
+                        } finally {
+                          setDeleting(false)
+                        }
+                      }}
+                    >
+                      {deleting ? 'Deleting...' : 'Delete'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import { MediaUploader } from './MediaUploader'
 import { MediaGrid } from './MediaGrid'
@@ -11,6 +10,7 @@ import type { Id } from '../../../convex/_generated/dataModel'
 interface PromptResponseCardProps {
   promptId: string
   promptText: string
+  promptLabel?: string
   responseId?: Id<'responses'>
   initialValue?: string
   existingMedia?: MediaItem[]
@@ -20,13 +20,14 @@ interface PromptResponseCardProps {
   onMediaError?: (error: string) => void
   onEnsureResponse?: () => Promise<Id<'responses'> | undefined>
   disabled?: boolean
-  maxLength?: number
   maxMedia?: number
+  variant?: 'legacy' | 'card'
 }
 
 export function PromptResponseCard({
   promptId,
   promptText,
+  promptLabel,
   responseId,
   initialValue = '',
   existingMedia = [],
@@ -36,35 +37,25 @@ export function PromptResponseCard({
   onMediaError,
   onEnsureResponse,
   disabled = false,
-  maxLength = 500,
   maxMedia = 3,
+  variant = 'legacy',
 }: PromptResponseCardProps) {
   const [value, setValue] = useState(initialValue)
   const [mediaCount, setMediaCount] = useState(existingMedia.length)
   const [isFocused, setIsFocused] = useState(false)
-  const charCount = value.length
 
   useEffect(() => {
     setValue(initialValue)
   }, [initialValue])
 
-  // Sync mediaCount when server data changes (e.g. on reload)
   useEffect(() => {
     setMediaCount(existingMedia.length)
   }, [existingMedia.length])
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value
-    if (newValue.length <= maxLength) {
-      setValue(newValue)
-      onValueChange?.(newValue)
-    }
-  }
-
-  const getCounterColor = () => {
-    if (charCount >= maxLength) return 'text-destructive'
-    if (charCount >= maxLength * 0.9) return 'text-amber-600 dark:text-amber-500'
-    return 'text-muted-foreground'
+    setValue(newValue)
+    onValueChange?.(newValue)
   }
 
   const handleMediaUploadComplete = (mediaId: Id<'media'>, type: 'image' | 'video') => {
@@ -72,12 +63,63 @@ export function PromptResponseCard({
     onMediaUpload?.(mediaId, type)
   }
 
+  if (variant === 'card') {
+    return (
+      <div
+        className={cn(
+          'flex flex-col overflow-hidden rounded-2xl border',
+          isFocused ? 'border-2 border-primary' : 'border-border'
+        )}
+        style={{ height: 'var(--card-height, 480px)' }}
+      >
+        {/* Prompt zone */}
+        <div className="flex shrink-0 flex-col gap-2 bg-card p-5 md:px-7 md:py-6">
+          {promptLabel && (
+            <span className="text-xs font-medium text-muted-foreground">{promptLabel}</span>
+          )}
+          <h3 className="font-serif text-2xl text-foreground md:text-[26px]">{promptText}</h3>
+        </div>
+
+        {/* Input zone */}
+        <div className="flex flex-1 flex-col justify-between bg-white px-5 py-4 md:px-7 md:py-5">
+          {/* Textarea */}
+          <textarea
+            id={`prompt-${promptId}`}
+            value={value}
+            onChange={handleChange}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            disabled={disabled}
+            placeholder="Type your response here..."
+            className={cn(
+              'flex-1 resize-none bg-transparent text-sm leading-relaxed text-foreground placeholder:text-foreground/25 focus:outline-none',
+              disabled && 'cursor-not-allowed opacity-60'
+            )}
+          />
+
+          {/* Bottom bar: + button + thumbnails */}
+          <div className="flex items-end gap-2 pt-2">
+            <MediaUploader
+              responseId={responseId}
+              onUploadComplete={handleMediaUploadComplete}
+              onUploadError={onMediaError}
+              onEnsureResponse={onEnsureResponse}
+              maxMedia={maxMedia}
+              currentMediaCount={mediaCount}
+              existingMedia={existingMedia}
+              onMediaRemove={disabled ? undefined : onMediaRemove}
+            />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Legacy variant (unchanged)
   return (
     <div className="space-y-2">
-      {/* Prompt title */}
       <h3 className="font-serif text-lg font-semibold text-foreground">{promptText}</h3>
 
-      {/* Media Grid - above textarea */}
       {existingMedia.length > 0 && (
         <MediaGrid
           media={existingMedia}
@@ -87,24 +129,19 @@ export function PromptResponseCard({
         />
       )}
 
-      {/* Text Input Area with embedded "+" button */}
       <div className="relative rounded-xl border border-border bg-card">
-        <Textarea
+        <textarea
           id={`prompt-${promptId}`}
           value={value}
           onChange={handleChange}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
           disabled={disabled}
           placeholder="Add text or tap + for photos..."
           className={cn(
-            'min-h-[80px] resize-none border-0 bg-transparent pb-10 pr-16 shadow-none focus-visible:ring-0',
+            'min-h-[80px] w-full resize-none rounded-xl border-0 bg-transparent p-3 pb-10 pr-16 text-sm shadow-none focus:outline-none focus:ring-0',
             disabled && 'cursor-not-allowed opacity-60'
           )}
-          maxLength={maxLength}
         />
 
-        {/* "+" button at bottom-left */}
         <div className="absolute bottom-2 left-2">
           <MediaUploader
             responseId={responseId}
@@ -115,18 +152,6 @@ export function PromptResponseCard({
             currentMediaCount={mediaCount}
           />
         </div>
-
-        {/* Character Counter - only visible on focus */}
-        {isFocused && (
-          <div
-            className={cn(
-              'absolute bottom-3 right-3 text-xs font-medium transition-colors',
-              getCounterColor()
-            )}
-          >
-            {charCount}/{maxLength}
-          </div>
-        )}
       </div>
     </div>
   )

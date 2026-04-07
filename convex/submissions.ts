@@ -118,9 +118,17 @@ export const updateResponse = mutation({
     if (!submission) throw new Error('Submission not found')
     if (submission.userId !== user._id) throw new Error('Not authorized to modify this submission')
 
-    // Check if submission is locked
+    // If locked, auto-unlock if deadline hasn't passed; otherwise block
     if (submission.lockedAt && submission.lockedAt > 0) {
-      throw new Error('Cannot modify locked submission')
+      const deadlineTs = computeDeadlineTimestamp(submission.cycleId)
+      if (Date.now() >= deadlineTs) {
+        throw new Error('Cannot modify submission after deadline')
+      }
+      // Silently unlock for editing (keep submittedAt to track "unsubmitted changes" state)
+      await ctx.db.patch(args.submissionId, {
+        lockedAt: undefined,
+        updatedAt: Date.now(),
+      })
     }
 
     // Verify prompt belongs to the same circle
@@ -202,6 +210,38 @@ export const lockSubmission = mutation({
     })
 
     return args.submissionId
+  },
+})
+
+/**
+ * Check if the current user has any non-empty responses across all their circles for a cycle.
+ */
+export const hasAnyResponses = query({
+  args: {
+    cycleId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthUser(ctx)
+
+    // Get all user's submissions for this cycle
+    const submissions = await ctx.db
+      .query('submissions')
+      .withIndex('by_user', (q) => q.eq('userId', user._id))
+      .filter((q) => q.eq(q.field('cycleId'), args.cycleId))
+      .collect()
+
+    for (const submission of submissions) {
+      const responses = await ctx.db
+        .query('responses')
+        .withIndex('by_submission', (q) => q.eq('submissionId', submission._id))
+        .collect()
+
+      if (responses.some((r) => r.text.trim().length > 0)) {
+        return true
+      }
+    }
+
+    return false
   },
 })
 
@@ -347,9 +387,16 @@ export const addMediaToResponse = mutation({
     if (!submission) throw new Error('Submission not found')
     if (submission.userId !== user._id) throw new Error('Not authorized to modify this response')
 
-    // Check if submission is locked
+    // If locked, auto-unlock if deadline hasn't passed; otherwise block
     if (submission.lockedAt && submission.lockedAt > 0) {
-      throw new Error('Cannot modify locked submission')
+      const deadlineTs = computeDeadlineTimestamp(submission.cycleId)
+      if (Date.now() >= deadlineTs) {
+        throw new Error('Cannot modify submission after deadline')
+      }
+      await ctx.db.patch(response.submissionId, {
+        lockedAt: undefined,
+        updatedAt: Date.now(),
+      })
     }
 
     // Check media count (max 3)
@@ -403,9 +450,16 @@ export const removeMediaFromResponse = mutation({
     if (!submission) throw new Error('Submission not found')
     if (submission.userId !== user._id) throw new Error('Not authorized to remove this media')
 
-    // Check if submission is locked
+    // If locked, auto-unlock if deadline hasn't passed; otherwise block
     if (submission.lockedAt && submission.lockedAt > 0) {
-      throw new Error('Cannot modify locked submission')
+      const deadlineTs = computeDeadlineTimestamp(submission.cycleId)
+      if (Date.now() >= deadlineTs) {
+        throw new Error('Cannot modify submission after deadline')
+      }
+      await ctx.db.patch(response.submissionId, {
+        lockedAt: undefined,
+        updatedAt: Date.now(),
+      })
     }
 
     // Delete the storage blob if it exists
@@ -462,5 +516,71 @@ export const getDeadlineStatus = query({
       isLocked,
       secondsRemaining,
     }
+  },
+})
+
+/**
+ * Get review data for all user's circles in a cycle.
+ * Returns per-circle: circle info, prompt count, answered count, submission status.
+ */
+export const getReviewData = query({
+  args: {
+    cycleId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthUser(ctx)
+
+    // Get all user's active memberships
+    const memberships = await ctx.db
+      .query('memberships')
+      .withIndex('by_user', (q) => q.eq('userId', user._id))
+      .collect()
+
+    const activeMemberships = memberships.filter((m) => !m.leftAt)
+
+    const results = await Promise.all(
+      activeMemberships.map(async (m) => {
+        const circle = await ctx.db.get(m.circleId)
+        if (!circle || circle.archivedAt) return null
+
+        // Get active prompts
+        const prompts = await ctx.db
+          .query('prompts')
+          .withIndex('by_circle', (q) => q.eq('circleId', m.circleId))
+          .collect()
+        const activePrompts = prompts.filter((p) => p.active)
+
+        // Get submission for this cycle
+        const submission = await ctx.db
+          .query('submissions')
+          .withIndex('by_user_circle_cycle', (q) =>
+            q.eq('userId', user._id).eq('circleId', m.circleId).eq('cycleId', args.cycleId)
+          )
+          .first()
+
+        let answeredCount = 0
+        if (submission) {
+          const responses = await ctx.db
+            .query('responses')
+            .withIndex('by_submission', (q) => q.eq('submissionId', submission._id))
+            .collect()
+          answeredCount = responses.filter((r) => r.text.trim().length > 0).length
+        }
+
+        return {
+          circleId: circle._id,
+          circleName: circle.name,
+          circleIconUrl: circle.iconImageId ? await ctx.storage.getUrl(circle.iconImageId) : null,
+          totalPrompts: activePrompts.length,
+          answeredCount,
+          submissionId: submission?._id ?? null,
+          submittedAt: submission?.submittedAt ?? null,
+          lockedAt: submission?.lockedAt ?? null,
+          updatedAt: submission?.updatedAt ?? null,
+        }
+      })
+    )
+
+    return results.filter((r): r is NonNullable<typeof r> => r !== null)
   },
 })

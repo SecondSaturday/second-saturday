@@ -110,6 +110,20 @@ export const regenerateInviteCode = mutation({
   },
 })
 
+export const deleteCircle = mutation({
+  args: { circleId: v.id('circles') },
+  handler: async (ctx, args) => {
+    const user = await getOrCreateAuthUser(ctx)
+    await requireAdmin(ctx, user._id, args.circleId)
+
+    await ctx.db.patch(args.circleId, {
+      archivedAt: Date.now(),
+      updatedAt: Date.now(),
+    })
+    return args.circleId
+  },
+})
+
 export const getCirclesByUser = query({
   args: {},
   handler: async (ctx) => {
@@ -160,7 +174,7 @@ export const getCirclesByUser = query({
           .first()
 
         let hasUnread = false
-        if (latestNewsletter) {
+        if (latestNewsletter && (latestNewsletter.submissionCount ?? 0) > 0) {
           const read = await ctx.db
             .query('newsletterReads')
             .withIndex('by_user_newsletter', (q) =>
