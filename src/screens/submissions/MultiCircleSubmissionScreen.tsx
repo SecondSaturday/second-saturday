@@ -27,8 +27,6 @@ interface MultiCircleSubmissionScreenProps {
   variant?: 'legacy' | 'redesign'
   activeCircleId?: string
   onCircleChange?: (circleId: string) => void
-  /** Expose prompt progress per circle for sidebar display */
-  onProgressUpdate?: (circleId: string, answered: number, total: number) => void
 }
 
 function getDeadlineTimestamp(): number {
@@ -47,7 +45,6 @@ export function MultiCircleSubmissionScreen({
   variant = 'legacy',
   activeCircleId: controlledCircleId,
   onCircleChange: controlledOnChange,
-  onProgressUpdate,
 }: MultiCircleSubmissionScreenProps) {
   const router = useRouter()
   const [internalCircleId, setInternalCircleId] = useState<string>(circles[0]?.id ?? '')
@@ -409,15 +406,6 @@ export function MultiCircleSubmissionScreen({
     const answered = prompts.filter((p) => (draftMap.get(p._id) ?? '').trim().length > 0).length
     return answered / prompts.length
   }, [promptsData, draftTexts, activeCircleId])
-
-  // Report progress to parent (for sidebar)
-  useEffect(() => {
-    if (!onProgressUpdate || !promptsData) return
-    const prompts = promptsData
-    const draftMap = draftTexts.get(activeCircleId) ?? new Map<string, string>()
-    const answered = prompts.filter((p) => (draftMap.get(p._id) ?? '').trim().length > 0).length
-    onProgressUpdate(activeCircleId, answered, prompts.length)
-  }, [onProgressUpdate, promptsData, draftTexts, activeCircleId])
 
   // Build circles with computed progress
   const circlesWithProgress = useMemo(

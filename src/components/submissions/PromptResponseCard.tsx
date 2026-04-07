@@ -82,18 +82,6 @@ export function PromptResponseCard({
 
         {/* Input zone */}
         <div className="flex flex-1 flex-col justify-between bg-white px-5 py-4 md:px-7 md:py-5">
-          {/* Media above textarea */}
-          {existingMedia.length > 0 && (
-            <div className="mb-3">
-              <MediaGrid
-                media={existingMedia}
-                onRemove={disabled ? undefined : onMediaRemove}
-                onBrokenMedia={() => setMediaCount((prev) => Math.max(0, prev - 1))}
-                disabled={disabled}
-              />
-            </div>
-          )}
-
           {/* Textarea */}
           <textarea
             id={`prompt-${promptId}`}
@@ -109,8 +97,8 @@ export function PromptResponseCard({
             )}
           />
 
-          {/* Bottom bar: + button left, char counter right */}
-          <div className="flex items-end pt-2">
+          {/* Bottom bar: + button + thumbnails */}
+          <div className="flex items-end gap-2 pt-2">
             <MediaUploader
               responseId={responseId}
               onUploadComplete={handleMediaUploadComplete}
@@ -118,6 +106,8 @@ export function PromptResponseCard({
               onEnsureResponse={onEnsureResponse}
               maxMedia={maxMedia}
               currentMediaCount={mediaCount}
+              existingMedia={existingMedia}
+              onMediaRemove={disabled ? undefined : onMediaRemove}
             />
           </div>
         </div>

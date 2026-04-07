@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useCallback } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '../../../../convex/_generated/api'
 import { MultiCircleSubmissionScreen } from '@/screens/submissions/MultiCircleSubmissionScreen'
@@ -40,17 +40,6 @@ export default function SubmitPage() {
 
   // Lifted state — must be before any early returns
   const [desktopActiveCircle, setDesktopActiveCircle] = useState('')
-  const [circleProgress, setCircleProgress] = useState<
-    Record<string, { answered: number; total: number }>
-  >({})
-
-  const handleProgressUpdate = useCallback((circleId: string, answered: number, total: number) => {
-    setCircleProgress((prev) => {
-      const existing = prev[circleId]
-      if (existing && existing.answered === answered && existing.total === total) return prev
-      return { ...prev, [circleId]: { answered, total } }
-    })
-  }, [])
 
   if (userCircles === undefined) {
     return (
@@ -113,7 +102,7 @@ export default function SubmitPage() {
             circles={circles}
             activeCircleId={effectiveActiveCircle}
             onCircleChange={setDesktopActiveCircle}
-            progress={circleProgress}
+            cycleId={cycleId}
           />
         </div>
 
@@ -135,7 +124,6 @@ export default function SubmitPage() {
             variant="redesign"
             activeCircleId={effectiveActiveCircle}
             onCircleChange={setDesktopActiveCircle}
-            onProgressUpdate={handleProgressUpdate}
           />
         </div>
       </div>
