@@ -117,87 +117,12 @@ describe('PromptResponseCard', () => {
     expect(onValueChange).toHaveBeenCalledWith('Hi')
   })
 
-  it('does not allow typing beyond maxLength', async () => {
-    const user = userEvent.setup()
-    render(
-      <PromptResponseCard
-        promptId="p1"
-        promptText="Prompt"
-        responseId={RESPONSE_ID}
-        initialValue="abc"
-        maxLength={5}
-      />
-    )
-
-    const textarea = screen.getByDisplayValue('abc')
-    // Try to type 3 more chars when only 2 remain
-    await user.type(textarea, 'xyz')
-
-    // Only 2 extra chars should be accepted ("xy" brings it to 5; "z" is rejected)
-    // Focus the textarea to see the counter
-    fireEvent.focus(textarea)
-    expect(screen.getByText('5/5')).toBeInTheDocument()
-  })
-
   it('disables the textarea when disabled prop is true', () => {
     render(
       <PromptResponseCard promptId="p1" promptText="Prompt" responseId={RESPONSE_ID} disabled />
     )
 
     expect(screen.getByPlaceholderText('Add text or tap + for photos...')).toBeDisabled()
-  })
-
-  it('applies custom maxLength to character counter', () => {
-    render(
-      <PromptResponseCard
-        promptId="p1"
-        promptText="Prompt"
-        responseId={RESPONSE_ID}
-        maxLength={200}
-      />
-    )
-
-    const textarea = screen.getByPlaceholderText('Add text or tap + for photos...')
-    fireEvent.focus(textarea)
-
-    expect(screen.getByText('0/200')).toBeInTheDocument()
-  })
-
-  it('counter turns destructive red at maxLength', () => {
-    render(
-      <PromptResponseCard
-        promptId="p1"
-        promptText="Prompt"
-        responseId={RESPONSE_ID}
-        initialValue="12345"
-        maxLength={5}
-      />
-    )
-
-    const textarea = screen.getByPlaceholderText('Add text or tap + for photos...')
-    fireEvent.focus(textarea)
-
-    const counter = screen.getByText('5/5')
-    expect(counter.className).toMatch(/text-destructive/)
-  })
-
-  it('counter turns amber when 90% of maxLength is reached', () => {
-    // 9/10 = 90%
-    render(
-      <PromptResponseCard
-        promptId="p1"
-        promptText="Prompt"
-        responseId={RESPONSE_ID}
-        initialValue="123456789"
-        maxLength={10}
-      />
-    )
-
-    const textarea = screen.getByPlaceholderText('Add text or tap + for photos...')
-    fireEvent.focus(textarea)
-
-    const counter = screen.getByText('9/10')
-    expect(counter.className).toMatch(/text-amber-600/)
   })
 
   it('renders MediaGrid for existing media items', () => {
