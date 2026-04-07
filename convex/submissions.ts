@@ -409,6 +409,12 @@ export const addMediaToResponse = mutation({
       throw new Error('Response can have up to 3 media items')
     }
 
+    // Guard against duplicate media on retry
+    if (args.storageId) {
+      const existing = existingMedia.find((m) => m.storageId === args.storageId)
+      if (existing) return existing._id
+    }
+
     // Calculate next order
     const order = existingMedia.length
 

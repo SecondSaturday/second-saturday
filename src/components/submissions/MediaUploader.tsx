@@ -53,6 +53,9 @@ export function MediaUploader({
   const [mediaType, setMediaType] = useState<MediaType | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const videoIdRef = useRef<Id<'videos'> | null>(null)
+  const lastFailedFileRef = useRef<File | null>(null)
+  const lastFailedMediaTypeRef = useRef<MediaType | null>(null)
+  const lastStorageIdRef = useRef<Id<'_storage'> | null>(null)
 
   // Mutations and actions
   const generateUploadUrl = useMutation(api.files.generateUploadUrl)
@@ -83,6 +86,9 @@ export function MediaUploader({
     setPreview(null)
     setMediaType(null)
     videoIdRef.current = null
+    lastFailedFileRef.current = null
+    lastFailedMediaTypeRef.current = null
+    lastStorageIdRef.current = null
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
       abortControllerRef.current = null
@@ -158,7 +164,10 @@ export function MediaUploader({
     }
   }
 
-  const uploadPhoto = async (file: File) => {
+  const uploadPhoto = async (file: File, existingStorageId?: Id<'_storage'>): Promise<boolean> => {
+    lastFailedFileRef.current = file
+    lastFailedMediaTypeRef.current = 'photo'
+
     const controller = new AbortController()
     abortControllerRef.current = controller
 
@@ -173,52 +182,64 @@ export function MediaUploader({
         throw new Error('Only JPEG and PNG formats are supported')
       }
 
-      setStage('compressing')
-      setProgress(20)
+      let storageId: Id<'_storage'>
 
-      // Compress image to <200KB with max 1200px width
-      const compressed = await compressImage(file, {
-        maxSizeMB: 0.2,
-        maxWidthOrHeight: 1200,
-        useWebWorker: true,
-      })
+      if (existingStorageId) {
+        // Retry path: skip compress+upload, reuse existing storageId
+        storageId = existingStorageId
+        setStage('uploading')
+        setProgress(80)
+      } else {
+        setStage('compressing')
+        setProgress(20)
 
-      // Check if upload was cancelled
-      if (controller.signal.aborted) {
-        resetUpload()
-        return
+        // Compress image to <200KB with max 1200px width
+        const compressed = await compressImage(file, {
+          maxSizeMB: 0.2,
+          maxWidthOrHeight: 1200,
+          useWebWorker: true,
+        })
+
+        // Check if upload was cancelled
+        if (controller.signal.aborted) {
+          resetUpload()
+          return false
+        }
+
+        setProgress(50)
+        setStage('uploading')
+
+        // Get upload URL from Convex
+        const uploadUrl = await generateUploadUrl()
+
+        if (controller.signal.aborted) {
+          resetUpload()
+          return false
+        }
+
+        setProgress(60)
+
+        // Upload compressed image to Convex storage
+        const uploadResponse = await fetch(uploadUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': compressed.type },
+          body: compressed,
+          signal: controller.signal,
+        })
+
+        if (!uploadResponse.ok) {
+          throw new Error(`Upload failed: ${uploadResponse.statusText}`)
+        }
+
+        const result = await uploadResponse.json()
+        storageId = result.storageId
+
+        lastStorageIdRef.current = storageId
       }
 
-      setProgress(50)
-      setStage('uploading')
-
-      // Get upload URL from Convex
-      const uploadUrl = await generateUploadUrl()
-
       if (controller.signal.aborted) {
         resetUpload()
-        return
-      }
-
-      setProgress(60)
-
-      // Upload compressed image to Convex storage
-      const uploadResponse = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': compressed.type },
-        body: compressed,
-        signal: controller.signal,
-      })
-
-      if (!uploadResponse.ok) {
-        throw new Error(`Upload failed: ${uploadResponse.statusText}`)
-      }
-
-      const { storageId } = await uploadResponse.json()
-
-      if (controller.signal.aborted) {
-        resetUpload()
-        return
+        return false
       }
 
       setProgress(80)
@@ -234,32 +255,37 @@ export function MediaUploader({
       setStage('idle')
       setPreview(null)
       onUploadComplete?.(mediaId, 'image')
+      lastFailedFileRef.current = null
+      lastFailedMediaTypeRef.current = null
+      lastStorageIdRef.current = null
+      return true
     } catch (err: unknown) {
       if (err instanceof Error && err.name === 'AbortError') {
         // Upload was cancelled
         resetUpload()
-        return
+        return false
       }
 
       // Handle network errors
       if (err instanceof TypeError && err.message.includes('fetch')) {
         handleError('Network error. Please check your connection and try again.')
-        return
+        return false
       }
 
       // Handle Convex mutation errors
       const errorMessage = err instanceof Error ? err.message : String(err)
       if (errorMessage?.includes('Response can have up to 3 media items')) {
         handleError('Maximum 3 media items reached')
-        return
+        return false
       }
 
       if (errorMessage?.includes('locked submission')) {
         handleError('Cannot add media to locked submission')
-        return
+        return false
       }
 
       handleError(errorMessage || 'Upload failed', err)
+      return false
     }
   }
 
@@ -304,7 +330,10 @@ export function MediaUploader({
     }
   }
 
-  const uploadVideo = async (file: File) => {
+  const uploadVideo = async (file: File): Promise<boolean> => {
+    lastFailedFileRef.current = file
+    lastFailedMediaTypeRef.current = 'video'
+
     const controller = videoUpload.createAbortController()
 
     try {
@@ -352,7 +381,7 @@ export function MediaUploader({
       if (controller?.signal.aborted) {
         videoUpload.reset()
         resetUpload()
-        return
+        return false
       }
 
       videoUpload.setProgress(40)
@@ -372,7 +401,7 @@ export function MediaUploader({
       if (controller?.signal.aborted) {
         videoUpload.reset()
         resetUpload()
-        return
+        return false
       }
 
       videoUpload.setProgress(80)
@@ -392,36 +421,41 @@ export function MediaUploader({
       setProgress(100)
       setStage('idle')
       onUploadComplete?.(mediaId, 'video')
+      lastFailedFileRef.current = null
+      lastFailedMediaTypeRef.current = null
+      lastStorageIdRef.current = null
 
       // Note: Video processing continues on Mux servers
       // Thumbnail and playback will be available after processing completes
+      return true
     } catch (err: unknown) {
       if (err instanceof Error && err.name === 'AbortError') {
         // Upload was cancelled
         videoUpload.reset()
         resetUpload()
-        return
+        return false
       }
 
       // Handle network errors
       if (err instanceof TypeError && err.message.includes('fetch')) {
         handleError('Network error. Please check your connection and try again.')
-        return
+        return false
       }
 
       // Handle Convex mutation errors
       const errorMessage = err instanceof Error ? err.message : String(err)
       if (errorMessage?.includes('Response can have up to 3 media items')) {
         handleError('Maximum 3 media items reached')
-        return
+        return false
       }
 
       if (errorMessage?.includes('locked submission')) {
         handleError('Cannot add media to locked submission')
-        return
+        return false
       }
 
       handleError(errorMessage || 'Video upload failed', err)
+      return false
     }
   }
 
@@ -582,7 +616,23 @@ export function MediaUploader({
           <span className="text-xs text-destructive">{error}</span>
           <button
             type="button"
-            onClick={resetUpload}
+            onClick={() => {
+              const file = lastFailedFileRef.current
+              const type = lastFailedMediaTypeRef.current
+              setError(null)
+              setStage('idle')
+
+              if (!file || !type) {
+                resetUpload()
+                return
+              }
+
+              if (type === 'photo') {
+                uploadPhoto(file, lastStorageIdRef.current ?? undefined)
+              } else {
+                uploadVideo(file)
+              }
+            }}
             className="text-xs font-medium text-foreground underline"
           >
             Retry
