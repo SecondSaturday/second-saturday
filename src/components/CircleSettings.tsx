@@ -60,6 +60,9 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
   const [regenerating, setRegenerating] = useState(false)
   const [showRegenDialog, setShowRegenDialog] = useState(false)
   const [showLeaveDialog, setShowLeaveDialog] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const deleteCircle = useMutation(api.circles.deleteCircle)
   const [removeTarget, setRemoveTarget] = useState<{ userId: Id<'users'>; name: string } | null>(
     null
   )
@@ -312,8 +315,8 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
             )}
           </div>
 
-          {/* Leave Circle section */}
-          <div className="border-t border-border pt-4">
+          {/* Leave / Delete Circle section */}
+          <div className="flex flex-col gap-3 border-t border-border pt-4">
             <Button
               variant="destructive"
               className="w-full"
@@ -321,6 +324,53 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
             >
               Leave this circle
             </Button>
+
+            {isAdmin && (
+              <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full border-destructive text-destructive hover:bg-destructive/10"
+                  >
+                    Delete this circle
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Delete Circle?</DialogTitle>
+                    <DialogDescription>
+                      This will permanently remove <strong>{circle.name}</strong> and all its data
+                      including newsletters, submissions, and media. This action cannot be undone.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      disabled={deleting}
+                      onClick={async () => {
+                        setDeleting(true)
+                        try {
+                          await deleteCircle({ circleId })
+                          toast.success('Circle deleted')
+                          router.push('/dashboard')
+                        } catch (err) {
+                          toast.error(
+                            err instanceof Error ? err.message : 'Failed to delete circle'
+                          )
+                        } finally {
+                          setDeleting(false)
+                        }
+                      }}
+                    >
+                      {deleting ? 'Deleting...' : 'Delete'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}

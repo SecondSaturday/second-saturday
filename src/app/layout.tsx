@@ -43,7 +43,7 @@ export default function RootLayout({
         className={`${instrumentSans.variable} ${instrumentSerif.variable} ${courierPrime.variable} antialiased`}
       >
         <Providers>{children}</Providers>
-        <Toaster position="bottom-center" />
+        <Toaster position="top-center" duration={2000} />
       </body>
     </html>
   )

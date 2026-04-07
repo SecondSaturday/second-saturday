@@ -1,12 +1,16 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '../../../../convex/_generated/api'
-import { MultiCircleSubmissionScreen } from '@/screens/submissions/MultiCircleSubmissionScreen'
+import {
+  MultiCircleSubmissionScreen,
+  type MultiCircleSubmissionScreenHandle,
+} from '@/screens/submissions/MultiCircleSubmissionScreen'
 import type { Circle } from '@/components/submissions'
 import { ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { getSecondSaturdayDeadline } from '@/lib/dates'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { cn } from '@/lib/utils'
@@ -42,8 +46,17 @@ export default function SubmitPage() {
   // Lifted state — must be before any early returns
   const [desktopActiveCircle, setDesktopActiveCircle] = useState('')
 
+  const router = useRouter()
+  const screenRef = useRef<MultiCircleSubmissionScreenHandle>(null)
+
   // Global check: does ANY circle have ≥1 response?
   const hasAnyAnswers = useQuery(api.submissions.hasAnyResponses, { cycleId }) ?? false
+
+  const handleGoToReview = async () => {
+    if (!hasAnyAnswers) return
+    await screenRef.current?.flushPendingChanges()
+    router.push('/dashboard/submit/review')
+  }
 
   if (userCircles === undefined) {
     return (
@@ -117,24 +130,23 @@ export default function SubmitPage() {
             {dueLabel === 'Submissions locked' ? (
               <span className="text-sm font-medium text-muted-foreground">Submissions locked</span>
             ) : (
-              <Link
-                href={hasAnyAnswers ? '/dashboard/submit/review' : '#'}
-                onClick={(e) => {
-                  if (!hasAnyAnswers) e.preventDefault()
-                }}
+              <button
+                onClick={handleGoToReview}
+                disabled={!hasAnyAnswers}
                 className={cn(
                   'rounded-lg px-4 py-2 text-[15px] font-semibold transition-opacity',
                   hasAnyAnswers
                     ? 'bg-primary text-primary-foreground'
-                    : 'pointer-events-none bg-primary/50 text-primary-foreground/70'
+                    : 'bg-primary/50 text-primary-foreground/70'
                 )}
               >
                 Submit
-              </Link>
+              </button>
             )}
           </div>
 
           <MultiCircleSubmissionScreen
+            ref={screenRef}
             circles={circles}
             cycleId={cycleId}
             variant="redesign"
@@ -160,20 +172,18 @@ export default function SubmitPage() {
           {dueLabel === 'Submissions locked' ? (
             <span className="text-sm font-medium text-muted-foreground">Locked</span>
           ) : (
-            <Link
-              href={hasAnyAnswers ? '/dashboard/submit/review' : '#'}
-              onClick={(e) => {
-                if (!hasAnyAnswers) e.preventDefault()
-              }}
+            <button
+              onClick={handleGoToReview}
+              disabled={!hasAnyAnswers}
               className={cn(
                 'rounded-lg px-4 py-2 text-[15px] font-semibold transition-opacity',
                 hasAnyAnswers
                   ? 'bg-primary text-primary-foreground'
-                  : 'pointer-events-none bg-primary/50 text-primary-foreground/70'
+                  : 'bg-primary/50 text-primary-foreground/70'
               )}
             >
               Submit
-            </Link>
+            </button>
           )}
         </div>
         {/* Title area */}
@@ -184,7 +194,12 @@ export default function SubmitPage() {
       </div>
 
       {/* Content — will be rebuilt in later stories */}
-      <MultiCircleSubmissionScreen circles={circles} cycleId={cycleId} variant="redesign" />
+      <MultiCircleSubmissionScreen
+        ref={screenRef}
+        circles={circles}
+        cycleId={cycleId}
+        variant="redesign"
+      />
     </div>
   )
 }

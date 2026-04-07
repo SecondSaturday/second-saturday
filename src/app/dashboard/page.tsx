@@ -178,9 +178,32 @@ function DesktopCircleNewsletter({ circleId }: { circleId: Id<'circles'> }) {
 
   if (newsletters.length === 0) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 text-center">
-        <p className="text-lg font-medium text-foreground">No newsletters yet</p>
-        <p className="text-sm text-muted-foreground">Editions will appear here once published.</p>
+      <div className="flex min-h-0 flex-1 flex-col">
+        <main className="flex-1 overflow-y-auto">
+          <NewsletterView
+            circle={{
+              name: circle.name,
+              iconUrl: circle.iconUrl ?? null,
+              coverUrl: circle.coverUrl ?? null,
+              timezone: 'UTC',
+            }}
+            circleId={circleId}
+            issueNumber={0}
+            sections={[]}
+            onSettingsOpen={() => setSettingsOpen(true)}
+          />
+        </main>
+
+        <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+          <DialogContent className="flex h-[85vh] w-[90vw] max-w-3xl flex-col overflow-hidden p-0">
+            <DialogHeader className="sticky top-0 z-10 border-b border-border bg-background px-6 py-4">
+              <DialogTitle className="font-sans text-2xl">Settings</DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 overflow-y-auto px-6 pb-6">
+              <CircleSettings circleId={circleId} />
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     )
   }

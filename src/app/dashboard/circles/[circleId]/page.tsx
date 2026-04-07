@@ -98,22 +98,33 @@ export default function CircleLandingPage() {
     )
   }
 
-  // No newsletters
+  // No newsletters — still show full circle page with cover/avatar/settings
   if (newsletters.length === 0 || !newsletter) {
+    const emptyCircleInfo = {
+      name: circle.name,
+      iconUrl: circle.iconUrl ?? null,
+      coverUrl: circle.coverUrl ?? null,
+      timezone: 'UTC',
+    }
+
     return (
       <div className="safe-area-top flex h-dvh flex-col bg-background">
-        <header className="absolute left-0 top-0 z-10 p-4">
-          <Link
-            href="/dashboard"
-            className="flex size-9 items-center justify-center rounded-full bg-background/80 shadow-sm backdrop-blur-sm"
-          >
-            <ArrowLeft className="size-5 text-foreground" />
-          </Link>
-        </header>
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 text-center">
-          <p className="text-lg font-medium text-foreground">No newsletters yet</p>
-          <p className="text-sm text-muted-foreground">Editions will appear here once published.</p>
-        </div>
+        <main className="safe-area-bottom relative flex-1 overflow-y-auto">
+          <header className="sticky top-0 z-10 bg-background px-4 py-3">
+            <Link
+              href="/dashboard"
+              className="flex size-9 items-center justify-center rounded-full"
+            >
+              <ArrowLeft className="size-5 text-foreground" />
+            </Link>
+          </header>
+          <NewsletterView
+            circle={emptyCircleInfo}
+            circleId={circleId}
+            issueNumber={0}
+            sections={[]}
+          />
+        </main>
       </div>
     )
   }

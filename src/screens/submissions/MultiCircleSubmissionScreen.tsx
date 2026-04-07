@@ -1,6 +1,14 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+  useImperativeHandle,
+  forwardRef,
+} from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
@@ -21,6 +29,10 @@ import { trackEvent } from '@/lib/analytics'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
+export interface MultiCircleSubmissionScreenHandle {
+  flushPendingChanges: () => Promise<void>
+}
+
 interface MultiCircleSubmissionScreenProps {
   circles: Circle[]
   cycleId: string
@@ -39,13 +51,19 @@ function getDeadlineTimestamp(): number {
   return deadline.getTime()
 }
 
-export function MultiCircleSubmissionScreen({
-  circles,
-  cycleId,
-  variant = 'legacy',
-  activeCircleId: controlledCircleId,
-  onCircleChange: controlledOnChange,
-}: MultiCircleSubmissionScreenProps) {
+export const MultiCircleSubmissionScreen = forwardRef<
+  MultiCircleSubmissionScreenHandle,
+  MultiCircleSubmissionScreenProps
+>(function MultiCircleSubmissionScreen(
+  {
+    circles,
+    cycleId,
+    variant = 'legacy',
+    activeCircleId: controlledCircleId,
+    onCircleChange: controlledOnChange,
+  },
+  ref
+) {
   const router = useRouter()
   const [internalCircleId, setInternalCircleId] = useState<string>(circles[0]?.id ?? '')
   const activeCircleId = controlledCircleId ?? internalCircleId
@@ -86,6 +104,51 @@ export function MultiCircleSubmissionScreen({
   const lockSubmission = useMutation(api.submissions.lockSubmission)
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Flush all pending draft changes for all circles
+  const flushAllPendingChanges = useCallback(async () => {
+    for (const [circleId, circleMap] of draftTexts.entries()) {
+      // We only have server data for the active circle, so only flush that
+      if (circleId !== activeCircleId) continue
+      if (!submissionData) continue
+
+      const serverResponses = submissionData.responses ?? []
+      const pendingChanges: Array<{ promptId: string; text: string }> = []
+      circleMap.forEach((text, promptId) => {
+        const serverText = serverResponses.find((r) => r.promptId === promptId)?.text ?? ''
+        if (text !== serverText) {
+          pendingChanges.push({ promptId, text })
+        }
+      })
+
+      if (pendingChanges.length > 0) {
+        let submissionId = submissionData._id
+        if (!submissionId) {
+          submissionId = await createSubmission({
+            circleId: circleId as Id<'circles'>,
+            cycleId,
+          })
+        }
+        await Promise.all(
+          pendingChanges.map(({ promptId, text }) =>
+            updateResponse({
+              submissionId: submissionId as Id<'submissions'>,
+              promptId: promptId as Id<'prompts'>,
+              text,
+            })
+          )
+        )
+      }
+    }
+  }, [draftTexts, activeCircleId, submissionData, createSubmission, updateResponse, cycleId])
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      flushPendingChanges: flushAllPendingChanges,
+    }),
+    [flushAllPendingChanges]
+  )
 
   const handleSubmit = useCallback(async () => {
     if (!submissionData?._id || isSubmitting) return
@@ -563,4 +626,4 @@ export function MultiCircleSubmissionScreen({
       )}
     </div>
   )
-}
+})

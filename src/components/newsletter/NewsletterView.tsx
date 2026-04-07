@@ -111,15 +111,17 @@ export function NewsletterView({
 
       <div className="mt-4 text-center">
         <h2 className="font-serif text-5xl font-normal text-foreground">{circle.name}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Issue #{issueNumber}
-          {formattedDate && <span> &middot; {formattedDate}</span>}
-        </p>
+        {issueNumber > 0 && (
+          <p className="mt-1 text-sm text-muted-foreground">
+            Issue #{issueNumber}
+            {formattedDate && <span> &middot; {formattedDate}</span>}
+          </p>
+        )}
       </div>
 
       {/* Month picker and settings */}
       <div className="mt-4 flex items-center justify-center gap-3">
-        {availableNewsletters && availableNewsletters.length > 1 ? (
+        {issueNumber === 0 ? null : availableNewsletters && availableNewsletters.length > 1 ? (
           <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center gap-1 rounded-lg border border-border px-3.5 py-1.5 text-sm font-medium text-foreground">
               {currentMonthLabel}
@@ -177,9 +179,12 @@ export function NewsletterView({
         ))}
 
         {sections.length === 0 && (
-          <p className="py-8 text-center text-muted-foreground">
-            This newsletter has no content yet.
-          </p>
+          <div className="flex flex-col items-center gap-2 py-12 text-center">
+            <p className="text-lg font-medium text-foreground">No newsletters yet</p>
+            <p className="text-sm text-muted-foreground">
+              Editions will appear here once published.
+            </p>
+          </div>
         )}
       </div>
     </div>
