@@ -8,11 +8,12 @@ import { SubmitFAB } from '@/components/dashboard/SubmitFAB'
 import { trackEvent } from '@/lib/analytics'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import type { Id } from '../../../convex/_generated/dataModel'
-import { useQuery } from 'convex/react'
-import { useConvexAuth } from 'convex/react'
+import { useQuery, useConvexAuth } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
 import { NewsletterView } from '@/components/newsletter/NewsletterView'
 import { parseNewsletterContent } from '@/lib/newsletter'
+import { CircleSettings } from '@/components/CircleSettings'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 const SIDEBAR_MIN = 16
 const SIDEBAR_MAX = 50
@@ -137,9 +138,14 @@ export default function DashboardPage() {
 }
 
 function DesktopCircleNewsletter({ circleId }: { circleId: Id<'circles'> }) {
-  const circle = useQuery(api.circles.getCircle, { circleId })
-  const newsletters = useQuery(api.newsletters.getNewslettersByCircle, { circleId })
+  const { isAuthenticated } = useConvexAuth()
+  const circle = useQuery(api.circles.getCircle, isAuthenticated ? { circleId } : 'skip')
+  const newsletters = useQuery(
+    api.newsletters.getNewslettersByCircle,
+    isAuthenticated ? { circleId } : 'skip'
+  )
   const [selectedNewsletterId, setSelectedNewsletterId] = useState<string | null>(null)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   // Derive the active newsletter: use explicit selection if valid, otherwise latest
   const defaultId = newsletters && newsletters.length > 0 ? newsletters[0]!._id : null
@@ -212,6 +218,7 @@ function DesktopCircleNewsletter({ circleId }: { circleId: Id<'circles'> }) {
             sections={parseNewsletterContent(fullNewsletter.htmlContent)}
             availableNewsletters={availableNewsletters}
             onNewsletterSelect={setSelectedNewsletterId}
+            onSettingsOpen={() => setSettingsOpen(true)}
           />
         </main>
       ) : (
@@ -219,6 +226,17 @@ function DesktopCircleNewsletter({ circleId }: { circleId: Id<'circles'> }) {
           <p className="text-lg font-medium text-foreground">No newsletter selected</p>
         </div>
       )}
+
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent className="flex h-[85vh] w-[90vw] max-w-3xl flex-col overflow-hidden p-0">
+          <DialogHeader className="sticky top-0 z-10 border-b border-border bg-background px-6 py-4">
+            <DialogTitle className="font-sans text-2xl">Settings</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto px-6 pb-6">
+            <CircleSettings circleId={circleId} />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

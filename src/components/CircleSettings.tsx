@@ -27,6 +27,7 @@ import { trackEvent } from '@/lib/analytics'
 import { LeaveCircleModal } from '@/components/LeaveCircleModal'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { PromptsEditor } from '@/components/PromptsEditor'
+import { PromptLibrary } from '@/components/PromptLibrary'
 import { AdminSubmissionDashboard } from '@/components/AdminSubmissionDashboard'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import {
@@ -63,6 +64,7 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
   const [removeTarget, setRemoveTarget] = useState<{ userId: Id<'users'>; name: string } | null>(
     null
   )
+  const [showLibrary, setShowLibrary] = useState(false)
 
   if (circle === undefined || members === undefined || currentUser === undefined) {
     return (
@@ -203,27 +205,6 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Stats tiles (ABOVE tabs — always visible) */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-lg bg-card p-4 text-center">
-          <p className="text-2xl font-bold text-foreground">{circle.memberCount}</p>
-          <p className="text-sm text-muted-foreground">Members</p>
-        </div>
-        <div className="rounded-lg bg-card p-4 text-center">
-          <p className="text-2xl font-bold text-foreground">{circle.newsletterCount}</p>
-          <p className="text-sm text-muted-foreground">Issues Sent</p>
-        </div>
-        <div className="rounded-lg bg-card p-4 text-center">
-          <p className="text-2xl font-bold text-foreground">
-            {new Date(circle.createdAt).toLocaleDateString('en-US', {
-              month: 'short',
-              year: 'numeric',
-            })}
-          </p>
-          <p className="text-sm text-muted-foreground">Created</p>
-        </div>
-      </div>
-
       {/* 3-member warning (admin only, above tabs) */}
       {isAdmin && circle.memberCount < 3 && (
         <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/30">
@@ -236,12 +217,12 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
       )}
 
       {/* Tab layout */}
-      <Tabs defaultValue="details">
+      <Tabs defaultValue="details" onValueChange={() => setShowLibrary(false)}>
         <TabsList variant="line">
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="prompts">Prompts</TabsTrigger>
           <TabsTrigger value="members">Members ({members?.length ?? 0})</TabsTrigger>
-          {isAdmin && <TabsTrigger value="status">Status</TabsTrigger>}
+          {/* Status tab hidden until redesigned */}
         </TabsList>
 
         <TabsContent value="details" className="flex flex-col gap-6">
@@ -287,7 +268,12 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
             <Label>Invite Link</Label>
             <div className="flex items-center gap-2 rounded-lg border border-border bg-card p-3">
               <p className="flex-1 truncate text-sm text-muted-foreground">{inviteLink}</p>
-              <Button variant="ghost" size="icon" onClick={handleCopyLink} aria-label="Copy invite link">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleCopyLink}
+                aria-label="Copy invite link"
+              >
                 {copied ? <Check className="size-4 text-green-600" /> : <Copy className="size-4" />}
               </Button>
             </div>
@@ -401,7 +387,12 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
                     {canRemove && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="size-8" aria-label="Member actions">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8"
+                            aria-label="Member actions"
+                          >
                             <MoreVertical className="size-4" />
                           </Button>
                         </DropdownMenuTrigger>

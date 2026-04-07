@@ -48,6 +48,7 @@ interface NewsletterViewProps {
   sections: Section[]
   availableNewsletters?: NewsletterOption[]
   onNewsletterSelect?: (newsletterId: string) => void
+  onSettingsOpen?: () => void
   isLoading?: boolean
 }
 
@@ -59,6 +60,7 @@ export function NewsletterView({
   sections,
   availableNewsletters,
   onNewsletterSelect,
+  onSettingsOpen,
   isLoading = false,
 }: NewsletterViewProps) {
   const formattedDate = publishedAt
@@ -147,12 +149,21 @@ export function NewsletterView({
           </span>
         )}
 
-        <Link
-          href={`/dashboard/circles/${circleId}/settings`}
-          className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        >
-          <Settings className="size-5" />
-        </Link>
+        {onSettingsOpen ? (
+          <button
+            onClick={onSettingsOpen}
+            className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <Settings className="size-5" />
+          </button>
+        ) : (
+          <Link
+            href={`/dashboard/circles/${circleId}/settings`}
+            className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <Settings className="size-5" />
+          </Link>
+        )}
       </div>
 
       {/* Sections — same horizontal margin as cover */}

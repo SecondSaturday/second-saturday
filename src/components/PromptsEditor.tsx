@@ -37,6 +37,7 @@ interface PromptsEditorProps {
   circleId: Id<'circles'>
   mode: 'setup' | 'settings'
   onComplete?: () => void
+  onBrowseLibrary?: () => void
   stepIndicator?: React.ReactNode
 }
 
@@ -92,7 +93,13 @@ function SortablePrompt({
   )
 }
 
-export function PromptsEditor({ circleId, mode, onComplete, stepIndicator }: PromptsEditorProps) {
+export function PromptsEditor({
+  circleId,
+  mode,
+  onComplete,
+  onBrowseLibrary,
+  stepIndicator,
+}: PromptsEditorProps) {
   const existingPrompts = useQuery(api.prompts.getCirclePrompts, { circleId })
   const updatePrompts = useMutation(api.prompts.updatePrompts)
 
@@ -233,16 +240,7 @@ export function PromptsEditor({ circleId, mode, onComplete, stepIndicator }: Pro
           </button>
         )}
 
-        {/* Browse prompt library */}
-        {prompts.length < 8 && (
-          <Link
-            href={`/dashboard/circles/${circleId}/prompts/library`}
-            className="flex items-center justify-between rounded-lg border border-border bg-card p-3 text-sm text-foreground hover:bg-muted/30"
-          >
-            <span>Browse Prompt Library</span>
-            <ChevronRight className="size-4 text-muted-foreground" />
-          </Link>
-        )}
+        {/* Browse prompt library — hidden until inline swap is implemented */}
 
         {error && <p className="text-sm text-destructive">{error}</p>}
       </div>

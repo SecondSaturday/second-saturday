@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import type { Id } from '../../../../../convex/_generated/dataModel'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import { useQuery, useMutation } from 'convex/react'
+import { useQuery, useMutation, useConvexAuth } from 'convex/react'
 import { api } from '../../../../../convex/_generated/api'
 import { NewsletterView } from '@/components/newsletter/NewsletterView'
 import { parseNewsletterContent } from '@/lib/newsletter'
@@ -15,8 +15,12 @@ export default function CircleLandingPage() {
   const params = useParams()
   const circleId = params.circleId as Id<'circles'>
 
-  const circle = useQuery(api.circles.getCircle, { circleId })
-  const newsletters = useQuery(api.newsletters.getNewslettersByCircle, { circleId })
+  const { isAuthenticated } = useConvexAuth()
+  const circle = useQuery(api.circles.getCircle, isAuthenticated ? { circleId } : 'skip')
+  const newsletters = useQuery(
+    api.newsletters.getNewslettersByCircle,
+    isAuthenticated ? { circleId } : 'skip'
+  )
   const [selectedNewsletterId, setSelectedNewsletterId] = useState<string | null>(null)
 
   // Auto-select latest newsletter
