@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useCallback } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '../../../../convex/_generated/api'
 import { MultiCircleSubmissionScreen } from '@/screens/submissions/MultiCircleSubmissionScreen'
@@ -41,8 +41,9 @@ export default function SubmitPage() {
 
   // Lifted state — must be before any early returns
   const [desktopActiveCircle, setDesktopActiveCircle] = useState('')
-  const [hasAnswers, setHasAnswers] = useState(false)
-  const handleAnswerStateChange = useCallback((has: boolean) => setHasAnswers(has), [])
+
+  // Global check: does ANY circle have ≥1 response?
+  const hasAnyAnswers = useQuery(api.submissions.hasAnyResponses, { cycleId }) ?? false
 
   if (userCircles === undefined) {
     return (
@@ -117,13 +118,13 @@ export default function SubmitPage() {
               <span className="text-sm font-medium text-muted-foreground">Submissions locked</span>
             ) : (
               <Link
-                href={hasAnswers ? '/dashboard/submit/review' : '#'}
+                href={hasAnyAnswers ? '/dashboard/submit/review' : '#'}
                 onClick={(e) => {
-                  if (!hasAnswers) e.preventDefault()
+                  if (!hasAnyAnswers) e.preventDefault()
                 }}
                 className={cn(
                   'rounded-lg px-4 py-2 text-[15px] font-semibold transition-opacity',
-                  hasAnswers
+                  hasAnyAnswers
                     ? 'bg-primary text-primary-foreground'
                     : 'pointer-events-none bg-primary/50 text-primary-foreground/70'
                 )}
@@ -139,7 +140,6 @@ export default function SubmitPage() {
             variant="redesign"
             activeCircleId={effectiveActiveCircle}
             onCircleChange={setDesktopActiveCircle}
-            onAnswerStateChange={handleAnswerStateChange}
           />
         </div>
       </div>
@@ -161,13 +161,13 @@ export default function SubmitPage() {
             <span className="text-sm font-medium text-muted-foreground">Locked</span>
           ) : (
             <Link
-              href={hasAnswers ? '/dashboard/submit/review' : '#'}
+              href={hasAnyAnswers ? '/dashboard/submit/review' : '#'}
               onClick={(e) => {
-                if (!hasAnswers) e.preventDefault()
+                if (!hasAnyAnswers) e.preventDefault()
               }}
               className={cn(
                 'rounded-lg px-4 py-2 text-[15px] font-semibold transition-opacity',
-                hasAnswers
+                hasAnyAnswers
                   ? 'bg-primary text-primary-foreground'
                   : 'pointer-events-none bg-primary/50 text-primary-foreground/70'
               )}
@@ -184,12 +184,7 @@ export default function SubmitPage() {
       </div>
 
       {/* Content — will be rebuilt in later stories */}
-      <MultiCircleSubmissionScreen
-        circles={circles}
-        cycleId={cycleId}
-        variant="redesign"
-        onAnswerStateChange={handleAnswerStateChange}
-      />
+      <MultiCircleSubmissionScreen circles={circles} cycleId={cycleId} variant="redesign" />
     </div>
   )
 }

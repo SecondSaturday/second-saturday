@@ -235,6 +235,38 @@ export const lockSubmission = mutation({
 })
 
 /**
+ * Check if the current user has any non-empty responses across all their circles for a cycle.
+ */
+export const hasAnyResponses = query({
+  args: {
+    cycleId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthUser(ctx)
+
+    // Get all user's submissions for this cycle
+    const submissions = await ctx.db
+      .query('submissions')
+      .withIndex('by_user', (q) => q.eq('userId', user._id))
+      .filter((q) => q.eq(q.field('cycleId'), args.cycleId))
+      .collect()
+
+    for (const submission of submissions) {
+      const responses = await ctx.db
+        .query('responses')
+        .withIndex('by_submission', (q) => q.eq('submissionId', submission._id))
+        .collect()
+
+      if (responses.some((r) => r.text.trim().length > 0)) {
+        return true
+      }
+    }
+
+    return false
+  },
+})
+
+/**
  * Get submission for the current user in a specific circle and cycle
  * Includes all responses and their associated prompts
  */
