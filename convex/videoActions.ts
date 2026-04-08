@@ -41,7 +41,7 @@ export const uploadVideoToMux = action({
 
       // Create a direct upload
       const upload = await mux.video.uploads.create({
-        cors_origin: process.env.SITE_URL || '*',
+        cors_origin: process.env.MUX_CORS_ORIGIN || 'capacitor://localhost',
         new_asset_settings: {
           playback_policy: ['public'],
           max_resolution_tier: '1080p',

@@ -82,4 +82,16 @@ crons.weekly(
   internal.notifications.sendSubmissionReminder
 )
 
+crons.daily(
+  'cleanup orphaned storage',
+  { hourUTC: 3, minuteUTC: 0 },
+  internal.cleanup.cleanupOrphanedStorage
+)
+
+crons.daily(
+  'cleanup orphaned videos',
+  { hourUTC: 3, minuteUTC: 30 },
+  internal.cleanup.cleanupOrphanedVideos
+)
+
 export default crons
