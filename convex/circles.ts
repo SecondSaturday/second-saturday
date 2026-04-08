@@ -1,7 +1,7 @@
 import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
 import type { Id } from './_generated/dataModel'
-import { getAuthUser, getOrCreateAuthUser, requireAdmin } from './authHelpers'
+import { getAuthUser, getOrCreateAuthUser, requireAdmin, requireMembership } from './authHelpers'
 
 const DEFAULT_PROMPTS = [
   'What did you do this month?',
@@ -77,6 +77,25 @@ export const updateCircle = mutation({
     await requireAdmin(ctx, user._id, args.circleId)
 
     const { circleId, ...updates } = args
+    const existing = await ctx.db.get(circleId)
+    if (!existing) throw new Error('Circle not found')
+
+    // Clean up old storage blobs when replacing images
+    if (
+      updates.iconImageId !== undefined &&
+      existing.iconImageId &&
+      existing.iconImageId !== updates.iconImageId
+    ) {
+      await ctx.storage.delete(existing.iconImageId)
+    }
+    if (
+      updates.coverImageId !== undefined &&
+      existing.coverImageId &&
+      existing.coverImageId !== updates.coverImageId
+    ) {
+      await ctx.storage.delete(existing.coverImageId)
+    }
+
     const patch: Record<string, string | number | Id<'_storage'> | undefined> = {
       updatedAt: Date.now(),
     }
@@ -264,9 +283,6 @@ export const getCircleByInviteCode = query({
     if (!circle || circle.archivedAt) return null
 
     const iconUrl = circle.iconImageId ? await ctx.storage.getUrl(circle.iconImageId) : null
-    const coverUrl = circle.coverImageId ? await ctx.storage.getUrl(circle.coverImageId) : null
-
-    const admin = await ctx.db.get(circle.adminId)
 
     const members = (
       await ctx.db
@@ -278,11 +294,8 @@ export const getCircleByInviteCode = query({
     return {
       _id: circle._id,
       name: circle.name,
-      description: circle.description,
       iconUrl,
-      coverUrl,
       memberCount: members.length,
-      adminName: admin?.name ?? admin?.email ?? 'Unknown',
     }
   },
 })
@@ -292,7 +305,8 @@ const MINIMUM_MEMBERS = 3
 export const hasMinimumMembers = query({
   args: { circleId: v.id('circles') },
   handler: async (ctx, args) => {
-    await getAuthUser(ctx)
+    const user = await getAuthUser(ctx)
+    await requireMembership(ctx, user._id, args.circleId)
 
     const members = await ctx.db
       .query('memberships')

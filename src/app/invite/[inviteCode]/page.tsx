@@ -106,9 +106,6 @@ export default function InvitePreviewPage() {
 
           <div className="space-y-2">
             <h1 className="text-2xl font-semibold text-foreground">{circle?.name || 'Circle'}</h1>
-            {circle?.description && (
-              <p className="text-sm text-muted-foreground">{circle.description}</p>
-            )}
           </div>
 
           <div className="rounded-lg bg-destructive/10 p-4">
@@ -146,7 +143,7 @@ export default function InvitePreviewPage() {
       <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-background px-6">
         <div className="flex w-full max-w-md flex-col items-center rounded-lg border border-border bg-card text-center">
           <ProfileHeaderImageLayout
-            coverImageUrl={circle.coverUrl ?? null}
+            coverImageUrl={null}
             iconUrl={circle.iconUrl ?? null}
             centered
             fallbackInitial={circle.name[0]}
@@ -163,7 +160,6 @@ export default function InvitePreviewPage() {
                   {circle.memberCount === 1 ? '1 member' : `${circle.memberCount} members`} sharing
                   monthly updates
                 </span>
-                <span>{circle.adminName} started this circle</span>
               </div>
             </div>
 
@@ -192,7 +188,7 @@ export default function InvitePreviewPage() {
       <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-background px-6">
         <div className="flex w-full max-w-md flex-col items-center rounded-lg border border-border bg-card text-center">
           <ProfileHeaderImageLayout
-            coverImageUrl={circle.coverUrl ?? null}
+            coverImageUrl={null}
             iconUrl={circle.iconUrl ?? null}
             centered
             fallbackInitial={circle.name[0]}
@@ -209,7 +205,6 @@ export default function InvitePreviewPage() {
                   {circle.memberCount === 1 ? '1 member' : `${circle.memberCount} members`} sharing
                   monthly updates
                 </span>
-                <span>{circle.adminName} started this circle</span>
               </div>
             </div>
 
@@ -233,7 +228,7 @@ export default function InvitePreviewPage() {
     <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-background px-6">
       <div className="flex w-full max-w-md flex-col items-center rounded-lg border border-border bg-card text-center">
         <ProfileHeaderImageLayout
-          coverImageUrl={circle.coverUrl ?? null}
+          coverImageUrl={null}
           iconUrl={circle.iconUrl ?? null}
           centered
           fallbackInitial={circle.name[0]}
@@ -250,7 +245,6 @@ export default function InvitePreviewPage() {
                 {circle.memberCount === 1 ? '1 member' : `${circle.memberCount} members`} sharing
                 monthly updates
               </span>
-              <span>{circle.adminName} started this circle</span>
             </div>
           </div>
 
