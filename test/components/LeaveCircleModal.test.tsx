@@ -103,11 +103,12 @@ describe('LeaveCircleModal', () => {
       })
     })
 
-    it('navigates to dashboard after successful leave', async () => {
-      render(<LeaveCircleModal {...defaultProps} />)
+    it('calls onSuccess after successful leave', async () => {
+      const onSuccess = vi.fn()
+      render(<LeaveCircleModal {...defaultProps} onSuccess={onSuccess} />)
       fireEvent.click(screen.getByText('Leave Circle'))
       await waitFor(() => {
-        expect(mockReplace).toHaveBeenCalledWith('/dashboard')
+        expect(onSuccess).toHaveBeenCalled()
       })
     })
 

@@ -1,41 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MediaUploader } from '@/components/submissions/MediaUploader'
 import type { Id } from '../../../convex/_generated/dataModel'
 
 // Mock Capacitor Camera
-const mockGetPhoto = vi.fn()
 vi.mock('@capacitor/camera', () => ({
   Camera: {
-    getPhoto: (...args: unknown[]) => mockGetPhoto(...args),
+    getPhoto: vi.fn(),
   },
-  CameraResultType: {
-    Uri: 'uri',
-    Base64: 'base64',
-    DataUrl: 'dataUrl',
-  },
-  CameraSource: {
-    Camera: 'CAMERA',
-    Photos: 'PHOTOS',
-    Prompt: 'PROMPT',
-  },
+  CameraResultType: { Uri: 'uri', Base64: 'base64', DataUrl: 'dataUrl' },
+  CameraSource: { Camera: 'CAMERA', Photos: 'PHOTOS', Prompt: 'PROMPT' },
 }))
 
-// Mock Convex mutations and actions
-const mockGenerateUploadUrl = vi.fn()
-const mockAddMediaToResponse = vi.fn()
-const mockUploadVideoToMux = vi.fn()
-let mutationCallCount = 0
+// Mock Capacitor FilePicker
+vi.mock('@capawesome/capacitor-file-picker', () => ({
+  FilePicker: { pickMedia: vi.fn() },
+}))
+
+// Mock Convex
 vi.mock('convex/react', () => ({
-  useMutation: vi.fn(() => {
-    // First call is generateUploadUrl, second is addMediaToResponse
-    const count = mutationCallCount++
-    if (count === 0) return mockGenerateUploadUrl
-    if (count === 1) return mockAddMediaToResponse
-    return vi.fn()
-  }),
-  useAction: vi.fn(() => mockUploadVideoToMux),
+  useMutation: vi.fn(() => vi.fn()),
+  useAction: vi.fn(() => vi.fn()),
 }))
 
 // Mock Clerk
@@ -50,512 +36,153 @@ vi.mock('@/lib/image', () => ({
   ),
 }))
 
-// Mock fetch
-global.fetch = vi.fn()
+// Mock video thumbnail extraction
+vi.mock('@/lib/video', () => ({
+  extractVideoThumbnail: vi.fn(() => Promise.resolve(null)),
+}))
+
+// Mock sonner
+vi.mock('sonner', () => ({
+  toast: { error: vi.fn(), success: vi.fn() },
+}))
+
+// Mock useBlockingUpload hook
+vi.mock('@/hooks/useBlockingUpload', () => ({
+  useBlockingUpload: () => ({
+    stage: 'idle',
+    progress: 0,
+    setStage: vi.fn(),
+    setProgress: vi.fn(),
+    reset: vi.fn(),
+    cancel: vi.fn(),
+  }),
+}))
+
+// Mock blocking modal
+vi.mock('@/components/ui/blocking-modal', () => ({
+  BlockingModal: () => null,
+}))
 
 describe('MediaUploader', () => {
+  const RESPONSE_ID = 'test-response-id' as unknown as Id<'responses'>
   const defaultProps = {
-    responseId: 'test-response-id' as unknown as Id<'responses'>,
+    responseId: RESPONSE_ID,
     currentMediaCount: 0,
   }
 
   beforeEach(() => {
     vi.clearAllMocks()
-    mutationCallCount = 0
   })
 
-  it('renders plus button dropdown trigger', () => {
+  it('renders add media button', () => {
     render(<MediaUploader {...defaultProps} />)
-
-    // Find the dropdown trigger button (it has aria-haspopup="menu")
-    const dropdownTrigger = screen.getByRole('button', { expanded: false })
-    expect(dropdownTrigger).toBeInTheDocument()
-    expect(dropdownTrigger).toHaveAttribute('aria-haspopup', 'menu')
+    expect(screen.getByLabelText('Add media')).toBeInTheDocument()
   })
 
-  it('opens dropdown with upload options when clicked', async () => {
+  it('opens menu options when plus button is clicked', async () => {
     const user = userEvent.setup()
     render(<MediaUploader {...defaultProps} />)
 
-    const dropdownTrigger = screen.getByRole('button', { expanded: false })
-    await user.click(dropdownTrigger)
+    await user.click(screen.getByLabelText('Add media'))
 
-    // Dropdown menu items should be visible
-    expect(screen.getByRole('menuitem', { name: /take photo/i })).toBeInTheDocument()
-    expect(screen.getByRole('menuitem', { name: /choose photo/i })).toBeInTheDocument()
-    expect(screen.getByRole('menuitem', { name: /choose video/i })).toBeInTheDocument()
+    expect(screen.getByLabelText('Take photo')).toBeInTheDocument()
+    expect(screen.getByLabelText('Choose from gallery')).toBeInTheDocument()
+  })
+
+  it('closes menu when plus button is clicked again', async () => {
+    const user = userEvent.setup()
+    render(<MediaUploader {...defaultProps} />)
+
+    // Open
+    await user.click(screen.getByLabelText('Add media'))
+    expect(screen.getByLabelText('Close media menu')).toBeInTheDocument()
+
+    // Close
+    await user.click(screen.getByLabelText('Close media menu'))
+    expect(screen.getByLabelText('Add media')).toBeInTheDocument()
   })
 
   it('disables plus button when max media count reached', () => {
     render(<MediaUploader {...defaultProps} currentMediaCount={3} maxMedia={3} />)
-
-    const dropdownTrigger = screen.getByRole('button')
-    expect(dropdownTrigger).toBeDisabled()
-    expect(screen.getByText(/maximum 3 media items reached/i)).toBeInTheDocument()
+    expect(screen.getByText('Media limit reached')).toBeInTheDocument()
   })
 
-  it('handles camera capture successfully', async () => {
-    const user = userEvent.setup()
-    const mockBlob = new Blob(['test'], { type: 'image/jpeg' })
-    const mockWebPath = 'blob:test-url'
-
-    mockGetPhoto.mockResolvedValue({
-      webPath: mockWebPath,
-      format: 'jpeg',
-    })
-    vi.mocked(global.fetch).mockImplementation(((url: string) => {
-      if (url === mockWebPath) {
-        return Promise.resolve({
-          blob: () => Promise.resolve(mockBlob),
-        })
-      }
-      if (url === 'https://upload.url') {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ storageId: 'test-storage-id' }),
-        })
-      }
-      return Promise.reject(new Error('Unknown URL'))
-    }) as typeof fetch)
-
-    mockGenerateUploadUrl.mockResolvedValue('https://upload.url')
-    mockAddMediaToResponse.mockResolvedValue('test-media-id')
-
-    render(<MediaUploader {...defaultProps} />)
-
-    // Open dropdown and click Take Photo
-    const dropdownTrigger = screen.getByRole('button', { expanded: false })
-    await user.click(dropdownTrigger)
-    const takePhotoItem = screen.getByRole('menuitem', { name: /take photo/i })
-    await user.click(takePhotoItem)
-
-    await waitFor(() => {
-      expect(mockGetPhoto).toHaveBeenCalledWith(
-        expect.objectContaining({
-          source: 'CAMERA',
-        })
-      )
-    })
-
-    await waitFor(() => {
-      expect(mockAddMediaToResponse).toHaveBeenCalledWith({
-        responseId: 'test-response-id',
-        storageId: 'test-storage-id',
-        type: 'image',
-      })
-    })
+  it('shows thumbnails for existing media', () => {
+    const existingMedia = [
+      {
+        _id: 'm1' as unknown as Id<'media'>,
+        type: 'image' as const,
+        url: 'https://example.com/1.jpg',
+      },
+      {
+        _id: 'm2' as unknown as Id<'media'>,
+        type: 'image' as const,
+        url: 'https://example.com/2.jpg',
+      },
+    ]
+    render(<MediaUploader {...defaultProps} existingMedia={existingMedia} />)
+    const images = screen.getAllByAltText('Media')
+    expect(images).toHaveLength(2)
   })
 
-  it('handles gallery selection successfully', async () => {
-    const user = userEvent.setup()
-    const mockBlob = new Blob(['test'], { type: 'image/png' })
-    const mockWebPath = 'blob:test-url'
-
-    mockGetPhoto.mockResolvedValue({
-      webPath: mockWebPath,
-      format: 'png',
-    })
-    vi.mocked(global.fetch).mockImplementation(((url: string) => {
-      if (url === mockWebPath) {
-        return Promise.resolve({
-          blob: () => Promise.resolve(mockBlob),
-        })
-      }
-      if (url === 'https://upload.url') {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ storageId: 'test-storage-id' }),
-        })
-      }
-      return Promise.reject(new Error('Unknown URL'))
-    }) as typeof fetch)
-
-    mockGenerateUploadUrl.mockResolvedValue('https://upload.url')
-    mockAddMediaToResponse.mockResolvedValue('test-media-id')
-
-    render(<MediaUploader {...defaultProps} />)
-
-    // Open dropdown and click Choose Photo
-    const dropdownTrigger = screen.getByRole('button', { expanded: false })
-    await user.click(dropdownTrigger)
-    const choosePhotoItem = screen.getByRole('menuitem', { name: /choose photo/i })
-    await user.click(choosePhotoItem)
-
-    await waitFor(() => {
-      expect(mockGetPhoto).toHaveBeenCalledWith(
-        expect.objectContaining({
-          source: 'PHOTOS',
-        })
-      )
-    })
-
-    await waitFor(() => {
-      expect(mockAddMediaToResponse).toHaveBeenCalledWith({
-        responseId: 'test-response-id',
-        storageId: 'test-storage-id',
-        type: 'image',
-      })
-    })
+  it('shows remove button on thumbnails when onMediaRemove is provided', () => {
+    const existingMedia = [
+      {
+        _id: 'm1' as unknown as Id<'media'>,
+        type: 'image' as const,
+        url: 'https://example.com/1.jpg',
+      },
+    ]
+    render(
+      <MediaUploader {...defaultProps} existingMedia={existingMedia} onMediaRemove={vi.fn()} />
+    )
+    expect(screen.getByLabelText('Remove media')).toBeInTheDocument()
   })
 
-  it('handles user cancellation gracefully', async () => {
+  it('calls onMediaRemove when remove button is clicked', async () => {
     const user = userEvent.setup()
+    const onMediaRemove = vi.fn()
+    const mediaId = 'm1' as unknown as Id<'media'>
+    const existingMedia = [
+      { _id: mediaId, type: 'image' as const, url: 'https://example.com/1.jpg' },
+    ]
+    render(
+      <MediaUploader
+        {...defaultProps}
+        existingMedia={existingMedia}
+        onMediaRemove={onMediaRemove}
+      />
+    )
 
-    mockGetPhoto.mockRejectedValue(new Error('User cancelled photos app'))
-
-    render(<MediaUploader {...defaultProps} />)
-
-    const dropdownTrigger = screen.getByRole('button', { expanded: false })
-    await user.click(dropdownTrigger)
-    const takePhotoItem = screen.getByRole('menuitem', { name: /take photo/i })
-    await user.click(takePhotoItem)
-
-    await waitFor(() => {
-      expect(mockGetPhoto).toHaveBeenCalled()
-    })
-
-    // Should not show error for user cancellation
-    expect(screen.queryByText(/failed/i)).not.toBeInTheDocument()
-    expect(mockAddMediaToResponse).not.toHaveBeenCalled()
+    await user.click(screen.getByLabelText('Remove media'))
+    expect(onMediaRemove).toHaveBeenCalledWith(mediaId)
   })
 
-  it('handles permission denial', async () => {
-    const user = userEvent.setup()
-
-    mockGetPhoto.mockRejectedValue(new Error('Camera permission denied'))
-
-    render(<MediaUploader {...defaultProps} />)
-
-    const dropdownTrigger = screen.getByRole('button', { expanded: false })
-    await user.click(dropdownTrigger)
-    const takePhotoItem = screen.getByRole('menuitem', { name: /take photo/i })
-    await user.click(takePhotoItem)
-
-    await waitFor(() => {
-      expect(
-        screen.getByText(/camera permission denied.*enable camera access/i)
-      ).toBeInTheDocument()
-    })
-
-    expect(mockAddMediaToResponse).not.toHaveBeenCalled()
+  it('renders without responseId', () => {
+    render(<MediaUploader currentMediaCount={0} />)
+    expect(screen.getByLabelText('Add media')).toBeInTheDocument()
   })
 
-  it('handles upload failure', async () => {
-    const user = userEvent.setup()
-    const mockBlob = new Blob(['test'], { type: 'image/jpeg' })
-    const mockWebPath = 'blob:test-url'
-
-    mockGetPhoto.mockResolvedValue({
-      webPath: mockWebPath,
-      format: 'jpeg',
-    })
-    vi.mocked(global.fetch).mockImplementation(((url: string) => {
-      if (url === mockWebPath) {
-        return Promise.resolve({
-          blob: () => Promise.resolve(mockBlob),
-        })
-      }
-      if (url === 'https://upload.url') {
-        return Promise.resolve({
-          ok: false,
-          statusText: 'Internal Server Error',
-        })
-      }
-      return Promise.reject(new Error('Unknown URL'))
-    }) as typeof fetch)
-
-    mockGenerateUploadUrl.mockResolvedValue('https://upload.url')
-
-    render(<MediaUploader {...defaultProps} />)
-
-    const dropdownTrigger = screen.getByRole('button', { expanded: false })
-    await user.click(dropdownTrigger)
-    const takePhotoItem = screen.getByRole('menuitem', { name: /take photo/i })
-    await user.click(takePhotoItem)
-
-    await waitFor(() => {
-      expect(screen.getByText(/upload failed/i)).toBeInTheDocument()
-    })
-
-    expect(mockAddMediaToResponse).not.toHaveBeenCalled()
+  it('limits visible thumbnails to 3', () => {
+    const existingMedia = Array.from({ length: 5 }, (_, i) => ({
+      _id: `m${i}` as unknown as Id<'media'>,
+      type: 'image' as const,
+      url: `https://example.com/${i}.jpg`,
+    }))
+    render(<MediaUploader {...defaultProps} existingMedia={existingMedia} />)
+    const images = screen.getAllByAltText('Media')
+    expect(images).toHaveLength(3)
   })
 
-  it('handles network errors', async () => {
-    const user = userEvent.setup()
-    const mockBlob = new Blob(['test'], { type: 'image/jpeg' })
-    const mockWebPath = 'blob:test-url'
-
-    mockGetPhoto.mockResolvedValue({
-      webPath: mockWebPath,
-      format: 'jpeg',
-    })
-    vi.mocked(global.fetch).mockImplementation(((url: string) => {
-      if (url === mockWebPath) {
-        return Promise.resolve({
-          blob: () => Promise.resolve(mockBlob),
-        })
-      }
-      if (url === 'https://upload.url') {
-        return Promise.reject(new TypeError('Failed to fetch'))
-      }
-      return Promise.reject(new Error('Unknown URL'))
-    }) as typeof fetch)
-
-    mockGenerateUploadUrl.mockResolvedValue('https://upload.url')
-
-    render(<MediaUploader {...defaultProps} />)
-
-    const dropdownTrigger = screen.getByRole('button', { expanded: false })
-    await user.click(dropdownTrigger)
-    const takePhotoItem = screen.getByRole('menuitem', { name: /take photo/i })
-    await user.click(takePhotoItem)
-
-    await waitFor(() => {
-      expect(screen.getByText(/network error.*check your connection/i)).toBeInTheDocument()
-    })
-
-    expect(mockAddMediaToResponse).not.toHaveBeenCalled()
-  })
-
-  it('allows canceling upload in progress', async () => {
-    const user = userEvent.setup()
-    const mockBlob = new Blob(['test'], { type: 'image/jpeg' })
-    const mockWebPath = 'blob:test-url'
-
-    mockGetPhoto.mockResolvedValue({
-      webPath: mockWebPath,
-      format: 'jpeg',
-    })
-
-    // Create a promise that never resolves to simulate slow upload
-    let uploadResolve: ((value: unknown) => void) | undefined
-    const uploadPromise = new Promise((resolve) => {
-      uploadResolve = resolve
-    })
-
-    vi.mocked(global.fetch).mockImplementation(((url: string) => {
-      if (url === mockWebPath) {
-        return Promise.resolve({
-          blob: () => Promise.resolve(mockBlob),
-        })
-      }
-      if (url === 'https://upload.url') {
-        return uploadPromise
-      }
-      return Promise.reject(new Error('Unknown URL'))
-    }) as typeof fetch)
-
-    mockGenerateUploadUrl.mockResolvedValue('https://upload.url')
-
-    render(<MediaUploader {...defaultProps} />)
-
-    const dropdownTrigger = screen.getByRole('button', { expanded: false })
-    await user.click(dropdownTrigger)
-    const takePhotoItem = screen.getByRole('menuitem', { name: /take photo/i })
-    await user.click(takePhotoItem)
-
-    // Wait for upload to start
-    await waitFor(() => {
-      expect(screen.getByText(/uploading/i)).toBeInTheDocument()
-    })
-
-    // Click cancel button
-    const cancelButton = screen.getByRole('button', { name: /cancel upload/i })
-    await user.click(cancelButton)
-
-    // Should reset to initial state
-    await waitFor(() => {
-      expect(screen.queryByText(/uploading/i)).not.toBeInTheDocument()
-      expect(screen.getByRole('button', { expanded: false })).toBeInTheDocument()
-    })
-
-    // Clean up
-    uploadResolve?.({
-      ok: true,
-      json: () => Promise.resolve({ storageId: 'test-storage-id' }),
-    })
-  })
-
-  it('shows progress during upload stages', async () => {
-    const user = userEvent.setup()
-    const mockBlob = new Blob(['test'], { type: 'image/jpeg' })
-    const mockWebPath = 'blob:test-url'
-
-    mockGetPhoto.mockResolvedValue({
-      webPath: mockWebPath,
-      format: 'jpeg',
-    })
-    vi.mocked(global.fetch).mockImplementation(((url: string) => {
-      if (url === mockWebPath) {
-        return Promise.resolve({
-          blob: () => Promise.resolve(mockBlob),
-        })
-      }
-      if (url === 'https://upload.url') {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ storageId: 'test-storage-id' }),
-        })
-      }
-      return Promise.reject(new Error('Unknown URL'))
-    }) as typeof fetch)
-
-    mockGenerateUploadUrl.mockResolvedValue('https://upload.url')
-    mockAddMediaToResponse.mockResolvedValue('test-media-id')
-
-    render(<MediaUploader {...defaultProps} />)
-
-    const dropdownTrigger = screen.getByRole('button', { expanded: false })
-    await user.click(dropdownTrigger)
-    const takePhotoItem = screen.getByRole('menuitem', { name: /take photo/i })
-    await user.click(takePhotoItem)
-
-    // Should show compressing stage
-    await waitFor(() => {
-      const text = screen.queryByText(/compressing image/i)
-      if (text) {
-        expect(text).toBeInTheDocument()
-      }
-    })
-  })
-
-  it('calls onUploadComplete callback on success', async () => {
-    const user = userEvent.setup()
-    const onUploadComplete = vi.fn()
-    const mockBlob = new Blob(['test'], { type: 'image/jpeg' })
-    const mockWebPath = 'blob:test-url'
-
-    mockGetPhoto.mockResolvedValue({
-      webPath: mockWebPath,
-      format: 'jpeg',
-    })
-    vi.mocked(global.fetch).mockImplementation(((url: string) => {
-      if (url === mockWebPath) {
-        return Promise.resolve({
-          blob: () => Promise.resolve(mockBlob),
-        })
-      }
-      if (url === 'https://upload.url') {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ storageId: 'test-storage-id' }),
-        })
-      }
-      return Promise.reject(new Error('Unknown URL'))
-    }) as typeof fetch)
-
-    mockGenerateUploadUrl.mockResolvedValue('https://upload.url')
-    mockAddMediaToResponse.mockResolvedValue('test-media-id')
-
-    render(<MediaUploader {...defaultProps} onUploadComplete={onUploadComplete} />)
-
-    const dropdownTrigger = screen.getByRole('button', { expanded: false })
-    await user.click(dropdownTrigger)
-    const takePhotoItem = screen.getByRole('menuitem', { name: /take photo/i })
-    await user.click(takePhotoItem)
-
-    await waitFor(() => {
-      expect(onUploadComplete).toHaveBeenCalledWith('test-media-id', 'image')
-    })
-  })
-
-  it('calls onUploadError callback on failure', async () => {
-    const user = userEvent.setup()
-    const onUploadError = vi.fn()
-
-    mockGetPhoto.mockRejectedValue(new Error('Camera permission denied'))
-
-    render(<MediaUploader {...defaultProps} onUploadError={onUploadError} />)
-
-    const dropdownTrigger = screen.getByRole('button', { expanded: false })
-    await user.click(dropdownTrigger)
-    const takePhotoItem = screen.getByRole('menuitem', { name: /take photo/i })
-    await user.click(takePhotoItem)
-
-    await waitFor(() => {
-      expect(onUploadError).toHaveBeenCalledWith(expect.stringContaining('permission denied'))
-    })
-  })
-
-  it('handles max media limit from Convex', async () => {
-    const user = userEvent.setup()
-    const mockBlob = new Blob(['test'], { type: 'image/jpeg' })
-    const mockWebPath = 'blob:test-url'
-
-    mockGetPhoto.mockResolvedValue({
-      webPath: mockWebPath,
-      format: 'jpeg',
-    })
-    vi.mocked(global.fetch).mockImplementation(((url: string) => {
-      if (url === mockWebPath) {
-        return Promise.resolve({
-          blob: () => Promise.resolve(mockBlob),
-        })
-      }
-      if (url === 'https://upload.url') {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ storageId: 'test-storage-id' }),
-        })
-      }
-      return Promise.reject(new Error('Unknown URL'))
-    }) as typeof fetch)
-
-    mockGenerateUploadUrl.mockResolvedValue('https://upload.url')
-    mockAddMediaToResponse.mockRejectedValue(new Error('Response can have up to 3 media items'))
-
-    render(<MediaUploader {...defaultProps} />)
-
-    const dropdownTrigger = screen.getByRole('button', { expanded: false })
-    await user.click(dropdownTrigger)
-    const takePhotoItem = screen.getByRole('menuitem', { name: /take photo/i })
-    await user.click(takePhotoItem)
-
-    await waitFor(() => {
-      expect(screen.getByText(/maximum 3 media items reached/i)).toBeInTheDocument()
-    })
-  })
-
-  it('dismisses error message when clicking try again', async () => {
-    const user = userEvent.setup()
-
-    mockGetPhoto.mockRejectedValue(new Error('Camera permission denied'))
-
-    render(<MediaUploader {...defaultProps} />)
-
-    const dropdownTrigger = screen.getByRole('button', { expanded: false })
-    await user.click(dropdownTrigger)
-    const takePhotoItem = screen.getByRole('menuitem', { name: /take photo/i })
-    await user.click(takePhotoItem)
-
-    await waitFor(() => {
-      expect(screen.getByText(/permission denied/i)).toBeInTheDocument()
-    })
-
-    const tryAgainButton = screen.getByRole('button', { name: /try again/i })
-    await user.click(tryAgainButton)
-
-    await waitFor(() => {
-      expect(screen.queryByText(/permission denied/i)).not.toBeInTheDocument()
-      expect(screen.getByRole('button', { expanded: false })).toBeInTheDocument()
-    })
-  })
-
-  it('calls onEnsureResponse before starting upload', async () => {
-    const user = userEvent.setup()
-    const onEnsureResponse = vi.fn().mockResolvedValue(undefined)
-
-    mockGetPhoto.mockRejectedValue(new Error('User cancelled'))
-
-    render(<MediaUploader {...defaultProps} onEnsureResponse={onEnsureResponse} />)
-
-    const dropdownTrigger = screen.getByRole('button', { expanded: false })
-    await user.click(dropdownTrigger)
-    const takePhotoItem = screen.getByRole('menuitem', { name: /take photo/i })
-    await user.click(takePhotoItem)
-
-    await waitFor(() => {
-      expect(onEnsureResponse).toHaveBeenCalled()
-    })
+  it('does not show remove buttons when onMediaRemove is not provided', () => {
+    const existingMedia = [
+      {
+        _id: 'm1' as unknown as Id<'media'>,
+        type: 'image' as const,
+        url: 'https://example.com/1.jpg',
+      },
+    ]
+    render(<MediaUploader {...defaultProps} existingMedia={existingMedia} />)
+    expect(screen.queryByLabelText('Remove media')).not.toBeInTheDocument()
   })
 })

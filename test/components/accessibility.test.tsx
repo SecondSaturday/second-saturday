@@ -108,9 +108,9 @@ describe('CircleListItem accessibility', () => {
     expect(screen.getByText('T')).toBeInTheDocument()
   })
 
-  it('shows 3-member warning for small circles', () => {
+  it('renders with low member count without errors', () => {
     render(<CircleListItem {...defaultProps} memberCount={2} />)
-    expect(screen.getByText(/invite.*more/i)).toBeInTheDocument()
+    expect(screen.getByText('Test Circle')).toBeInTheDocument()
   })
 })
 

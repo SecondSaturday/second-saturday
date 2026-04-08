@@ -44,6 +44,11 @@ vi.mock('lucide-react', () => ({
   ArrowLeft: () => <span>←</span>,
 }))
 
+vi.mock('@/hooks/useMediaQuery', () => ({
+  useIsDesktop: () => false,
+  useMediaQuery: () => false,
+}))
+
 // Stub screen to capture props without rendering the full submission tree
 vi.mock('@/screens/submissions/MultiCircleSubmissionScreen', () => ({
   MultiCircleSubmissionScreen: ({ circles, cycleId }: { circles: unknown[]; cycleId: string }) => (

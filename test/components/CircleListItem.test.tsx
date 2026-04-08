@@ -26,16 +26,14 @@ describe('CircleListItem', () => {
     expect(screen.getByText('F')).toBeInTheDocument()
   })
 
-  it('shows primary indicator when hasUnread is true', () => {
-    const { container } = render(<CircleListItem {...defaultProps} hasUnread={true} />)
-    const indicator = container.querySelector('.fill-primary')
-    expect(indicator).toBeInTheDocument()
+  it('shows unread indicator when hasUnread is true', () => {
+    render(<CircleListItem {...defaultProps} hasUnread={true} />)
+    expect(screen.getByAltText('Unread')).toBeInTheDocument()
   })
 
-  it('shows muted indicator when hasUnread is false', () => {
-    const { container } = render(<CircleListItem {...defaultProps} hasUnread={false} />)
-    const mutedIndicator = container.querySelector('.fill-muted-foreground\\/30')
-    expect(mutedIndicator).toBeInTheDocument()
+  it('shows read indicator when hasUnread is false', () => {
+    render(<CircleListItem {...defaultProps} hasUnread={false} />)
+    expect(screen.getByAltText('Read')).toBeInTheDocument()
   })
 
   it('calls onClick when clicked', () => {

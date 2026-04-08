@@ -113,9 +113,9 @@ describe('InvitePreviewPage', () => {
     expect(screen.getByText(/5 members/)).toBeInTheDocument()
   })
 
-  it('shows admin name', () => {
-    const { container } = render(<InvitePreviewPage />)
-    expect(container.textContent).toContain('Alice Admin started this circle')
+  it('shows sharing text', () => {
+    render(<InvitePreviewPage />)
+    expect(screen.getByText(/sharing/)).toBeInTheDocument()
   })
 
   it('shows Join Circle button when signed in', () => {

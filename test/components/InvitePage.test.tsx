@@ -258,7 +258,6 @@ describe('InvitePreviewPage', () => {
       expect(screen.getByText('Sign up to Join')).toBeInTheDocument()
       expect(screen.getByText('Log in to Join')).toBeInTheDocument()
       expect(screen.getByText(/5 members/)).toBeInTheDocument()
-      expect(screen.getByText('Admin User started this circle')).toBeInTheDocument()
     })
 
     it('preserves redirect URL in auth links', async () => {
@@ -514,7 +513,7 @@ describe('InvitePreviewPage', () => {
       })
     })
 
-    it('displays admin name attribution', async () => {
+    it('displays member sharing text', async () => {
       const mockCircle = {
         _id: 'circle-123',
         name: 'Test Circle',
@@ -533,7 +532,7 @@ describe('InvitePreviewPage', () => {
       render(<InvitePreviewPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('Admin started this circle')).toBeInTheDocument()
+        expect(screen.getByText(/sharing/)).toBeInTheDocument()
       })
     })
 
