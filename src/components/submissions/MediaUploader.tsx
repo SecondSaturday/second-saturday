@@ -2,11 +2,12 @@
 
 import { useState, useRef } from 'react'
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
+import { FilePicker } from '@capawesome/capacitor-file-picker'
 import { useMutation, useAction } from 'convex/react'
 import { useUser } from '@clerk/nextjs'
 import { api } from '../../../convex/_generated/api'
 import { compressImage } from '@/lib/image'
-import { Camera as CameraIcon, Image as ImageIcon, X, Loader2, Plus } from 'lucide-react'
+import { Camera as CameraIcon, ImagePlus as GalleryIcon, X, Loader2, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Id } from '../../../convex/_generated/dataModel'
 import { BlockingModal } from '../ui/blocking-modal'
@@ -51,6 +52,7 @@ export function MediaUploader({
   const [error, setError] = useState<string | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [mediaType, setMediaType] = useState<MediaType | null>(null)
+  const [batchStatus, setBatchStatus] = useState<{ current: number; total: number } | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const videoIdRef = useRef<Id<'videos'> | null>(null)
   const lastFailedFileRef = useRef<File | null>(null)
@@ -76,7 +78,6 @@ export function MediaUploader({
     },
   })
 
-  const videoInputRef = useRef<HTMLInputElement | null>(null)
   const canUploadMore = currentMediaCount < maxMedia
 
   const resetUpload = () => {
@@ -85,6 +86,7 @@ export function MediaUploader({
     setError(null)
     setPreview(null)
     setMediaType(null)
+    setBatchStatus(null)
     videoIdRef.current = null
     lastFailedFileRef.current = null
     lastFailedMediaTypeRef.current = null
@@ -290,44 +292,71 @@ export function MediaUploader({
     }
   }
 
-  const handleVideoSelect = async () => {
+  const handleGalleryPick = async () => {
     if (!canUploadMore) {
       handleError(`Maximum ${maxMedia} media items allowed per response`)
       return
     }
-    // Ensure response exists before starting upload
-    await onEnsureResponse?.()
-    videoInputRef.current?.click()
-  }
-
-  const handleVideoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    // Reset input so the same file can be re-selected
-    if (e.target) e.target.value = ''
-    if (!file) return
 
     try {
-      setStage('selecting')
-      setError(null)
-      setProgress(0)
-      setMediaType('video')
-      videoUpload.setStage('selecting')
-      videoUpload.setProgress(10)
+      await onEnsureResponse?.()
 
-      // Show preview
-      const previewUrl = URL.createObjectURL(file)
-      setPreview(previewUrl)
-      videoUpload.setProgress(20)
+      const result = await FilePicker.pickMedia({
+        readData: false,
+      })
 
-      await uploadVideo(file)
+      if (!result.files || result.files.length === 0) return
+
+      // Reject entire selection if it exceeds remaining slots
+      const remainingSlots = maxMedia - currentMediaCount
+      if (result.files.length > remainingSlots) {
+        handleError(
+          `You can only add ${remainingSlots} more item${remainingSlots === 1 ? '' : 's'}`
+        )
+        return
+      }
+
+      // Process files sequentially — stop on first failure
+      const totalFiles = result.files.length
+      for (let i = 0; i < totalFiles; i++) {
+        const picked = result.files[i]!
+        if (!picked.path) continue
+
+        setProgress(0)
+        setBatchStatus({ current: i + 1, total: totalFiles })
+
+        // Convert PickedFile to File object (iOS returns local file URI)
+        const response = await fetch(picked.path)
+        const blob = await response.blob()
+        const file = new File([blob], picked.name || `media-${Date.now()}`, {
+          type: picked.mimeType || 'application/octet-stream',
+        })
+
+        let success: boolean
+        if (picked.mimeType?.startsWith('video/')) {
+          setMediaType('video')
+          success = await uploadVideo(file)
+        } else {
+          setMediaType('photo')
+          success = await uploadPhoto(file)
+        }
+
+        // Stop batch on failure
+        if (!success) {
+          setBatchStatus(null)
+          return
+        }
+      }
+
+      setBatchStatus(null)
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : String(err)
-      if (errorMessage?.includes('User cancelled') || errorMessage?.includes('cancelled')) {
-        videoUpload.reset()
+      const msg = err instanceof Error ? err.message : String(err)
+      if (msg?.includes('cancel') || msg?.includes('Cancel')) {
         resetUpload()
         return
       }
-      handleError('Failed to select video', err)
+      handleError('Failed to pick media', err)
+      setBatchStatus(null)
     }
   }
 
@@ -415,7 +444,7 @@ export function MediaUploader({
       const mediaId = await addMediaToResponse({
         responseId: responseId!,
         type: 'video',
-        // Asset ID will be updated via Mux webhook when video is processed
+        videoId: videoIdRef.current ?? undefined,
       })
 
       videoUpload.setProgress(100)
@@ -510,12 +539,12 @@ export function MediaUploader({
                 type="button"
                 onClick={() => {
                   setMenuOpen(false)
-                  handlePhotoCapture(CameraSource.Photos)
+                  handleGalleryPick()
                 }}
                 className="flex size-12 items-center justify-center rounded-lg border border-border/60 bg-card transition-colors hover:bg-muted/50"
-                aria-label="Choose photo"
+                aria-label="Choose from gallery"
               >
-                <ImageIcon className="size-6 text-primary" />
+                <GalleryIcon className="size-6 text-primary" />
               </button>
             </div>
 
@@ -582,20 +611,14 @@ export function MediaUploader({
         </>
       )}
 
-      {/* Hidden video input */}
-      <input
-        ref={videoInputRef}
-        type="file"
-        accept="video/mp4,video/quicktime,video/x-m4v"
-        className="hidden"
-        onChange={handleVideoFileChange}
-      />
-
       {/* Uploading indicator (inline, compact) */}
       {isUploading && (
         <div className="flex items-center gap-2">
           <Loader2 className="size-5 animate-spin text-primary" />
           <span className="text-xs text-muted-foreground">
+            {batchStatus &&
+              batchStatus.total > 1 &&
+              `(${batchStatus.current}/${batchStatus.total}) `}
             {stage === 'selecting' && 'Selecting...'}
             {stage === 'compressing' && 'Compressing...'}
             {stage === 'uploading' && 'Uploading...'}
