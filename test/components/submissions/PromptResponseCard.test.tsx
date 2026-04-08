@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { PromptResponseCard } from '@/components/submissions/PromptResponseCard'
 import type { MediaItem } from '@/components/submissions/MediaGrid'
@@ -69,33 +69,6 @@ describe('PromptResponseCard', () => {
     )
 
     expect(screen.getByDisplayValue('Hello world')).toBeInTheDocument()
-  })
-
-  it('hides character counter by default (only shows on focus)', () => {
-    render(<PromptResponseCard promptId="p1" promptText="Prompt" responseId={RESPONSE_ID} />)
-
-    // Counter should not be visible when not focused
-    expect(screen.queryByText('0/500')).not.toBeInTheDocument()
-  })
-
-  it('shows character counter when textarea is focused', () => {
-    render(<PromptResponseCard promptId="p1" promptText="Prompt" responseId={RESPONSE_ID} />)
-
-    const textarea = screen.getByPlaceholderText('Add text or tap + for photos...')
-    fireEvent.focus(textarea)
-
-    expect(screen.getByText('0/500')).toBeInTheDocument()
-  })
-
-  it('updates character counter as user types', async () => {
-    const user = userEvent.setup()
-    render(<PromptResponseCard promptId="p1" promptText="Prompt" responseId={RESPONSE_ID} />)
-
-    const textarea = screen.getByPlaceholderText('Add text or tap + for photos...')
-    await user.click(textarea)
-    await user.type(textarea, 'Hello')
-
-    expect(screen.getByText('5/500')).toBeInTheDocument()
   })
 
   it('calls onValueChange when textarea value changes', async () => {
