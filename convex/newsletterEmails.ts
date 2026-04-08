@@ -40,7 +40,7 @@ export const sendNewsletter = internalAction({
     const date = `${MONTH_NAMES[parseInt(month!, 10) - 1]} ${year}`
 
     const viewInAppUrl = `${APP_URL}/dashboard/circles/${newsletter.circleId}/newsletter/${newsletter._id}?utm_source=email&utm_medium=newsletter`
-    const unsubscribeUrl = `${APP_URL}/circles/${newsletter.circleId}/unsubscribe`
+    const unsubscribeUrl = `${APP_URL}/dashboard/circles/${newsletter.circleId}/settings`
 
     // Render React Email template to HTML
     const html = await render(
@@ -114,7 +114,7 @@ export const sendMissedMonthEmail = internalAction({
     const secondSaturdayDay = getSecondSaturdayDay(nextYear, nextMonth)
     const nextDeadline = `${MONTH_NAMES[nextMonth - 1]} ${secondSaturdayDay}, ${nextYear}`
 
-    const viewCircleUrl = `${APP_URL}/circles/${args.circleId}`
+    const viewCircleUrl = `${APP_URL}/dashboard/circles/${args.circleId}`
 
     // Render React Email template to HTML
     const html = await render(

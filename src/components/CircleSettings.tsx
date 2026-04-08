@@ -212,7 +212,7 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="prompts">Prompts</TabsTrigger>
           <TabsTrigger value="members">Members ({members?.length ?? 0})</TabsTrigger>
-          {/* Status tab hidden until redesigned */}
+          {isAdmin && <TabsTrigger value="status">Status</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="details" className="flex flex-col gap-6">
@@ -325,8 +325,8 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
                   <DialogHeader>
                     <DialogTitle>Delete Circle?</DialogTitle>
                     <DialogDescription>
-                      This will permanently remove <strong>{circle.name}</strong> and all its data
-                      including newsletters, submissions, and media. This action cannot be undone.
+                      This will archive <strong>{circle.name}</strong>. Members will no longer be
+                      able to access the circle or submit responses. This action cannot be undone.
                     </DialogDescription>
                   </DialogHeader>
                   <DialogFooter>

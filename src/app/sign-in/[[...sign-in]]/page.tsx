@@ -14,7 +14,7 @@ function SignInContent() {
   // Only allow internal relative paths to prevent open redirect
   const redirectUrl =
     rawRedirect?.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : null
-  const signInFallbackRedirectUrl = redirectUrl || '/dashboard'
+  const signInFallbackRedirectUrl = redirectUrl || '/complete-profile'
 
   return (
     <AuthLayout>

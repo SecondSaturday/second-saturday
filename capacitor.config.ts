@@ -28,7 +28,6 @@ const config: CapacitorConfig = {
       '*.clerk.accounts.dev',
       'accounts.dev',
       '*.accounts.dev',
-      'optimum-slug-14.clerk.accounts.dev',
       // OAuth providers
       'accounts.google.com',
       'appleid.apple.com',

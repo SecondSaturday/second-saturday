@@ -4,7 +4,7 @@ const MATTERMOST_WEBHOOK_URL = process.env.MATTERMOST_ERRORS_WEBHOOK_URL
 
 export async function POST(request: NextRequest) {
   if (!MATTERMOST_WEBHOOK_URL) {
-    return NextResponse.json({ error: 'Webhook URL not configured' }, { status: 500 })
+    return NextResponse.json({ ok: true, skipped: 'Webhook URL not configured' })
   }
 
   const payload = await request.json()
