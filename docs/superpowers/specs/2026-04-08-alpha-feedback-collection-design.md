@@ -29,6 +29,7 @@ Hosted on the self-hosted N8N instance using the built-in Form Trigger node. Tes
 
 | Field | Type | Options |
 |-------|------|---------|
+| Name | Text | Tester's name (for follow-up) |
 | Type | Select | Bug Report, Feature Request, General Feedback, Confusion |
 | Description | Text area | Free text — what happened or what's on your mind |
 | Platform | Select | iOS, Android, Web |
@@ -85,15 +86,16 @@ Creates an issue in the alpha testing Plane project:
   ```
 - **Labels:** Auto-assigned per router mapping
 - **Priority:** Auto-assigned per severity mapping (or Medium default)
-- **Attachments:** Screenshot/recording uploaded if provided
+- **Attachments:** Screenshot/recording uploaded if provided. Note: Plane's API requires a separate attachment upload call (`POST /api/v1/workspaces/{slug}/projects/{id}/issues/{issue_id}/assets/`) after issue creation — chain a second HTTP Request node for this
 
 #### Node 4: Mattermost (Post Alert)
 Posts to a dedicated `#alpha-feedback` channel after the Plane issue is created:
 
 - **Message format:**
   ```
-  **[{Type}]** {severity if bug} | {platform}
+  **[{Type}]** {severity if bug, omitted otherwise} | {platform}
   {description truncated to ~200 chars}
+  Submitted by: {name}
   [View in Plane]({plane_issue_url})
   ```
 
@@ -123,6 +125,11 @@ Plane: Create Issue
 Mattermost: Post Alert
 (summary + link to Plane issue)
 ```
+
+## Implementation Notes
+
+- **N8N version:** Conditional form fields (show/hide based on Type) require N8N v1.64+
+- **Error handling:** Enable N8N's built-in retry (2 retries, exponential backoff) on the Plane and Mattermost nodes. Optionally add an Error Trigger workflow that posts to Mattermost if the main workflow fails, so no submission is silently lost.
 
 ## Setup Checklist
 
