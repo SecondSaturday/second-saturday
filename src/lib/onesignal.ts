@@ -126,7 +126,9 @@ export async function initOneSignalWeb(): Promise<string | null> {
   }
 
   try {
-    console.log('OneSignal Web: initializing with appId', ONESIGNAL_APP_ID)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('OneSignal Web: initializing with appId', ONESIGNAL_APP_ID)
+    }
 
     // Load the OneSignal Web SDK v16 script if not already loaded
     if (!document.querySelector('script[src*="OneSignalSDK.page.js"]')) {
@@ -172,7 +174,9 @@ export async function initOneSignalWeb(): Promise<string | null> {
               },
             },
           } as Parameters<typeof OneSignal.init>[0])
-          console.log('OneSignal Web: init complete')
+          if (process.env.NODE_ENV === 'development') {
+            console.log('OneSignal Web: init complete')
+          }
           resolve()
         } catch (err) {
           reject(err)
@@ -185,7 +189,9 @@ export async function initOneSignalWeb(): Promise<string | null> {
 
     const onesignal = (window as unknown as { OneSignal?: OneSignalWebSDK }).OneSignal
     const subscriptionId = onesignal?.User?.PushSubscription?.id
-    console.log('OneSignal Web: subscription ID =', subscriptionId)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('OneSignal Web: subscription ID =', subscriptionId)
+    }
     return subscriptionId ?? null
   } catch (err) {
     console.error('OneSignal Web: initialization failed:', err)

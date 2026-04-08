@@ -29,11 +29,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
   // Identify user when auth state changes
   useEffect(() => {
     if (isSignedIn && userId && user) {
-      identifyUser(userId, {
-        email: user.primaryEmailAddress?.emailAddress,
-        name: user.fullName,
-        username: user.username,
-      })
+      identifyUser(userId)
     } else if (!isSignedIn) {
       resetUser()
     }

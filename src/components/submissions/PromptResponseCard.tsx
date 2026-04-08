@@ -81,7 +81,7 @@ export function PromptResponseCard({
         </div>
 
         {/* Input zone */}
-        <div className="flex flex-1 flex-col justify-between bg-white px-5 py-4 md:px-7 md:py-5">
+        <div className="flex flex-1 flex-col justify-between bg-card px-5 py-4 md:px-7 md:py-5">
           {/* Textarea */}
           <textarea
             id={`prompt-${promptId}`}

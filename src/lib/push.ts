@@ -1,3 +1,5 @@
+import 'server-only'
+
 // OneSignal Push Notification utilities
 // Note: The Capacitor plugin (@onesignal/onesignal-capacitor) will be installed
 // when Capacitor is configured in issue #7
