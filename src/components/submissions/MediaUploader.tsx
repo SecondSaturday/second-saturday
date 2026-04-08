@@ -52,7 +52,7 @@ export function MediaUploader({
 }: MediaUploaderProps) {
   const { user } = useUser()
   const [stage, setStage] = useState<UploadStage>('idle')
-  const [progress, setProgress] = useState(0)
+  const [, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [, setPreview] = useState<string | null>(null)
   const [mediaType, setMediaType] = useState<MediaType | null>(null)
@@ -556,7 +556,6 @@ export function MediaUploader({
     stage === 'compressing' ||
     stage === 'uploading' ||
     stage === 'processing'
-  const _showProgress = isUploading && progress > 0 && mediaType === 'photo'
   const showBlockingModal = isUploading && mediaType === 'video'
 
   const [menuOpen, setMenuOpen] = useState(false)

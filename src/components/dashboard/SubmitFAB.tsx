@@ -41,7 +41,7 @@ export function SubmitFAB({ nextDeadlineLabel, sidebarWidthVw }: SubmitFABProps)
         data-testid="submit-button"
         className="pointer-events-auto inline-flex items-center gap-2 rounded-md bg-primary px-8 py-3.5 text-lg font-semibold text-primary-foreground shadow-lg transition-transform hover:scale-105 active:scale-95"
       >
-        <Plus className="size-5 stroke-[3]" />
+        <Plus className="size-5 stroke-3" />
         {label}
       </Link>
       <p className="pointer-events-none mt-1.5 text-center font-mono text-xs text-muted-foreground/60">

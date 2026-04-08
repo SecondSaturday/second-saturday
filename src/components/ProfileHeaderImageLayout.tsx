@@ -43,6 +43,7 @@ export function ProfileHeaderImageLayout({
       {/* Cover image */}
       <div className="relative mx-4 mt-4 h-[150px] overflow-hidden rounded-2xl bg-muted md:mx-8 md:mt-6 md:h-[180px]">
         {coverImageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img src={coverImageUrl} alt="Cover" className="size-full object-cover" />
         ) : (
           <div className="flex size-full items-center justify-center">
@@ -74,7 +75,7 @@ export function ProfileHeaderImageLayout({
       {/* Circle icon overlapping cover bottom edge */}
       <div className="relative -mt-[30px] flex justify-center">
         <div className="relative">
-          <Avatar className="!size-[100px] border-4 border-background">
+          <Avatar className="size-[100px]! border-4 border-background">
             <AvatarImage src={iconUrl ?? undefined} alt="Circle icon" />
             <AvatarFallback>
               {fallbackInitial ? (
