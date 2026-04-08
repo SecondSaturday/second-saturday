@@ -1,8 +1,16 @@
 'use client'
 
+import { useEffect } from 'react'
+import * as Sentry from '@sentry/nextjs'
 import Link from 'next/link'
 
 export default function CircleError({ error, reset }: { error: Error; reset: () => void }) {
+  useEffect(() => {
+    Sentry.captureException(error, {
+      tags: { digest: (error as Error & { digest?: string }).digest },
+    })
+  }, [error])
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-4 text-center">
       <h2 className="text-xl font-semibold text-foreground">Something went wrong</h2>
