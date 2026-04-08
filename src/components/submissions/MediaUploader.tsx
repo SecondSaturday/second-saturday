@@ -299,13 +299,14 @@ export function MediaUploader({
     }
 
     try {
-      await onEnsureResponse?.()
-
       const result = await FilePicker.pickMedia({
         readData: false,
       })
 
       if (!result.files || result.files.length === 0) return
+
+      // Create response record only after user confirms selection
+      await onEnsureResponse?.()
 
       // Reject entire selection if it exceeds remaining slots
       const remainingSlots = maxMedia - currentMediaCount
@@ -320,7 +321,10 @@ export function MediaUploader({
       const totalFiles = result.files.length
       for (let i = 0; i < totalFiles; i++) {
         const picked = result.files[i]!
-        if (!picked.path) continue
+        if (!picked.path) {
+          console.warn('Skipping file with no path:', picked.name)
+          continue
+        }
 
         setProgress(0)
         setBatchStatus({ current: i + 1, total: totalFiles })
