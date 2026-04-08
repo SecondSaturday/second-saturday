@@ -10,6 +10,7 @@ import { compressImage } from '@/lib/image'
 import { extractVideoThumbnail } from '@/lib/video'
 import { Camera as CameraIcon, ImagePlus as GalleryIcon, X, Loader2, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 import type { Id } from '../../../convex/_generated/dataModel'
 import { BlockingModal } from '../ui/blocking-modal'
 import { useBlockingUpload } from '@/hooks/useBlockingUpload'
@@ -25,7 +26,7 @@ interface MediaUploaderProps {
   responseId?: Id<'responses'>
   onUploadComplete?: (mediaId: Id<'media'>, type: 'image' | 'video') => void
   onUploadError?: (error: string) => void
-  onEnsureResponse?: () => Promise<void>
+  onEnsureResponse?: () => Promise<Id<'responses'> | undefined>
   onMediaRemove?: (mediaId: Id<'media'>) => void
   maxMedia?: number
   currentMediaCount?: number
@@ -254,8 +255,14 @@ export function MediaUploader({
       setProgress(80)
 
       // Save media record to database
+      const actualResponseId = responseId
+      if (!actualResponseId) {
+        toast.error('Failed to create response')
+        resetUpload()
+        return false
+      }
       const mediaId = await addMediaToResponse({
-        responseId: responseId!,
+        responseId: actualResponseId,
         storageId,
         type: 'image',
       })
@@ -476,8 +483,15 @@ export function MediaUploader({
       // Save media record to database
       // Note: muxAssetId will be updated via webhook when Mux processes the video
       // For now, we store the uploadId to track the video
+      const actualResponseId = responseId
+      if (!actualResponseId) {
+        toast.error('Failed to create response')
+        videoUpload.reset()
+        resetUpload()
+        return false
+      }
       const mediaId = await addMediaToResponse({
-        responseId: responseId!,
+        responseId: actualResponseId,
         type: 'video',
         videoId: videoIdRef.current ?? undefined,
         thumbnailStorageId,

@@ -20,6 +20,8 @@ export default function WhatameshGradient({
   onReady,
 }: WhatameshGradientProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const onReadyRef = useRef(onReady)
+  onReadyRef.current = onReady
   const [isLoaded, setIsLoaded] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // Generate unique ID for each instance
@@ -51,9 +53,7 @@ export default function WhatameshGradient({
             setIsLoaded(true)
 
             // Notify parent that gradient is ready
-            if (onReady) {
-              onReady()
-            }
+            onReadyRef.current?.()
           } catch (err) {
             console.error('Failed to initialize whatamesh gradient:', err)
             setError(err instanceof Error ? err.message : String(err))
@@ -72,7 +72,7 @@ export default function WhatameshGradient({
         gradientInstance.pause()
       }
     }
-  }, [canvasId, onReady])
+  }, [canvasId])
 
   return (
     <>

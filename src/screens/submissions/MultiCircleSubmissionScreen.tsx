@@ -286,6 +286,9 @@ export const MultiCircleSubmissionScreen = forwardRef<
     if (changedPrompts.length === 0) return
 
     const doSave = async () => {
+      // Double-check lock status (may have changed during debounce)
+      if (isLockedRef.current) return
+
       setSaveStatus('saving')
 
       try {
@@ -439,10 +442,10 @@ export const MultiCircleSubmissionScreen = forwardRef<
 
   // Handler: ensure a response exists before media upload (on-demand creation)
   const handleEnsureResponse = useCallback(
-    async (promptId: string) => {
-      // If response already exists, nothing to do
+    async (promptId: string): Promise<Id<'responses'> | undefined> => {
+      // If response already exists, return its ID
       const serverResponse = submissionData?.responses.find((r) => r.promptId === promptId)
-      if (serverResponse?._id) return
+      if (serverResponse?._id) return serverResponse._id
 
       // Create submission if needed, then create empty response
       let submissionId = submissionData?._id
@@ -452,11 +455,12 @@ export const MultiCircleSubmissionScreen = forwardRef<
           cycleId,
         })
       }
-      await updateResponse({
+      const responseId = await updateResponse({
         submissionId: submissionId as Id<'submissions'>,
         promptId: promptId as Id<'prompts'>,
         text: '',
       })
+      return responseId
     },
     [submissionData, activeCircleId, cycleId, createSubmission, updateResponse]
   )
