@@ -7,6 +7,7 @@ import { useMutation, useAction } from 'convex/react'
 import { useUser } from '@clerk/nextjs'
 import { api } from '../../../convex/_generated/api'
 import { compressImage } from '@/lib/image'
+import { extractVideoThumbnail } from '@/lib/video'
 import { Camera as CameraIcon, ImagePlus as GalleryIcon, X, Loader2, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Id } from '../../../convex/_generated/dataModel'
@@ -442,6 +443,26 @@ export function MediaUploader({
       videoUpload.setProgress(80)
       setProgress(80)
 
+      // Extract and upload thumbnail (best-effort)
+      let thumbnailStorageId: Id<'_storage'> | undefined
+      try {
+        const thumbnailBlob = await extractVideoThumbnail(file)
+        if (thumbnailBlob) {
+          const thumbUploadUrl = await generateUploadUrl()
+          const thumbResponse = await fetch(thumbUploadUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'image/jpeg' },
+            body: thumbnailBlob,
+          })
+          if (thumbResponse.ok) {
+            const result = await thumbResponse.json()
+            thumbnailStorageId = result.storageId
+          }
+        }
+      } catch {
+        // Thumbnail extraction is best-effort — continue without it
+      }
+
       // Save media record to database
       // Note: muxAssetId will be updated via webhook when Mux processes the video
       // For now, we store the uploadId to track the video
@@ -449,6 +470,7 @@ export function MediaUploader({
         responseId: responseId!,
         type: 'video',
         videoId: videoIdRef.current ?? undefined,
+        thumbnailStorageId,
       })
 
       videoUpload.setProgress(100)

@@ -375,6 +375,7 @@ export const addMediaToResponse = mutation({
     videoId: v.optional(v.id('videos')),
     type: v.union(v.literal('image'), v.literal('video')),
     thumbnailUrl: v.optional(v.string()),
+    thumbnailStorageId: v.optional(v.id('_storage')),
   },
   handler: async (ctx, args) => {
     const user = await getAuthUser(ctx)
@@ -419,6 +420,12 @@ export const addMediaToResponse = mutation({
     // Calculate next order
     const order = existingMedia.length
 
+    // Resolve thumbnail URL from storage ID if provided
+    let resolvedThumbnailUrl = args.thumbnailUrl
+    if (!resolvedThumbnailUrl && args.thumbnailStorageId) {
+      resolvedThumbnailUrl = (await ctx.storage.getUrl(args.thumbnailStorageId)) ?? undefined
+    }
+
     const now = Date.now()
     const mediaId = await ctx.db.insert('media', {
       responseId: args.responseId,
@@ -426,7 +433,7 @@ export const addMediaToResponse = mutation({
       muxAssetId: args.muxAssetId,
       videoId: args.videoId,
       type: args.type,
-      thumbnailUrl: args.thumbnailUrl,
+      thumbnailUrl: resolvedThumbnailUrl,
       order,
       uploadedAt: now,
       createdAt: now,
