@@ -1,6 +1,7 @@
 {
   "name": "second-saturday",
   "version": "0.1.0",
+  "description": "Connect meaningfully, once a month.",
   "private": true,
   "scripts": {
     "dev": "next dev",

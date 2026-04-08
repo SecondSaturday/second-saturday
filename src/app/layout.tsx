@@ -24,8 +24,41 @@ const courierPrime = Courier_Prime({
 })
 
 export const metadata: Metadata = {
-  title: 'Second Saturday',
-  description: 'Second Saturday Application',
+  title: {
+    default: 'Second Saturday',
+    template: '%s | Second Saturday',
+  },
+  description: 'Connect meaningfully, once a month.',
+  metadataBase: new URL('https://secondsaturday.app'),
+  applicationName: 'Second Saturday',
+  authors: [{ name: 'Second Saturday' }],
+  keywords: ['circles', 'community', 'monthly newsletter', 'friends', 'connection'],
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: '/apple-icon.png',
+  },
+  manifest: '/manifest.json',
+  openGraph: {
+    type: 'website',
+    siteName: 'Second Saturday',
+    title: 'Second Saturday',
+    description: 'Connect meaningfully, once a month.',
+    url: 'https://secondsaturday.app',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Second Saturday',
+    description: 'Connect meaningfully, once a month.',
+  },
+  appleWebApp: {
+    capable: true,
+    title: 'Second Saturday',
+    statusBarStyle: 'black-translucent',
+  },
 }
 
 export default function RootLayout({
