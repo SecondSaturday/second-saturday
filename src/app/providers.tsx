@@ -1,7 +1,7 @@
 'use client'
 
-import { Suspense } from 'react'
-import { ClerkProvider } from '@clerk/nextjs'
+import { Suspense, useEffect } from 'react'
+import { ClerkProvider, useUser } from '@clerk/nextjs'
 import { dark } from '@clerk/themes'
 import { ConvexProviderWithClerk } from 'convex/react-clerk'
 import { ConvexReactClient } from 'convex/react'
@@ -11,6 +11,7 @@ import { PostHogProvider } from '@/providers/posthog-provider'
 import { OneSignalProvider } from '@/providers/onesignal-provider'
 import { CapacitorProvider } from '@/providers/capacitor-provider'
 import { useTimezoneSync } from '@/hooks/useTimezoneSync'
+import * as Sentry from '@sentry/nextjs'
 
 const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
@@ -47,6 +48,24 @@ function TimezoneSync() {
   return null
 }
 
+function SentryUserContext() {
+  const { user, isSignedIn } = useUser()
+
+  useEffect(() => {
+    if (isSignedIn && user) {
+      Sentry.setUser({
+        id: user.id,
+        email: user.primaryEmailAddress?.emailAddress,
+        username: user.username ?? undefined,
+      })
+    } else {
+      Sentry.setUser(null)
+    }
+  }, [isSignedIn, user])
+
+  return null
+}
+
 function ClerkWithTheme({ children }: { children: React.ReactNode }) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === 'dark'
@@ -55,6 +74,7 @@ function ClerkWithTheme({ children }: { children: React.ReactNode }) {
     <ClerkProvider appearance={isDark ? clerkDarkAppearance : clerkAppearance}>
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
         <TimezoneSync />
+        <SentryUserContext />
         <Suspense fallback={null}>
           <PostHogProvider>
             <OneSignalProvider>
