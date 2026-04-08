@@ -12,6 +12,8 @@ interface ProfileHeaderImageLayoutProps {
   onIconUpload?: (file: File) => void
   editable?: boolean
   className?: string
+  centered?: boolean
+  fallbackInitial?: string
 }
 
 export function ProfileHeaderImageLayout({
@@ -21,6 +23,7 @@ export function ProfileHeaderImageLayout({
   onIconUpload,
   editable = false,
   className,
+  fallbackInitial,
 }: ProfileHeaderImageLayoutProps) {
   const coverInputRef = useRef<HTMLInputElement>(null)
   const iconInputRef = useRef<HTMLInputElement>(null)
@@ -74,7 +77,13 @@ export function ProfileHeaderImageLayout({
           <Avatar className="!size-[100px] border-4 border-background">
             <AvatarImage src={iconUrl ?? undefined} alt="Circle icon" />
             <AvatarFallback>
-              <Camera className="size-6 text-muted-foreground/40" />
+              {fallbackInitial ? (
+                <span className="text-2xl font-semibold text-muted-foreground">
+                  {fallbackInitial}
+                </span>
+              ) : (
+                <Camera className="size-6 text-muted-foreground/40" />
+              )}
             </AvatarFallback>
           </Avatar>
 
