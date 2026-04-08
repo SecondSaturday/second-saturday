@@ -105,7 +105,7 @@ export default function DashboardPage() {
     <div className="safe-area-top relative flex h-dvh bg-background">
       {/* Sidebar: full-width on mobile, resizable on desktop */}
       <div
-        className="flex min-h-0 shrink-0 flex-col md:border-r md:border-border"
+        className="flex min-h-0 shrink-0 flex-col  md:border-r md:border-border"
         style={{ width: isDesktop ? `${sidebarWidth}vw` : '100%' }}
       >
         <DashboardHeader />
@@ -142,7 +142,7 @@ function DesktopCircleNewsletter({ circleId }: { circleId: Id<'circles'> }) {
   const circle = useQuery(api.circles.getCircle, isAuthenticated ? { circleId } : 'skip')
   const newsletters = useQuery(
     api.newsletters.getNewslettersByCircle,
-    isAuthenticated ? { circleId } : 'skip'
+    isAuthenticated && circle ? { circleId } : 'skip'
   )
   const [selectedNewsletterId, setSelectedNewsletterId] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -160,7 +160,7 @@ function DesktopCircleNewsletter({ circleId }: { circleId: Id<'circles'> }) {
     currentNewsletter ? { newsletterId: currentNewsletter._id } : 'skip'
   )
 
-  if (circle === undefined || newsletters === undefined) {
+  if (circle === undefined || (circle && newsletters === undefined)) {
     return (
       <div className="flex flex-1 items-center justify-center">
         <div className="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -176,7 +176,7 @@ function DesktopCircleNewsletter({ circleId }: { circleId: Id<'circles'> }) {
     )
   }
 
-  if (newsletters.length === 0) {
+  if (!newsletters || newsletters.length === 0) {
     return (
       <div className="flex min-h-0 flex-1 flex-col">
         <main className="flex-1 overflow-y-auto">
@@ -216,7 +216,7 @@ function DesktopCircleNewsletter({ circleId }: { circleId: Id<'circles'> }) {
     )
   }
 
-  const availableNewsletters = newsletters
+  const availableNewsletters = (newsletters ?? [])
     .filter((n) => n.publishedAt)
     .map((n) => ({
       id: n._id,

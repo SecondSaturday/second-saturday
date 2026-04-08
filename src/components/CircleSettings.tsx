@@ -20,7 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Copy, RefreshCw, Check, AlertTriangle, MoreVertical } from 'lucide-react'
+import { Copy, RefreshCw, Check, MoreVertical } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Id } from '../../convex/_generated/dataModel'
 import { trackEvent } from '@/lib/analytics'
@@ -206,17 +206,6 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* 3-member warning (admin only, above tabs) */}
-      {isAdmin && circle.memberCount < 3 && (
-        <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/30">
-          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
-          <p className="text-sm text-amber-700 dark:text-amber-400">
-            Invite {3 - circle.memberCount} more member{circle.memberCount < 2 ? 's' : ''} to start
-            sending newsletters.
-          </p>
-        </div>
-      )}
-
       {/* Tab layout */}
       <Tabs defaultValue="details">
         <TabsList variant="line">
@@ -318,8 +307,8 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
           {/* Leave / Delete Circle section */}
           <div className="flex flex-col gap-3 border-t border-border pt-4">
             <Button
-              variant="destructive"
-              className="w-full"
+              variant="outline"
+              className="w-full border-destructive text-destructive hover:bg-destructive/10"
               onClick={() => setShowLeaveDialog(true)}
             >
               Leave this circle
@@ -328,10 +317,7 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
             {isAdmin && (
               <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                 <DialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full border-destructive text-destructive hover:bg-destructive/10"
-                  >
+                  <Button variant="destructive" className="w-full">
                     Delete this circle
                   </Button>
                 </DialogTrigger>
@@ -354,8 +340,9 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
                         setDeleting(true)
                         try {
                           await deleteCircle({ circleId })
+                          setShowDeleteDialog(false)
                           toast.success('Circle deleted')
-                          router.push('/dashboard')
+                          router.replace('/dashboard')
                         } catch (err) {
                           toast.error(
                             err instanceof Error ? err.message : 'Failed to delete circle'
@@ -478,7 +465,7 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
         isAdmin={isAdmin}
         open={showLeaveDialog}
         onOpenChange={setShowLeaveDialog}
-        onSuccess={() => router.push('/dashboard')}
+        onSuccess={() => router.replace('/dashboard')}
       />
 
       {/* Remove Member Modal */}

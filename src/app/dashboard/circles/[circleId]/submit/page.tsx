@@ -22,7 +22,10 @@ export default function SubmitPage() {
   }, [])
 
   const circle = useQuery(api.circles.getCircle, { circleId })
-  const submission = useQuery(api.submissions.getSubmissionForCircle, { circleId, cycleId })
+  const submission = useQuery(
+    api.submissions.getSubmissionForCircle,
+    circle ? { circleId, cycleId } : 'skip'
+  )
 
   if (circle === undefined || submission === undefined) {
     return (
@@ -63,9 +66,9 @@ export default function SubmitPage() {
         <button
           onClick={() => {
             if (isDesktop) {
-              router.push(`/dashboard?circle=${circleId}`)
+              router.replace(`/dashboard?circle=${circleId}`)
             } else {
-              router.push(`/dashboard/circles/${circleId}`)
+              router.replace(`/dashboard/circles/${circleId}`)
             }
           }}
           aria-label="Back"

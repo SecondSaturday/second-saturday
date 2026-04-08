@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import {
@@ -33,7 +32,6 @@ export function LeaveCircleModal({
   onOpenChange,
   onSuccess,
 }: LeaveCircleModalProps) {
-  const router = useRouter()
   const leaveCircle = useMutation(api.memberships.leaveCircle)
   const transferAdminAndLeave = useMutation(api.memberships.transferAdminAndLeave)
   const members = useQuery(
@@ -46,15 +44,19 @@ export function LeaveCircleModal({
   const currentUser = useQuery(api.users.getCurrentUser)
   const otherMembers = members?.filter((m) => m.userId !== currentUser?._id)
 
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) setSelectedNewAdmin(null)
+    onOpenChange(newOpen)
+  }
+
   const handleLeave = async () => {
     setLoading(true)
     try {
       await leaveCircle({ circleId })
+      handleOpenChange(false)
       toast.success('Left circle')
       trackEvent('circle_left', { circleId })
-      onOpenChange(false)
       onSuccess?.()
-      router.replace('/dashboard')
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to leave circle')
     } finally {
@@ -67,11 +69,10 @@ export function LeaveCircleModal({
     setLoading(true)
     try {
       await transferAdminAndLeave({ circleId, newAdminUserId: selectedNewAdmin })
+      handleOpenChange(false)
       toast.success('Admin transferred and left circle')
       trackEvent('circle_left', { circleId, adminTransferred: true })
-      onOpenChange(false)
       onSuccess?.()
-      router.replace('/dashboard')
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to transfer and leave')
     } finally {
@@ -84,7 +85,7 @@ export function LeaveCircleModal({
     const noOtherMembers = otherMembers !== undefined && otherMembers.length === 0
 
     return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
@@ -121,7 +122,7 @@ export function LeaveCircleModal({
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+            <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={loading}>
               Cancel
             </Button>
             {noOtherMembers ? (
@@ -145,7 +146,7 @@ export function LeaveCircleModal({
 
   // Regular member flow
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Leave this circle?</DialogTitle>
@@ -155,7 +156,7 @@ export function LeaveCircleModal({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+          <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={loading}>
             Cancel
           </Button>
           <Button variant="destructive" onClick={handleLeave} disabled={loading}>

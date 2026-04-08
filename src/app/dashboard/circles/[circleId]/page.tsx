@@ -1,10 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import type { Id } from '../../../../../convex/_generated/dataModel'
 import { ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
 import { useQuery, useMutation, useConvexAuth } from 'convex/react'
 import { api } from '../../../../../convex/_generated/api'
 import { NewsletterView } from '@/components/newsletter/NewsletterView'
@@ -13,13 +12,14 @@ import { trackEvent } from '@/lib/analytics'
 
 export default function CircleLandingPage() {
   const params = useParams()
+  const router = useRouter()
   const circleId = params.circleId as Id<'circles'>
 
   const { isAuthenticated } = useConvexAuth()
   const circle = useQuery(api.circles.getCircle, isAuthenticated ? { circleId } : 'skip')
   const newsletters = useQuery(
     api.newsletters.getNewslettersByCircle,
-    isAuthenticated ? { circleId } : 'skip'
+    isAuthenticated && circle ? { circleId } : 'skip'
   )
   const [selectedNewsletterId, setSelectedNewsletterId] = useState<string | null>(null)
 
@@ -65,13 +65,17 @@ export default function CircleLandingPage() {
   }, [newsletter, circleId, markRead])
 
   // Loading
-  if (circle === undefined || newsletters === undefined || (activeId && newsletter === undefined)) {
+  if (
+    circle === undefined ||
+    (circle && newsletters === undefined) ||
+    (activeId && newsletter === undefined)
+  ) {
     return (
       <div className="safe-area-top flex h-dvh flex-col bg-background">
         <header className="flex shrink-0 items-center gap-3 border-b border-border bg-background px-4 py-3">
-          <Link href="/dashboard">
+          <button onClick={() => router.replace('/dashboard')} aria-label="Back">
             <ArrowLeft className="size-5 text-foreground" />
-          </Link>
+          </button>
           <h1 className="text-lg font-semibold text-foreground">Loading...</h1>
         </header>
         <div className="flex flex-1 items-center justify-center">
@@ -86,9 +90,9 @@ export default function CircleLandingPage() {
     return (
       <div className="safe-area-top flex h-dvh flex-col bg-background">
         <header className="flex shrink-0 items-center gap-3 border-b border-border bg-background px-4 py-3">
-          <Link href="/dashboard">
+          <button onClick={() => router.replace('/dashboard')} aria-label="Back">
             <ArrowLeft className="size-5 text-foreground" />
-          </Link>
+          </button>
           <h1 className="text-lg font-semibold text-foreground">Circle not found</h1>
         </header>
         <div className="flex flex-1 items-center justify-center px-4">
@@ -99,7 +103,7 @@ export default function CircleLandingPage() {
   }
 
   // No newsletters — still show full circle page with cover/avatar/settings
-  if (newsletters.length === 0 || !newsletter) {
+  if (!newsletters || newsletters.length === 0 || !newsletter) {
     const emptyCircleInfo = {
       name: circle.name,
       iconUrl: circle.iconUrl ?? null,
@@ -111,12 +115,13 @@ export default function CircleLandingPage() {
       <div className="safe-area-top flex h-dvh flex-col bg-background">
         <main className="safe-area-bottom relative flex-1 overflow-y-auto">
           <header className="sticky top-0 z-10 bg-background px-4 py-3">
-            <Link
-              href="/dashboard"
+            <button
+              onClick={() => router.replace('/dashboard')}
               className="flex size-9 items-center justify-center rounded-full"
+              aria-label="Back"
             >
               <ArrowLeft className="size-5 text-foreground" />
-            </Link>
+            </button>
           </header>
           <NewsletterView
             circle={emptyCircleInfo}
@@ -137,7 +142,7 @@ export default function CircleLandingPage() {
     timezone: 'UTC',
   }
 
-  const availableNewsletters = newsletters
+  const availableNewsletters = (newsletters ?? [])
     .filter((n) => n.publishedAt)
     .map((n) => ({
       id: n._id,
@@ -157,9 +162,13 @@ export default function CircleLandingPage() {
           className="sticky top-0 z-10 bg-background px-4 py-3 transition-transform duration-300"
           style={{ transform: headerVisible ? 'translateY(0)' : 'translateY(-100%)' }}
         >
-          <Link href="/dashboard" className="flex size-9 items-center justify-center rounded-full">
+          <button
+            onClick={() => router.replace('/dashboard')}
+            className="flex size-9 items-center justify-center rounded-full"
+            aria-label="Back"
+          >
             <ArrowLeft className="size-5 text-foreground" />
-          </Link>
+          </button>
         </header>
         <NewsletterView
           circle={circleInfo}
