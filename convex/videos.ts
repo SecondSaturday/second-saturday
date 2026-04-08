@@ -12,10 +12,13 @@ export const createVideo = mutation({
   },
   handler: async (ctx, args) => {
     const user = await getAuthUser(ctx)
+    if (args.circleId) {
+      await requireMembership(ctx, user._id, args.circleId)
+    }
     const now = Date.now()
     return await ctx.db.insert('videos', {
       uploadId: args.uploadId,
-      userId: user.clerkId,
+      userId: user._id,
       title: args.title,
       circleId: args.circleId,
       status: 'uploading',
@@ -138,7 +141,7 @@ export const getVideo = query({
     }
 
     // Check if user is the owner
-    if (video.userId === user.clerkId) {
+    if (video.userId === user._id) {
       return video
     }
 
@@ -160,7 +163,7 @@ export const getVideosByUser = query({
     const user = await getAuthUser(ctx)
     return await ctx.db
       .query('videos')
-      .withIndex('by_user', (q) => q.eq('userId', user.clerkId))
+      .withIndex('by_user', (q) => q.eq('userId', user._id))
       .order('desc')
       .collect()
   },
@@ -193,7 +196,7 @@ export const deleteVideo = mutation({
     }
 
     // Verify ownership
-    if (video.userId !== user.clerkId) {
+    if (video.userId !== user._id) {
       throw new Error('Not authorized to delete this video')
     }
 

@@ -100,7 +100,7 @@ export const deleteUser = internalMutation({
     // Delete all videos by this user
     const videos = await ctx.db
       .query('videos')
-      .withIndex('by_user', (q) => q.eq('userId', user.clerkId))
+      .withIndex('by_user', (q) => q.eq('userId', user._id))
       .collect()
 
     for (const video of videos) {
@@ -295,7 +295,7 @@ export const deleteAccount = mutation({
     // Delete all videos by this user
     const videos = await ctx.db
       .query('videos')
-      .withIndex('by_user', (q) => q.eq('userId', user.clerkId))
+      .withIndex('by_user', (q) => q.eq('userId', user._id))
       .collect()
 
     for (const video of videos) {

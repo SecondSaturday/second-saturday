@@ -21,7 +21,7 @@ export default defineSchema({
     uploadId: v.string(),
     assetId: v.optional(v.string()),
     playbackId: v.optional(v.string()),
-    userId: v.string(),
+    userId: v.id('users'),
     circleId: v.optional(v.id('circles')),
     title: v.optional(v.string()),
     duration: v.optional(v.number()),
