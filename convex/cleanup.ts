@@ -24,9 +24,8 @@ export const cleanupOrphanedStorage = internalMutation({
     for (const m of orphanedMedia.slice(0, BATCH_SIZE)) {
       const response = await ctx.db.get(m.responseId)
       if (!response) {
-        if (m.storageId) {
-          await ctx.storage.delete(m.storageId)
-        }
+        // storageId guaranteed non-null by filter above
+        await ctx.storage.delete(m.storageId!)
         await ctx.db.delete(m._id)
         deletedCount++
       }
