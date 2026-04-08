@@ -187,7 +187,7 @@ export const MultiCircleSubmissionScreen = forwardRef<
         trackEvent('submission_locked', { circle_id: activeCircleId, cycle_id: cycleId })
       } catch {}
       toast.success('Submission locked! See you on newsletter day.')
-      router.push('/dashboard')
+      router.replace('/dashboard')
     } catch (err) {
       toast.error('Failed to submit. Please try again.')
     } finally {

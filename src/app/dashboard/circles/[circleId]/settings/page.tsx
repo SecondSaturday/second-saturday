@@ -14,9 +14,9 @@ export default function CircleSettingsPage() {
 
   const handleBack = () => {
     if (isDesktop) {
-      router.push(`/dashboard?circle=${circleId}`)
+      router.replace(`/dashboard?circle=${circleId}`)
     } else {
-      router.push(`/dashboard/circles/${circleId}`)
+      router.replace(`/dashboard/circles/${circleId}`)
     }
   }
 

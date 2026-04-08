@@ -21,9 +21,9 @@ export default function NewsletterPage() {
 
   const handleBack = useCallback(() => {
     if (isDesktop) {
-      router.push(`/dashboard?circle=${circleId}`)
+      router.replace(`/dashboard?circle=${circleId}`)
     } else {
-      router.push(`/dashboard/circles/${circleId}`)
+      router.replace(`/dashboard/circles/${circleId}`)
     }
   }, [router, circleId, isDesktop])
 
