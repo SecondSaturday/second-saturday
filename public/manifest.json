@@ -1,0 +1,27 @@
+{
+  "name": "Second Saturday",
+  "short_name": "2nd Saturday",
+  "description": "Connect meaningfully, once a month.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#efe6e6",
+  "theme_color": "#953FE3",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

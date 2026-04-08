@@ -4,12 +4,11 @@ import { test, expect } from '@playwright/test'
 test.setTimeout(30000)
 
 test.describe('Authentication (Unauthenticated)', () => {
-  test('home page is accessible', async ({ page }) => {
-    const response = await page.goto('/', { waitUntil: 'domcontentloaded' })
+  test('home page redirects away from root', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'domcontentloaded' })
 
-    // Page should load (200 or redirect to sign-in)
-    expect(response?.status()).toBeLessThan(500)
-    await expect(page.locator('body')).toBeVisible()
+    // Home page redirects: unauthenticated → /sign-in, authenticated → /dashboard
+    await expect(page).toHaveURL(/\/(sign-in|dashboard)/, { timeout: 15000 })
   })
 
   test('sign-in page is accessible', async ({ page }) => {

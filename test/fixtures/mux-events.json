@@ -1,0 +1,51 @@
+{
+  "video.upload.asset_created": {
+    "type": "video.upload.asset_created",
+    "id": "evt_test_asset_created",
+    "created_at": "2024-01-15T10:30:00.000Z",
+    "data": {
+      "id": "upload_test_123",
+      "timeout": 3600,
+      "status": "asset_created",
+      "new_asset_settings": {
+        "playback_policy": ["public"]
+      },
+      "asset_id": "asset_test_abc123",
+      "created_at": "2024-01-15T10:30:00.000Z"
+    }
+  },
+  "video.asset.ready": {
+    "type": "video.asset.ready",
+    "id": "evt_test_asset_ready",
+    "created_at": "2024-01-15T10:35:00.000Z",
+    "data": {
+      "id": "asset_test_abc123",
+      "created_at": "2024-01-15T10:30:00.000Z",
+      "status": "ready",
+      "duration": 120.5,
+      "aspect_ratio": "16:9",
+      "playback_ids": [
+        {
+          "id": "playback_test_xyz789",
+          "policy": "public"
+        }
+      ],
+      "master_access": "none",
+      "mp4_support": "standard"
+    }
+  },
+  "video.asset.errored": {
+    "type": "video.asset.errored",
+    "id": "evt_test_asset_errored",
+    "created_at": "2024-01-15T10:35:00.000Z",
+    "data": {
+      "id": "asset_test_error456",
+      "created_at": "2024-01-15T10:30:00.000Z",
+      "status": "errored",
+      "errors": {
+        "messages": ["Video file is corrupted"],
+        "type": "invalid_input"
+      }
+    }
+  }
+}

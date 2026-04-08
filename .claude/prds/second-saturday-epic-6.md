@@ -32,6 +32,16 @@ This epic covers how the app communicates with users between newsletters. Notifi
 4. **Provide notification preferences** - Users can toggle reminders and newsletter notifications on/off
 5. **Respect quiet hours** - No notifications during user-defined quiet times (P2)
 
+## Carried Over from Epic 3
+
+The following items were deferred from Epic 3 (Circle Membership) as they require notification infrastructure:
+
+- **3.5.6** — One-tap "Send reminder" to individual member from admin submission dashboard
+- **3.5.7** — Option to send reminder to all non-submitters at once
+- **3.5.8** — Limit admin to max 3 manual reminders per cycle (count resets after newsletter sends)
+
+The admin submission dashboard UI shell already exists (`src/components/AdminSubmissionDashboard.tsx`) with a "Send Reminder" button that currently shows a "Coming soon" toast. This epic must wire that button to actual notification delivery and implement the reminder count tracking/enforcement.
+
 ---
 
 ## Implementation Plan
@@ -83,6 +93,10 @@ This epic covers how the app communicates with users between newsletters. Notifi
 1. **Set up Convex schema**
    - Create notificationPreferences table in schema.ts
      - Fields: userId, circleId (optional, for per-circle overrides), submissionReminders, newsletterReady, createdAt, updatedAt
+   - Create adminReminders table in schema.ts (carried from Epic 3: 3.5.8)
+     - Fields: circleId, adminUserId, targetUserId (optional, null = all non-submitters), cycleId, sentAt
+     - Index: by_circle_cycle for counting reminders per cycle
+     - Enforces max 3 reminders per admin per cycle
    - Create indexes for efficient queries
 
 2. **Implement Convex queries and mutations**
@@ -113,10 +127,14 @@ This epic covers how the app communicates with users between newsletters. Notifi
    - Implement newsletter ready notification
      - Send when newsletter is compiled and sent
      - Include circle name in notification
-   - Implement admin manual reminder
-     - Admin can send to individual members or all non-submitters
-     - Track reminder count per admin per cycle (max 3)
-     - Reset count after newsletter sends
+   - Implement admin manual reminder (carried from Epic 3: 3.5.6, 3.5.7, 3.5.8)
+     - Wire existing "Send Reminder" button in `src/components/AdminSubmissionDashboard.tsx` (currently shows "Coming soon" toast)
+     - Create `sendAdminReminder` mutation: sends push to individual member (3.5.6)
+     - Create `sendBulkAdminReminder` mutation: sends push to all non-submitters at once (3.5.7)
+     - Create `getAdminReminderCount` query: returns reminders sent this cycle
+     - Track reminder count per admin per cycle in adminReminders table (max 3) (3.5.8)
+     - Show remaining reminder count in dashboard UI (e.g., "2 of 3 reminders remaining")
+     - Reset count after newsletter sends (delete adminReminders for completed cycle)
 
 5. **Add analytics events** (PostHog)
    - Track `push_notification_sent` (type: reminder/newsletter_ready)
@@ -295,6 +313,37 @@ This epic covers how the app communicates with users between newsletters. Notifi
 
 ---
 
+### JTBD 6.4: Admin Manual Reminders (Carried from Epic 3)
+
+**When** the deadline is approaching and some members haven't submitted,
+**I want to** send targeted reminders from the submission dashboard,
+**So I can** nudge specific people or all stragglers without leaving the app.
+
+**Context:** Deferred from Epic 3 (3.5.6, 3.5.7, 3.5.8). The admin submission dashboard UI already exists at `src/components/AdminSubmissionDashboard.tsx` with a "Send Reminder" button that shows a "Coming soon" toast. This JTBD wires that button to actual notification delivery.
+
+**Functional Requirements:**
+
+| ID | Requirement | Priority | Origin |
+|----|-------------|----------|--------|
+| 6.4.1 | One-tap "Send reminder" to individual member from submission dashboard | P0 | Epic 3: 3.5.6 |
+| 6.4.2 | Option to send reminder to all non-submitters at once | P0 | Epic 3: 3.5.7 |
+| 6.4.3 | Limit admin to max 3 manual reminders per cycle | P0 | Epic 3: 3.5.8 |
+| 6.4.4 | Show remaining reminder count (e.g., "2 of 3 reminders remaining") | P0 | Epic 3: 3.5.8 |
+| 6.4.5 | Reminder count resets after newsletter sends | P0 | Epic 3: 3.5.8 |
+| 6.4.6 | Manual reminder sends push notification via OneSignal | P0 | New |
+| 6.4.7 | Disable "Send Reminder" button when 0 reminders remaining | P0 | New |
+
+**Acceptance Criteria:**
+- Admin can send reminder to individual member from submission dashboard
+- Admin can send bulk reminder to all non-submitters
+- Dashboard shows "X of 3 reminders remaining" with live count
+- After 3 reminders sent, button is disabled with "No reminders remaining" tooltip
+- Reminder count resets when newsletter for that cycle is sent
+- Each reminder sends a push notification to the target member(s)
+- Sending a bulk reminder counts as 1 reminder (not 1 per member)
+
+---
+
 ## Analytics Events
 
 Track notification sending and engagement:
@@ -303,11 +352,13 @@ Track notification sending and engagement:
 - `push_notification_sent` (type: reminder/newsletter_ready)
 - `push_notification_clicked` (type: reminder/newsletter_ready)
 - `notification_settings_updated`
+- `admin_manual_reminder_sent` (target: individual/all, reminders_remaining: number)
 
 **Implementation:** Track events at key moments:
 - When push notification is sent to user
 - When user taps notification (opens app)
 - When user updates notification preferences
+- When admin sends manual reminder (individual or bulk)
 
 ---
 
@@ -380,7 +431,8 @@ Track notification sending and engagement:
 - Implement deep linking from notifications
 - Implement submission reminder notification
 - Implement newsletter ready notification
-- Implement admin manual reminder with count tracking
+- Wire admin manual reminder buttons in existing AdminSubmissionDashboard (Epic 3 carryover)
+- Implement admin reminder count tracking and enforcement
 - Add analytics events (PostHog)
 - Manual testing in dev environment
 
@@ -433,7 +485,10 @@ Track notification sending and engagement:
 - [ ] Reminders include circle name and deadline
 - [ ] Tapping notification opens correct screen (deep linking works)
 - [ ] Notification preferences screen allows toggling reminders on/off
-- [ ] Admin can send manual reminders (max 3 per cycle)
+- [ ] Admin can send manual reminder to individual member from submission dashboard (Epic 3: 3.5.6)
+- [ ] Admin can send bulk reminder to all non-submitters (Epic 3: 3.5.7)
+- [ ] Manual reminders limited to max 3 per cycle (Epic 3: 3.5.8)
+- [ ] Dashboard shows remaining reminder count
 - [ ] Reminder count resets after newsletter sends
 - [ ] Notification preferences sync across devices
 - [ ] OneSignal player ID registered in Convex on app load

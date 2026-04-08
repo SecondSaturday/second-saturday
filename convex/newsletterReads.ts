@@ -1,0 +1,95 @@
+import { mutation, query } from './_generated/server'
+import { v } from 'convex/values'
+import { getAuthUser, getOrCreateAuthUser } from './authHelpers'
+
+export const markNewsletterRead = mutation({
+  args: {
+    circleId: v.id('circles'),
+    newsletterId: v.id('newsletters'),
+  },
+  handler: async (ctx, args) => {
+    const user = await getOrCreateAuthUser(ctx)
+
+    // Verify membership
+    const membership = await ctx.db
+      .query('memberships')
+      .withIndex('by_user_circle', (q) => q.eq('userId', user._id).eq('circleId', args.circleId))
+      .first()
+
+    if (!membership || membership.leftAt) throw new Error('Not a member of this circle')
+
+    // Verify newsletter belongs to this circle
+    const newsletter = await ctx.db.get(args.newsletterId)
+    if (!newsletter || newsletter.circleId !== args.circleId) {
+      throw new Error('Newsletter does not belong to this circle')
+    }
+
+    // Check if already read
+    const existing = await ctx.db
+      .query('newsletterReads')
+      .withIndex('by_user_newsletter', (q) =>
+        q.eq('userId', user._id).eq('newsletterId', args.newsletterId)
+      )
+      .first()
+
+    if (existing) return existing._id
+
+    return await ctx.db.insert('newsletterReads', {
+      userId: user._id,
+      circleId: args.circleId,
+      newsletterId: args.newsletterId,
+      readAt: Date.now(),
+    })
+  },
+})
+
+export const getNewslettersByDate = query({
+  args: {
+    circleId: v.id('circles'),
+    /** Full year (e.g. 2026) */
+    year: v.number(),
+    /** 0-indexed month (0 = January, 11 = December) */
+    month: v.number(),
+  },
+  handler: async (ctx, args) => {
+    if (args.month < 0 || args.month > 11) {
+      throw new Error('month must be 0-indexed (0 = January, 11 = December)')
+    }
+    const user = await getAuthUser(ctx)
+
+    // Verify membership
+    const membership = await ctx.db
+      .query('memberships')
+      .withIndex('by_user_circle', (q) => q.eq('userId', user._id).eq('circleId', args.circleId))
+      .first()
+
+    if (!membership || membership.leftAt) throw new Error('Not a member of this circle')
+
+    const startOfMonth = Date.UTC(args.year, args.month, 1)
+    const endOfMonth = Date.UTC(args.year, args.month + 1, 0, 23, 59, 59, 999)
+
+    const newsletters = await ctx.db
+      .query('newsletters')
+      .withIndex('by_circle', (q) => q.eq('circleId', args.circleId))
+      .collect()
+
+    const filtered = newsletters.filter(
+      (n) => n.publishedAt && n.publishedAt >= startOfMonth && n.publishedAt <= endOfMonth
+    )
+
+    const withReadStatus = await Promise.all(
+      filtered.map(async (n) => {
+        const read = await ctx.db
+          .query('newsletterReads')
+          .withIndex('by_user_newsletter', (q) =>
+            q.eq('userId', user._id).eq('newsletterId', n._id)
+          )
+          .first()
+
+        return { ...n, isRead: !!read }
+      })
+    )
+
+    return withReadStatus
+  },
+})

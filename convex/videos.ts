@@ -1,19 +1,24 @@
 import { v } from 'convex/values'
 import { mutation, query, internalMutation } from './_generated/server'
+import { internal } from './_generated/api'
+import { getAuthUser, requireMembership } from './authHelpers'
 
 // Create a new video record when upload starts
 export const createVideo = mutation({
   args: {
     uploadId: v.string(),
-    userId: v.string(),
     title: v.optional(v.string()),
     circleId: v.optional(v.id('circles')),
   },
   handler: async (ctx, args) => {
+    const user = await getAuthUser(ctx)
+    if (args.circleId) {
+      await requireMembership(ctx, user._id, args.circleId)
+    }
     const now = Date.now()
     return await ctx.db.insert('videos', {
       uploadId: args.uploadId,
-      userId: args.userId,
+      userId: user._id,
       title: args.title,
       circleId: args.circleId,
       status: 'uploading',
@@ -78,6 +83,16 @@ export const updateVideoReady = internalMutation({
       updatedAt: Date.now(),
     })
 
+    // Update linked media record with muxAssetId so newsletters can find the video
+    const linkedMedia = await ctx.db
+      .query('media')
+      .withIndex('by_video', (q) => q.eq('videoId', video._id))
+      .first()
+
+    if (linkedMedia && !linkedMedia.muxAssetId) {
+      await ctx.db.patch(linkedMedia._id, { muxAssetId: args.assetId })
+    }
+
     return video._id
   },
 })
@@ -99,6 +114,11 @@ export const updateVideoError = internalMutation({
       return null
     }
 
+    // Don't overwrite a ready video with an error from a stale/replayed event
+    if (video.status === 'ready') {
+      return null
+    }
+
     await ctx.db.patch(video._id, {
       status: 'error',
       error: args.error,
@@ -113,17 +133,37 @@ export const updateVideoError = internalMutation({
 export const getVideo = query({
   args: { id: v.id('videos') },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.id)
+    const user = await getAuthUser(ctx)
+    const video = await ctx.db.get(args.id)
+
+    if (!video) {
+      throw new Error('Video not found')
+    }
+
+    // Check if user is the owner
+    if (video.userId === user._id) {
+      return video
+    }
+
+    // If video has a circleId, check circle membership
+    if (video.circleId) {
+      await requireMembership(ctx, user._id, video.circleId)
+      return video
+    }
+
+    // User is neither owner nor circle member
+    throw new Error('Not authorized to view this video')
   },
 })
 
 // Get videos for a user
 export const getVideosByUser = query({
-  args: { userId: v.string() },
-  handler: async (ctx, args) => {
+  args: {},
+  handler: async (ctx) => {
+    const user = await getAuthUser(ctx)
     return await ctx.db
       .query('videos')
-      .withIndex('by_user', (q) => q.eq('userId', args.userId))
+      .withIndex('by_user', (q) => q.eq('userId', user._id))
       .order('desc')
       .collect()
   },
@@ -133,6 +173,9 @@ export const getVideosByUser = query({
 export const getVideosByCircle = query({
   args: { circleId: v.id('circles') },
   handler: async (ctx, args) => {
+    const user = await getAuthUser(ctx)
+    await requireMembership(ctx, user._id, args.circleId)
+
     return await ctx.db
       .query('videos')
       .withIndex('by_circle', (q) => q.eq('circleId', args.circleId))
@@ -145,6 +188,37 @@ export const getVideosByCircle = query({
 export const deleteVideo = mutation({
   args: { id: v.id('videos') },
   handler: async (ctx, args) => {
+    const user = await getAuthUser(ctx)
+    const video = await ctx.db.get(args.id)
+
+    if (!video) {
+      throw new Error('Video not found')
+    }
+
+    // Verify ownership
+    if (video.userId !== user._id) {
+      throw new Error('Not authorized to delete this video')
+    }
+
+    // Schedule Mux asset deletion before removing the DB record
+    if (video.assetId) {
+      await ctx.scheduler.runAfter(0, internal.videoActions.deleteMuxAsset, {
+        assetId: video.assetId,
+      })
+    }
+
+    // Clean up linked media records that reference this video
+    const linkedMedia = await ctx.db
+      .query('media')
+      .withIndex('by_video', (q) => q.eq('videoId', args.id))
+      .collect()
+    for (const m of linkedMedia) {
+      if (m.storageId) {
+        await ctx.storage.delete(m.storageId)
+      }
+      await ctx.db.delete(m._id)
+    }
+
     await ctx.db.delete(args.id)
     return { success: true }
   },

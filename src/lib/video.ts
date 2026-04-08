@@ -1,126 +1,61 @@
-import Mux from '@mux/mux-node'
-import crypto from 'crypto'
+export async function extractVideoThumbnail(file: File, maxWidth = 640): Promise<Blob | null> {
+  return new Promise((resolve) => {
+    const video = document.createElement('video')
+    const url = URL.createObjectURL(file)
+    video.src = url
+    video.muted = true
+    video.playsInline = true
+    video.preload = 'metadata'
 
-// Mux client - only available server-side
-const mux = new Mux({
-  tokenId: process.env.MUX_TOKEN_ID,
-  tokenSecret: process.env.MUX_TOKEN_SECRET,
-})
+    const timeout = setTimeout(() => {
+      cleanup()
+      resolve(null)
+    }, 5000)
 
-export interface CreateUploadOptions {
-  corsOrigin?: string
-  maxDurationSeconds?: number
-}
+    const cleanup = () => {
+      clearTimeout(timeout)
+      URL.revokeObjectURL(url)
+      video.remove()
+    }
 
-// Create a direct upload URL for client-side uploads
-export async function createUploadUrl(options: CreateUploadOptions = {}) {
-  const { corsOrigin = '*', maxDurationSeconds = 300 } = options
-
-  try {
-    const upload = await mux.video.uploads.create({
-      new_asset_settings: {
-        playback_policy: ['public'],
-        encoding_tier: 'baseline',
-      },
-      cors_origin: corsOrigin,
-      // Max 5 minutes by default
-      ...(maxDurationSeconds && {
-        new_asset_settings: {
-          playback_policy: ['public'],
-          encoding_tier: 'baseline',
-          max_resolution_tier: '1080p',
-        },
-      }),
+    video.addEventListener('error', () => {
+      cleanup()
+      resolve(null)
     })
 
-    return {
-      uploadId: upload.id,
-      uploadUrl: upload.url,
-    }
-  } catch (err) {
-    console.error('Failed to create Mux upload:', err)
-    throw err
-  }
-}
+    video.addEventListener('loadeddata', () => {
+      video.currentTime = Math.min(0.5, video.duration || 0)
+    })
 
-// Get asset details by ID
-export async function getAsset(assetId: string) {
-  try {
-    const asset = await mux.video.assets.retrieve(assetId)
-    return {
-      id: asset.id,
-      status: asset.status,
-      duration: asset.duration,
-      playbackId: asset.playback_ids?.[0]?.id,
-      aspectRatio: asset.aspect_ratio,
-      resolution: asset.resolution_tier,
-    }
-  } catch (err) {
-    console.error('Failed to get Mux asset:', err)
-    throw err
-  }
-}
+    video.addEventListener('seeked', () => {
+      try {
+        const canvas = document.createElement('canvas')
+        const scale = Math.min(1, maxWidth / video.videoWidth)
+        canvas.width = Math.round(video.videoWidth * scale)
+        canvas.height = Math.round(video.videoHeight * scale)
 
-// Get playback URL for a video
-export function getPlaybackUrl(playbackId: string, options: { thumbnail?: boolean } = {}) {
-  if (options.thumbnail) {
-    return `https://image.mux.com/${playbackId}/thumbnail.jpg`
-  }
-  return `https://stream.mux.com/${playbackId}.m3u8`
-}
+        const ctx = canvas.getContext('2d')
+        if (!ctx) {
+          cleanup()
+          resolve(null)
+          return
+        }
 
-// Get thumbnail URL at a specific time
-export function getThumbnailUrl(
-  playbackId: string,
-  options: { time?: number; width?: number; height?: number } = {}
-) {
-  const { time = 0, width = 640, height } = options
-  const params = new URLSearchParams({
-    time: time.toString(),
-    width: width.toString(),
-    ...(height && { height: height.toString() }),
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+        canvas.toBlob(
+          (blob) => {
+            cleanup()
+            resolve(blob)
+          },
+          'image/jpeg',
+          0.7
+        )
+      } catch {
+        cleanup()
+        resolve(null)
+      }
+    })
+
+    video.load()
   })
-  return `https://image.mux.com/${playbackId}/thumbnail.jpg?${params.toString()}`
-}
-
-// Delete an asset
-export async function deleteAsset(assetId: string) {
-  try {
-    await mux.video.assets.delete(assetId)
-    return { success: true }
-  } catch (err) {
-    console.error('Failed to delete Mux asset:', err)
-    throw err
-  }
-}
-
-// Verify Mux webhook signature
-export function verifyMuxWebhook(body: string, signature: string, webhookSecret: string): boolean {
-  // Mux uses a simple HMAC-SHA256 signature
-  // The signature header format is: t=<timestamp>,v1=<signature>
-  const parts = signature.split(',')
-  const timestampPart = parts.find((p) => p.startsWith('t='))
-  const signaturePart = parts.find((p) => p.startsWith('v1='))
-
-  if (!timestampPart || !signaturePart) {
-    return false
-  }
-
-  const timestamp = timestampPart.slice(2)
-  const expectedSignature = signaturePart.slice(3)
-
-  // Create the signed payload
-  const signedPayload = `${timestamp}.${body}`
-
-  // Compute HMAC
-  const hmac = crypto.createHmac('sha256', webhookSecret)
-  hmac.update(signedPayload)
-  const computedSignature = hmac.digest('hex')
-
-  // Timing-safe comparison
-  try {
-    return crypto.timingSafeEqual(Buffer.from(expectedSignature), Buffer.from(computedSignature))
-  } catch {
-    return false
-  }
 }

@@ -1,20 +1,19 @@
 import { test, expect } from '@playwright/test'
 import { setupClerkTestingToken } from '@clerk/testing/playwright'
+import { warmupConvexAuth } from './helpers'
 
 test.describe('Home Page (Authenticated)', () => {
   test.beforeEach(async ({ page }) => {
     // Ensure testing token is set for each test
     await setupClerkTestingToken({ page })
+    await warmupConvexAuth(page)
   })
 
-  test('page loads successfully', async ({ page }) => {
-    const response = await page.goto('/', { waitUntil: 'domcontentloaded' })
+  test('authenticated user is redirected to dashboard from home', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'domcontentloaded' })
 
-    // Should load without server errors
-    expect(response?.status()).toBeLessThan(500)
-
-    // Page should be visible
-    await expect(page.locator('body')).toBeVisible()
+    // Authenticated users should be redirected to /dashboard
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 })
   })
 
   test('has correct title', async ({ page }) => {
