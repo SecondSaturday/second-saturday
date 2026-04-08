@@ -22,6 +22,8 @@ interface MediaThumbnail {
   thumbnailUrl?: string | null
 }
 
+const EMPTY_MEDIA: MediaThumbnail[] = []
+
 interface MediaUploaderProps {
   responseId?: Id<'responses'>
   onUploadComplete?: (mediaId: Id<'media'>, type: 'image' | 'video') => void
@@ -45,7 +47,7 @@ export function MediaUploader({
   onMediaRemove,
   maxMedia = 3,
   currentMediaCount = 0,
-  existingMedia = [],
+  existingMedia = EMPTY_MEDIA,
   className,
 }: MediaUploaderProps) {
   const { user } = useUser()

@@ -1,12 +1,13 @@
 'use client'
 
+import { Suspense } from 'react'
 import { SignUp } from '@clerk/nextjs'
 import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import { AuthLayout } from '@/components/auth'
 import { useAuthAnalytics } from '@/hooks'
 
-export default function SignUpPage() {
+function SignUpContent() {
   useAuthAnalytics()
   const searchParams = useSearchParams()
   const rawRedirect = searchParams.get('redirect_url')
@@ -24,5 +25,13 @@ export default function SignUpPage() {
         <SignUp forceRedirectUrl={signUpForceRedirectUrl} />
       </div>
     </AuthLayout>
+  )
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense>
+      <SignUpContent />
+    </Suspense>
   )
 }

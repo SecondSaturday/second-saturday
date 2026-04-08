@@ -121,7 +121,9 @@ export default function ReviewPage() {
   }
 
   async function handleSubmitAll() {
-    const submittable = reviewData!.filter((c) => {
+    if (!reviewData) return
+
+    const submittable = reviewData.filter((c) => {
       const status = getCircleStatus(c)
       return (status === 'ready' || status === 'unsubmitted-changes') && c.submissionId
     })
@@ -131,15 +133,17 @@ export default function ReviewPage() {
     const ids = new Set(submittable.map((c) => c.circleId))
     setSubmittingCircles(ids)
 
+    const results = await Promise.allSettled(
+      submittable.map((circle) => lockSubmission({ submissionId: circle.submissionId! }))
+    )
     let successCount = 0
-    for (const circle of submittable) {
-      try {
-        await lockSubmission({ submissionId: circle.submissionId! })
+    results.forEach((result, i) => {
+      if (result.status === 'fulfilled') {
         successCount++
-      } catch {
-        toast.error(`Failed to submit ${circle.circleName}`)
+      } else {
+        toast.error(`Failed to submit ${submittable[i]!.circleName}`)
       }
-    }
+    })
 
     setSubmittingCircles(new Set())
 

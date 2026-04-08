@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { Suspense, useRef } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, BookOpen } from 'lucide-react'
 import Link from 'next/link'
@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { CreationLayout } from '@/components/circles/CreationLayout'
 import { TipPill } from '@/components/circles/TipPill'
 
-export default function PromptsPage() {
+function PromptsContent() {
   const params = useParams()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -68,5 +68,13 @@ export default function PromptsPage() {
         />
       </div>
     </div>
+  )
+}
+
+export default function PromptsPage() {
+  return (
+    <Suspense>
+      <PromptsContent />
+    </Suspense>
   )
 }

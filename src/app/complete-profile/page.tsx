@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { Suspense, useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
@@ -12,7 +12,7 @@ import type { Id } from '../../../convex/_generated/dataModel'
 import { FloatingLabelInput } from '@/components/ui/FloatingLabelInput'
 import { useUser } from '@clerk/nextjs'
 
-export default function CompleteProfilePage() {
+function CompleteProfileContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const rawRedirect = searchParams.get('redirect_url')
@@ -118,5 +118,13 @@ export default function CompleteProfilePage() {
         </form>
       </div>
     </AuthLayout>
+  )
+}
+
+export default function CompleteProfilePage() {
+  return (
+    <Suspense>
+      <CompleteProfileContent />
+    </Suspense>
   )
 }

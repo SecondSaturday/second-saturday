@@ -1,12 +1,13 @@
 'use client'
 
+import { Suspense } from 'react'
 import { SignIn } from '@clerk/nextjs'
 import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import { AuthLayout } from '@/components/auth'
 import { useAuthAnalytics } from '@/hooks'
 
-export default function SignInPage() {
+function SignInContent() {
   useAuthAnalytics()
   const searchParams = useSearchParams()
   const rawRedirect = searchParams.get('redirect_url')
@@ -22,5 +23,13 @@ export default function SignInPage() {
         <SignIn fallbackRedirectUrl={signInFallbackRedirectUrl} />
       </div>
     </AuthLayout>
+  )
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense>
+      <SignInContent />
+    </Suspense>
   )
 }

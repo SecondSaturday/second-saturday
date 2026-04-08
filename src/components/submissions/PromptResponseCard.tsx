@@ -7,6 +7,8 @@ import { MediaGrid } from './MediaGrid'
 import type { MediaItem } from './MediaGrid'
 import type { Id } from '../../../convex/_generated/dataModel'
 
+const EMPTY_MEDIA: MediaItem[] = []
+
 interface PromptResponseCardProps {
   promptId: string
   promptText: string
@@ -30,7 +32,7 @@ export function PromptResponseCard({
   promptLabel,
   responseId,
   initialValue = '',
-  existingMedia = [],
+  existingMedia = EMPTY_MEDIA,
   onValueChange,
   onMediaUpload,
   onMediaRemove,

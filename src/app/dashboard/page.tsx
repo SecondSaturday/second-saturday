@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useSyncExternalStore } from 'react'
+import { Suspense, useState, useEffect, useCallback, useSyncExternalStore } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader'
 import { CircleList } from '@/components/dashboard/CircleList'
@@ -76,7 +76,7 @@ function useSidebarWidth() {
   return { width, startDrag }
 }
 
-export default function DashboardPage() {
+function DashboardContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const isDesktop = useMediaQuery('(min-width: 768px)')
@@ -134,6 +134,14 @@ export default function DashboardPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense>
+      <DashboardContent />
+    </Suspense>
   )
 }
 

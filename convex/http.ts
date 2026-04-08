@@ -4,8 +4,7 @@ import { Webhook } from 'svix'
 import { internal } from './_generated/api'
 import { reportErrorToSentry } from './lib/sentry'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const internalVideos = (internal as any).videos
+const internalVideos = internal.videos
 
 const http = httpRouter()
 

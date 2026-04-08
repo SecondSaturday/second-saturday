@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef } from 'react'
+import { Suspense, useCallback, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useIsDesktop } from '@/hooks/useMediaQuery'
 import { useQuery, useMutation } from 'convex/react'
@@ -12,7 +12,7 @@ import { NewsletterView } from '@/components/newsletter/NewsletterView'
 import { parseNewsletterContent } from '@/lib/newsletter'
 import { trackEvent } from '@/lib/analytics'
 
-export default function NewsletterPage() {
+function NewsletterContent() {
   const params = useParams()
   const router = useRouter()
   const circleId = params.circleId as Id<'circles'>
@@ -135,5 +135,13 @@ export default function NewsletterPage() {
         />
       </main>
     </div>
+  )
+}
+
+export default function NewsletterPage() {
+  return (
+    <Suspense>
+      <NewsletterContent />
+    </Suspense>
   )
 }
