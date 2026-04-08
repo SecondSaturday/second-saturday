@@ -7,8 +7,7 @@ import type { CapacitorConfig } from '@capacitor/cli'
 // For device testing, use Cloudflare Tunnel (no interstitial, Clerk-compatible)
 // Run: cloudflared tunnel --url http://localhost:3000
 // Then update this URL with your cloudflared domain
-const serverUrl =
-  process.env.CAPACITOR_SERVER_URL || 'https://controller-herbal-pmid-candidate.trycloudflare.com'
+const serverUrl = process.env.CAPACITOR_SERVER_URL || 'http://localhost:3000'
 
 const config: CapacitorConfig = {
   appId: 'com.secondsaturday.app',
@@ -18,10 +17,9 @@ const config: CapacitorConfig = {
     // Load app from live server (required for Clerk auth)
     // Note: For Android emulator, use 10.0.2.2 instead of localhost
     url: serverUrl,
-    cleartext: true, // Allow HTTP for local development
+    cleartext: true, // Required for local dev; production builds should use HTTPS via CAPACITOR_SERVER_URL
     // Keep authentication flows within the WebView (don't open Safari)
     allowNavigation: [
-      'controller-herbal-pmid-candidate.trycloudflare.com',
       '*.trycloudflare.com',
       '*.clerk.dev',
       '*.clerk.com',
@@ -33,9 +31,7 @@ const config: CapacitorConfig = {
       'optimum-slug-14.clerk.accounts.dev',
       // OAuth providers
       'accounts.google.com',
-      '*.google.com',
       'appleid.apple.com',
-      '*.apple.com',
       'localhost',
       'localhost:*',
     ],
@@ -59,7 +55,7 @@ const config: CapacitorConfig = {
     scrollEnabled: false, // Prevent WebView-level scroll/zoom
   },
   android: {
-    allowMixedContent: true, // Allow HTTP for local development
+    allowMixedContent: true, // Required for local dev; production builds should use HTTPS
   },
 }
 
