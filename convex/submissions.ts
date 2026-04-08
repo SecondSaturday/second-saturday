@@ -399,20 +399,21 @@ export const addMediaToResponse = mutation({
       })
     }
 
-    // Check media count (max 3)
+    // Check existing media
     const existingMedia = await ctx.db
       .query('media')
       .withIndex('by_response', (q) => q.eq('responseId', args.responseId))
       .collect()
 
-    if (existingMedia.length >= 3) {
-      throw new Error('Response can have up to 3 media items')
-    }
-
-    // Guard against duplicate media on retry
+    // Guard against duplicate media on retry (must precede count check)
     if (args.storageId) {
       const existing = existingMedia.find((m) => m.storageId === args.storageId)
       if (existing) return existing._id
+    }
+
+    // Check media count (max 3)
+    if (existingMedia.length >= 3) {
+      throw new Error('Response can have up to 3 media items')
     }
 
     // Calculate next order

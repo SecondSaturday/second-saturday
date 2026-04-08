@@ -165,9 +165,6 @@ export function MediaUploader({
   }
 
   const uploadPhoto = async (file: File, existingStorageId?: Id<'_storage'>): Promise<boolean> => {
-    lastFailedFileRef.current = file
-    lastFailedMediaTypeRef.current = 'photo'
-
     const controller = new AbortController()
     abortControllerRef.current = controller
 
@@ -181,6 +178,10 @@ export function MediaUploader({
       if (!file.type.includes('jpeg') && !file.type.includes('jpg') && !file.type.includes('png')) {
         throw new Error('Only JPEG and PNG formats are supported')
       }
+
+      // Store refs after validation passes (for retry support)
+      lastFailedFileRef.current = file
+      lastFailedMediaTypeRef.current = 'photo'
 
       let storageId: Id<'_storage'>
 
@@ -331,9 +332,6 @@ export function MediaUploader({
   }
 
   const uploadVideo = async (file: File): Promise<boolean> => {
-    lastFailedFileRef.current = file
-    lastFailedMediaTypeRef.current = 'video'
-
     const controller = videoUpload.createAbortController()
 
     try {
@@ -356,6 +354,10 @@ export function MediaUploader({
       if (fileSizeMB > 500) {
         throw new Error('Video file is too large. Please choose a video under 500MB.')
       }
+
+      // Store refs after validation passes (for retry support)
+      lastFailedFileRef.current = file
+      lastFailedMediaTypeRef.current = 'video'
 
       if (fileSizeMB > 100) {
         console.warn('Large video file detected:', fileSizeMB.toFixed(2), 'MB')
@@ -627,11 +629,15 @@ export function MediaUploader({
                 return
               }
 
-              if (type === 'photo') {
-                uploadPhoto(file, lastStorageIdRef.current ?? undefined)
-              } else {
-                uploadVideo(file)
-              }
+              setMediaType(type)
+              void (async () => {
+                await onEnsureResponse?.()
+                if (type === 'photo') {
+                  await uploadPhoto(file, lastStorageIdRef.current ?? undefined)
+                } else {
+                  await uploadVideo(file)
+                }
+              })()
             }}
             className="text-xs font-medium text-foreground underline"
           >
