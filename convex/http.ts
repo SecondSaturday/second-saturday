@@ -2,6 +2,7 @@ import { httpRouter } from 'convex/server'
 import { httpAction } from './_generated/server'
 import { Webhook } from 'svix'
 import { internal } from './_generated/api'
+import { reportErrorToSentry } from './lib/sentry'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const internalVideos = (internal as any).videos
@@ -52,60 +53,67 @@ http.route({
       }) as typeof payload
     } catch (err) {
       console.error('Webhook verification failed:', err)
+      await reportErrorToSentry(err, { handler: 'clerk-webhook', event: 'verification' })
       return new Response('Invalid signature', { status: 400 })
     }
 
     const { type, data } = payload
 
-    // Handle different event types
-    switch (type) {
-      case 'user.created': {
-        const email = data.email_addresses?.[0]?.email_address
-        if (!email) {
-          console.error('No email found in webhook payload')
-          return new Response('No email in payload', { status: 400 })
+    try {
+      // Handle different event types
+      switch (type) {
+        case 'user.created': {
+          const email = data.email_addresses?.[0]?.email_address
+          if (!email) {
+            console.error('No email found in webhook payload')
+            return new Response('No email in payload', { status: 400 })
+          }
+
+          // Don't set name here — let the user set it on /complete-profile
+          const name = [data.first_name, data.last_name].filter(Boolean).join(' ') || undefined
+
+          await ctx.runMutation(internal.users.upsertUser, {
+            clerkId: data.id,
+            email,
+            imageUrl: data.image_url,
+          })
+
+          await ctx.scheduler.runAfter(0, internal.emails.sendWelcomeEmail, { email, name })
+          break
         }
 
-        // Don't set name here — let the user set it on /complete-profile
-        const name = [data.first_name, data.last_name].filter(Boolean).join(' ') || undefined
+        case 'user.updated': {
+          const email = data.email_addresses?.[0]?.email_address
+          if (!email) {
+            console.error('No email found in webhook payload')
+            return new Response('No email in payload', { status: 400 })
+          }
 
-        await ctx.runMutation(internal.users.upsertUser, {
-          clerkId: data.id,
-          email,
-          imageUrl: data.image_url,
-        })
+          const name = [data.first_name, data.last_name].filter(Boolean).join(' ') || undefined
 
-        await ctx.scheduler.runAfter(0, internal.emails.sendWelcomeEmail, { email, name })
-        break
-      }
-
-      case 'user.updated': {
-        const email = data.email_addresses?.[0]?.email_address
-        if (!email) {
-          console.error('No email found in webhook payload')
-          return new Response('No email in payload', { status: 400 })
+          await ctx.runMutation(internal.users.upsertUser, {
+            clerkId: data.id,
+            email,
+            name,
+            imageUrl: data.image_url,
+          })
+          break
         }
 
-        const name = [data.first_name, data.last_name].filter(Boolean).join(' ') || undefined
+        case 'user.deleted': {
+          await ctx.runMutation(internal.users.deleteUser, {
+            clerkId: data.id,
+          })
+          break
+        }
 
-        await ctx.runMutation(internal.users.upsertUser, {
-          clerkId: data.id,
-          email,
-          name,
-          imageUrl: data.image_url,
-        })
-        break
+        default:
+          console.log('Unhandled webhook event type:', type)
       }
-
-      case 'user.deleted': {
-        await ctx.runMutation(internal.users.deleteUser, {
-          clerkId: data.id,
-        })
-        break
-      }
-
-      default:
-        console.log('Unhandled webhook event type:', type)
+    } catch (err) {
+      console.error('Clerk webhook handler failed:', err)
+      await reportErrorToSentry(err, { handler: 'clerk-webhook', event: type })
+      return new Response('Internal error', { status: 500 })
     }
 
     return new Response(JSON.stringify({ success: true }), {
@@ -140,6 +148,10 @@ http.route({
     const isValid = await verifyMuxSignature(body, signature, muxWebhookSecret)
     if (!isValid) {
       console.error('Mux webhook signature verification failed')
+      await reportErrorToSentry(new Error('Mux webhook signature verification failed'), {
+        handler: 'mux-webhook',
+        event: 'verification',
+      })
       return new Response('Invalid signature', { status: 400 })
     }
 
@@ -159,54 +171,60 @@ http.route({
 
     console.log('Mux webhook received:', payload.type)
 
-    switch (payload.type) {
-      case 'video.upload.asset_created': {
-        // Upload completed, asset created
-        // For this event type, data represents the upload object:
-        //   data.id = upload ID, data.asset_id = asset ID
-        const uploadId = payload.data.id
-        const assetId = payload.data.asset_id
-        console.log('Mux upload.asset_created:', { uploadId, assetId })
-        if (uploadId && assetId) {
-          await ctx.runMutation(internalVideos.updateVideoAsset, {
-            uploadId,
-            assetId,
-            status: 'processing',
-          })
+    try {
+      switch (payload.type) {
+        case 'video.upload.asset_created': {
+          // Upload completed, asset created
+          // For this event type, data represents the upload object:
+          //   data.id = upload ID, data.asset_id = asset ID
+          const uploadId = payload.data.id
+          const assetId = payload.data.asset_id
+          console.log('Mux upload.asset_created:', { uploadId, assetId })
+          if (uploadId && assetId) {
+            await ctx.runMutation(internalVideos.updateVideoAsset, {
+              uploadId,
+              assetId,
+              status: 'processing',
+            })
+          }
+          break
         }
-        break
-      }
 
-      case 'video.asset.ready': {
-        // Asset is ready for playback
-        const assetId = payload.data.id
-        const playbackId = payload.data.playback_ids?.[0]?.id
-        if (assetId && playbackId) {
-          await ctx.runMutation(internalVideos.updateVideoReady, {
-            assetId,
-            playbackId,
-            duration: payload.data.duration,
-            aspectRatio: payload.data.aspect_ratio,
-          })
+        case 'video.asset.ready': {
+          // Asset is ready for playback
+          const assetId = payload.data.id
+          const playbackId = payload.data.playback_ids?.[0]?.id
+          if (assetId && playbackId) {
+            await ctx.runMutation(internalVideos.updateVideoReady, {
+              assetId,
+              playbackId,
+              duration: payload.data.duration,
+              aspectRatio: payload.data.aspect_ratio,
+            })
+          }
+          break
         }
-        break
-      }
 
-      case 'video.asset.errored': {
-        // Asset processing failed - mark video as errored to prevent orphaned media records
-        const assetId = payload.data.id
-        const errorMessages = payload.data.errors?.messages?.join(', ')
-        if (assetId) {
-          await ctx.runMutation(internalVideos.updateVideoError, {
-            assetId,
-            error: errorMessages,
-          })
+        case 'video.asset.errored': {
+          // Asset processing failed - mark video as errored to prevent orphaned media records
+          const assetId = payload.data.id
+          const errorMessages = payload.data.errors?.messages?.join(', ')
+          if (assetId) {
+            await ctx.runMutation(internalVideos.updateVideoError, {
+              assetId,
+              error: errorMessages,
+            })
+          }
+          break
         }
-        break
-      }
 
-      default:
-        console.log('Unhandled Mux webhook event type:', payload.type)
+        default:
+          console.log('Unhandled Mux webhook event type:', payload.type)
+      }
+    } catch (err) {
+      console.error('Mux webhook handler failed:', err)
+      await reportErrorToSentry(err, { handler: 'mux-webhook', event: payload.type })
+      return new Response('Internal error', { status: 500 })
     }
 
     return new Response(JSON.stringify({ success: true }), {
