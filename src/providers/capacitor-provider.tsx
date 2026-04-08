@@ -34,7 +34,7 @@ export function CapacitorProvider({ children }: { children: React.ReactNode }) {
         await StatusBar.setOverlaysWebView({ overlay: true })
         // Use dark content (dark icons on light background)
         await StatusBar.setStyle({ style: Style.Light })
-      } catch (e) {
+      } catch {
         // Status bar plugin may not be available on all platforms
       }
     }
@@ -49,7 +49,7 @@ export function CapacitorProvider({ children }: { children: React.ReactNode }) {
         for (const [key, value] of Object.entries(insets)) {
           document.documentElement.style.setProperty(`--safe-area-inset-${key}`, `${value}px`)
         }
-      } catch (e) {
+      } catch {
         // SafeArea plugin may not be available
       }
     }

@@ -188,7 +188,7 @@ export const MultiCircleSubmissionScreen = forwardRef<
       } catch {}
       toast.success('Submission locked! See you on newsletter day.')
       router.replace('/dashboard')
-    } catch (err) {
+    } catch {
       toast.error('Failed to submit. Please try again.')
     } finally {
       setIsSubmitting(false)
@@ -202,6 +202,7 @@ export const MultiCircleSubmissionScreen = forwardRef<
     promptsData,
     draftTexts,
     updateResponse,
+    router,
   ])
 
   // Initialise draft texts from server data when data loads
@@ -244,17 +245,15 @@ export const MultiCircleSubmissionScreen = forwardRef<
     })
   }, [submissionData, promptsData, activeCircleId])
 
-  // Get current draft map for active circle (stable reference for debounce)
-  const activeDraftMap = draftTexts.get(activeCircleId) ?? new Map<string, string>()
-
   // Debounce the active draft map — convert to plain object for debounce comparison
   const activeDraftObj = useMemo(() => {
+    const map = draftTexts.get(activeCircleId) ?? new Map<string, string>()
     const obj: Record<string, string> = {}
-    activeDraftMap.forEach((text, promptId) => {
+    map.forEach((text, promptId) => {
       obj[promptId] = text
     })
     return obj
-  }, [activeDraftMap])
+  }, [draftTexts, activeCircleId])
 
   const debouncedDraftObj = useDebounce(activeDraftObj, 2000)
 
@@ -393,7 +392,7 @@ export const MultiCircleSubmissionScreen = forwardRef<
 
       setActiveCircleId(newCircleId)
     },
-    [activeCircleId, draftTexts, submissionData, updateResponse]
+    [activeCircleId, draftTexts, submissionData, updateResponse, setActiveCircleId]
   )
 
   // Handler: text change for a prompt

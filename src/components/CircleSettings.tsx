@@ -98,7 +98,7 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
       toast.success('Invite link copied!')
       trackEvent('invite_link_copied', { circleId })
       setTimeout(() => setCopied(false), 2000)
-    } catch (err) {
+    } catch {
       toast.error('Failed to copy link.')
     }
   }
@@ -157,7 +157,7 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
       } else {
         await updateCircle({ circleId, coverImageId: storageId })
       }
-    } catch (err) {
+    } catch {
       toast.error('Failed to upload image.')
     }
   }
@@ -176,7 +176,7 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
       })
       const { storageId } = await result.json()
       await handleImageUpload(storageId, field)
-    } catch (err) {
+    } catch {
       toast.error('Failed to upload image.')
     }
   }

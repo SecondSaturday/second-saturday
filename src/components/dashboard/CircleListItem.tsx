@@ -16,7 +16,6 @@ export function CircleListItem({
   name,
   iconUrl,
   memberNames,
-  memberCount,
   hasUnread,
   onClick,
 }: CircleListItemProps) {

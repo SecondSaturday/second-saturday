@@ -52,7 +52,7 @@ export function MediaUploader({
   const [stage, setStage] = useState<UploadStage>('idle')
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
-  const [preview, setPreview] = useState<string | null>(null)
+  const [, setPreview] = useState<string | null>(null)
   const [mediaType, setMediaType] = useState<MediaType | null>(null)
   const [batchStatus, setBatchStatus] = useState<{ current: number; total: number } | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -554,7 +554,7 @@ export function MediaUploader({
     stage === 'compressing' ||
     stage === 'uploading' ||
     stage === 'processing'
-  const showProgress = isUploading && progress > 0 && mediaType === 'photo'
+  const _showProgress = isUploading && progress > 0 && mediaType === 'photo'
   const showBlockingModal = isUploading && mediaType === 'video'
 
   const [menuOpen, setMenuOpen] = useState(false)
