@@ -135,9 +135,11 @@ export const cleanupE2EData = internalMutation({
         .withIndex('by_circle', (q) => q.eq('circleId', circle._id))
         .collect()
       for (const n of newsletters) {
-        // Clean up reads for each newsletter (full scan, fine for cleanup)
-        const allReads = await ctx.db.query('newsletterReads').collect()
-        const nReads = allReads.filter((r) => r.newsletterId === n._id)
+        // Clean up reads for each newsletter
+        const nReads = await ctx.db
+          .query('newsletterReads')
+          .withIndex('by_newsletter', (q) => q.eq('newsletterId', n._id))
+          .collect()
         for (const r of nReads) {
           if (!dryRun) await ctx.db.delete(r._id)
           stats.newsletterReads++

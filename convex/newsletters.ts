@@ -2,6 +2,7 @@ import { mutation, query, internalMutation } from './_generated/server'
 import { internal } from './_generated/api'
 import { v } from 'convex/values'
 import { getAuthUser, requireMembership } from './authHelpers'
+import { MONTH_NAMES } from './lib/constants'
 
 export const getNewsletterById = query({
   args: { newsletterId: v.id('newsletters') },
@@ -287,21 +288,7 @@ export const compileNewsletter = internalMutation({
 
     // Format title
     const [year, month] = cycleId.split('-')
-    const monthNames = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ]
-    const monthName = monthNames[parseInt(month!, 10) - 1] ?? month
+    const monthName = MONTH_NAMES[parseInt(month!, 10) - 1] ?? month
     const title = `${circle.name} - ${monthName} ${year}`
 
     const now = Date.now()

@@ -10,6 +10,7 @@ import { internal } from './_generated/api'
 import { v } from 'convex/values'
 import type { Doc } from './_generated/dataModel'
 import { getAuthUser, requireAdmin } from './authHelpers'
+import { MAX_ADMIN_REMINDERS_PER_CYCLE } from './lib/constants'
 
 /**
  * Collect all OneSignal player IDs (native + web) for a user.
@@ -160,8 +161,10 @@ export const sendAdminReminder = mutation({
       )
       .collect()
 
-    if (existingReminders.length >= 3) {
-      throw new Error('Maximum of 3 admin reminders per cycle reached')
+    if (existingReminders.length >= MAX_ADMIN_REMINDERS_PER_CYCLE) {
+      throw new Error(
+        `Maximum of ${MAX_ADMIN_REMINDERS_PER_CYCLE} admin reminders per cycle reached`
+      )
     }
 
     // Insert reminder row
@@ -222,8 +225,10 @@ export const sendBulkAdminReminder = mutation({
       )
       .collect()
 
-    if (existingReminders.length >= 3) {
-      throw new Error('Maximum of 3 admin reminders per cycle reached')
+    if (existingReminders.length >= MAX_ADMIN_REMINDERS_PER_CYCLE) {
+      throw new Error(
+        `Maximum of ${MAX_ADMIN_REMINDERS_PER_CYCLE} admin reminders per cycle reached`
+      )
     }
 
     // Insert a single reminder row with no targetUserId (bulk)

@@ -2,6 +2,7 @@ import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
 import type { Id } from './_generated/dataModel'
 import { getAuthUser, getOrCreateAuthUser, requireAdmin, requireMembership } from './authHelpers'
+import { MEMBER_BATCH_LIMIT } from './lib/constants'
 
 const DEFAULT_PROMPTS = [
   'What did you do this month?',
@@ -174,7 +175,7 @@ export const getCirclesByUser = query({
         const memberBatch = await ctx.db
           .query('memberships')
           .withIndex('by_circle', (q) => q.eq('circleId', m.circleId))
-          .take(200)
+          .take(MEMBER_BATCH_LIMIT)
         const activeMembers = memberBatch.filter((mem) => !mem.leftAt)
 
         const memberUsers = await Promise.all(

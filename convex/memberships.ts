@@ -4,6 +4,7 @@ import { v } from 'convex/values'
 import type { Id } from './_generated/dataModel'
 import { internal } from './_generated/api'
 import { getAuthUser, getOrCreateAuthUser, getActiveMembership } from './authHelpers'
+import { computeSecondSaturdayDeadline, parseCycleId } from './lib/dates'
 
 export const getCircleMembers = query({
   args: { circleId: v.id('circles') },
@@ -116,14 +117,8 @@ function getCurrentCycleId(): string {
 
 /** Compute deadline timestamp for a cycle (second Saturday at 10:59 UTC) */
 function computeDeadline(cycleId: string): number {
-  const parts = cycleId.split('-').map(Number)
-  const year = parts[0]!
-  const month = parts[1]! - 1
-  const firstDay = new Date(Date.UTC(year, month, 1))
-  const dayOfWeek = firstDay.getUTCDay()
-  const daysToFirstSaturday = (6 - dayOfWeek + 7) % 7
-  const secondSaturdayDay = 1 + daysToFirstSaturday + 7
-  return Date.UTC(year, month, secondSaturdayDay, 10, 59, 0)
+  const { year, month } = parseCycleId(cycleId)
+  return computeSecondSaturdayDeadline(year, month)
 }
 
 export const getSubmissionStatus = query({

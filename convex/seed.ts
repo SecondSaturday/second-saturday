@@ -1,5 +1,6 @@
 import { internalMutation } from './_generated/server'
 import { v } from 'convex/values'
+import { MONTH_NAMES } from './lib/constants'
 
 const TEST_RESPONSES = [
   "Things have been really good this month! Spent a lot of time outdoors and finally got back into reading. Feels like I'm finding a rhythm again.",
@@ -273,21 +274,7 @@ export const createTestNewsletter = internalMutation({
 
     // Title
     const [year, month] = cycleId.split('-')
-    const monthNames = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ]
-    const monthName = monthNames[parseInt(month!, 10) - 1] ?? month
+    const monthName = MONTH_NAMES[parseInt(month!, 10) - 1] ?? month
     const title = `${circle.name} - ${monthName} ${year}`
 
     const now = Date.now()

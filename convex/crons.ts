@@ -1,6 +1,7 @@
 import { cronJobs } from 'convex/server'
 import { internalMutation } from './_generated/server'
 import { internal } from './_generated/api'
+import { computeSecondSaturdayDeadline } from './lib/dates'
 
 /**
  * Internal mutation to lock all unlocked submissions whose deadline has passed.
@@ -35,12 +36,8 @@ export const lockPastDeadlineSubmissions = internalMutation({
       // Derive deadline for this cycle
       const [yearStr, monthStr] = cycleId.split('-')
       const cYear = parseInt(yearStr!, 10)
-      const cMonth = parseInt(monthStr!, 10) - 1
-      const firstDayOfMonth = new Date(Date.UTC(cYear, cMonth, 1))
-      const dayOfWeek = firstDayOfMonth.getUTCDay()
-      const daysToFirstSaturday = (6 - dayOfWeek + 7) % 7
-      const secondSaturdayDay = 1 + daysToFirstSaturday + 7
-      const deadlineMs = Date.UTC(cYear, cMonth, secondSaturdayDay, 10, 59, 0)
+      const cMonth = parseInt(monthStr!, 10)
+      const deadlineMs = computeSecondSaturdayDeadline(cYear, cMonth)
 
       if (now >= deadlineMs) {
         for (const submission of unlocked) {

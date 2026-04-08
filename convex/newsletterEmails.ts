@@ -7,6 +7,8 @@ import { Resend } from 'resend'
 import { render } from '@react-email/components'
 import NewsletterEmail, { type NewsletterEmailProps } from '../src/emails/NewsletterEmail'
 import MissedMonthEmail from '../src/emails/MissedMonthEmail'
+import { MONTH_NAMES } from './lib/constants'
+import { getSecondSaturdayDay } from './lib/dates'
 
 const getResend = () => {
   const apiKey = process.env.RESEND_API_KEY
@@ -35,21 +37,7 @@ export const sendNewsletter = internalAction({
 
     // Format date from cycleId (YYYY-MM)
     const [year, month] = newsletter.cycleId.split('-')
-    const monthNames = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ]
-    const date = `${monthNames[parseInt(month!, 10) - 1]} ${year}`
+    const date = `${MONTH_NAMES[parseInt(month!, 10) - 1]} ${year}`
 
     const viewInAppUrl = `${APP_URL}/dashboard/circles/${newsletter.circleId}/newsletter/${newsletter._id}?utm_source=email&utm_medium=newsletter`
     const unsubscribeUrl = `${APP_URL}/circles/${newsletter.circleId}/unsubscribe`
@@ -117,32 +105,14 @@ export const sendMissedMonthEmail = internalAction({
     // Calculate next deadline (next month's second Saturday at 10:59 AM UTC)
     const [yearStr, monthStr] = args.cycleId.split('-')
     const year = parseInt(yearStr!, 10)
-    const month = parseInt(monthStr!, 10) - 1 // 0-indexed
+    const month = parseInt(monthStr!, 10) // 1-indexed
 
-    // Next month
-    const nextMonth = month === 11 ? 0 : month + 1
-    const nextYear = month === 11 ? year + 1 : year
+    // Next month (1-indexed)
+    const nextMonth = month === 12 ? 1 : month + 1
+    const nextYear = month === 12 ? year + 1 : year
 
-    const firstDay = new Date(Date.UTC(nextYear, nextMonth, 1))
-    const dayOfWeek = firstDay.getUTCDay()
-    const daysToFirstSaturday = (6 - dayOfWeek + 7) % 7
-    const secondSaturdayDay = 1 + daysToFirstSaturday + 7
-
-    const monthNames = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ]
-    const nextDeadline = `${monthNames[nextMonth]} ${secondSaturdayDay}, ${nextYear}`
+    const secondSaturdayDay = getSecondSaturdayDay(nextYear, nextMonth)
+    const nextDeadline = `${MONTH_NAMES[nextMonth - 1]} ${secondSaturdayDay}, ${nextYear}`
 
     const viewCircleUrl = `${APP_URL}/circles/${args.circleId}`
 

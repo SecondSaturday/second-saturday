@@ -2,6 +2,8 @@ import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
 import { internal } from './_generated/api'
 import { getAuthUser, requireMembership } from './authHelpers'
+import { MAX_RESPONSE_TEXT_LENGTH } from './lib/constants'
+import { computeSecondSaturdayDeadline } from './lib/dates'
 
 /** Validate cycle ID format (YYYY-MM) */
 function validateCycleId(cycleId: string): void {
@@ -21,10 +23,10 @@ function validateCycleId(cycleId: string): void {
   }
 }
 
-/** Validate response text length (500 character limit) */
+/** Validate response text length */
 function validateResponseText(text: string): void {
-  if (text.length > 500) {
-    throw new Error('Response text must be 500 characters or less')
+  if (text.length > MAX_RESPONSE_TEXT_LENGTH) {
+    throw new Error(`Response text must be ${MAX_RESPONSE_TEXT_LENGTH} characters or less`)
   }
 }
 
@@ -34,23 +36,19 @@ function validateResponseText(text: string): void {
  */
 function computeDeadlineTimestamp(cycleMonth?: string): number {
   let year: number
-  let month: number // 0-indexed
+  let month: number // 1-indexed
 
   if (cycleMonth) {
     const parts = cycleMonth.split('-').map(Number)
     year = parts[0]!
-    month = parts[1]! - 1 // convert to 0-indexed
+    month = parts[1]!
   } else {
     const now = new Date(Date.now())
     year = now.getUTCFullYear()
-    month = now.getUTCMonth()
+    month = now.getUTCMonth() + 1
   }
 
-  const firstDayOfMonth = new Date(Date.UTC(year, month, 1))
-  const dayOfWeek = firstDayOfMonth.getUTCDay()
-  const daysToFirstSaturday = (6 - dayOfWeek + 7) % 7
-  const secondSaturdayDay = 1 + daysToFirstSaturday + 7
-  return Date.UTC(year, month, secondSaturdayDay, 10, 59, 0)
+  return computeSecondSaturdayDeadline(year, month)
 }
 
 /**
