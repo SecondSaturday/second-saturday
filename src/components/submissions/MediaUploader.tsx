@@ -127,23 +127,28 @@ export function MediaUploader({
       const photo = await Camera.getPhoto({
         quality: 90,
         allowEditing: false,
-        resultType: CameraResultType.Uri,
+        resultType: CameraResultType.Base64,
         source,
       })
 
-      if (!photo.webPath) {
-        throw new Error('No photo path returned')
+      if (!photo.base64String) {
+        throw new Error('No photo data returned')
       }
 
-      // Convert photo to blob/file for upload
-      const response = await fetch(photo.webPath)
-      const blob = await response.blob()
-      const file = new File([blob], `photo-${Date.now()}.${photo.format}`, {
-        type: `image/${photo.format}`,
+      // Convert base64 to blob/file for upload
+      const byteString = atob(photo.base64String)
+      const bytes = new Uint8Array(byteString.length)
+      for (let i = 0; i < byteString.length; i++) {
+        bytes[i] = byteString.charCodeAt(i)
+      }
+      const mimeType = `image/${photo.format || 'jpeg'}`
+      const blob = new Blob([bytes], { type: mimeType })
+      const file = new File([blob], `photo-${Date.now()}.${photo.format || 'jpeg'}`, {
+        type: mimeType,
       })
 
       // Show preview
-      setPreview(photo.webPath)
+      setPreview(`data:${mimeType};base64,${photo.base64String}`)
       setProgress(10)
 
       await uploadPhoto(file)
@@ -301,7 +306,7 @@ export function MediaUploader({
 
     try {
       const result = await FilePicker.pickMedia({
-        readData: false,
+        readData: true,
       })
 
       if (!result.files || result.files.length === 0) return
@@ -322,19 +327,24 @@ export function MediaUploader({
       const totalFiles = result.files.length
       for (let i = 0; i < totalFiles; i++) {
         const picked = result.files[i]!
-        if (!picked.path) {
-          console.warn('Skipping file with no path:', picked.name)
+        if (!picked.data) {
+          console.warn('Skipping file with no data:', picked.name)
           continue
         }
 
         setProgress(0)
         setBatchStatus({ current: i + 1, total: totalFiles })
 
-        // Convert PickedFile to File object (iOS returns local file URI)
-        const response = await fetch(picked.path)
-        const blob = await response.blob()
+        // Convert base64 data to File object
+        const byteString = atob(picked.data)
+        const bytes = new Uint8Array(byteString.length)
+        for (let j = 0; j < byteString.length; j++) {
+          bytes[j] = byteString.charCodeAt(j)
+        }
+        const mimeType = picked.mimeType || 'application/octet-stream'
+        const blob = new Blob([bytes], { type: mimeType })
         const file = new File([blob], picked.name || `media-${Date.now()}`, {
-          type: picked.mimeType || 'application/octet-stream',
+          type: mimeType,
         })
 
         let success: boolean
