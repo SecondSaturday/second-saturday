@@ -5,13 +5,12 @@ import { Capacitor } from '@capacitor/core'
 import { App } from '@capacitor/app'
 import { StatusBar, Style } from '@capacitor/status-bar'
 import { SafeArea } from 'capacitor-plugin-safe-area'
-import { CapacitorSwipeBackPlugin } from '@notnotsamuel/capacitor-swipe-back'
 
 /**
  * Capacitor provider that handles native platform behaviors:
  * - Platform detection for CSS safe area handling
  * - Safe area inset injection via native bridge (iOS/Android)
- * - iOS swipe-back navigation gestures
+ * - iOS swipe-back navigation gestures (always enabled, dashboard guards via popstate)
  * - Android back button/gesture navigation
  * - iOS/Android status bar configuration for edge-to-edge display
  */
@@ -40,18 +39,6 @@ export function CapacitorProvider({ children }: { children: React.ReactNode }) {
       }
     }
     configureStatusBar()
-
-    // Enable iOS swipe-back navigation gestures
-    const enableSwipeBack = async () => {
-      try {
-        await CapacitorSwipeBackPlugin.enable()
-      } catch (e) {
-        // SwipeBack plugin may not be available
-      }
-    }
-    if (platform === 'ios') {
-      enableSwipeBack()
-    }
 
     // Inject safe area insets as CSS variables via native bridge
     // This bypasses the broken env() approach on iOS where WKWebView
