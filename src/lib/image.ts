@@ -2,7 +2,7 @@
 
 import imageCompression from 'browser-image-compression'
 
-export interface CompressImageOptions {
+interface CompressImageOptions {
   maxSizeMB?: number
   maxWidthOrHeight?: number
   useWebWorker?: boolean
@@ -92,34 +92,4 @@ export function isImageFile(file: File): boolean {
 // Check if file is a video
 export function isVideoFile(file: File): boolean {
   return file.type.startsWith('video/')
-}
-
-// Get image dimensions
-export function getImageDimensions(file: File): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    const url = URL.createObjectURL(file)
-
-    img.onload = () => {
-      URL.revokeObjectURL(url)
-      resolve({ width: img.width, height: img.height })
-    }
-
-    img.onerror = () => {
-      URL.revokeObjectURL(url)
-      reject(new Error('Failed to load image'))
-    }
-
-    img.src = url
-  })
-}
-
-// Generate a thumbnail preview URL
-export function createThumbnailUrl(file: File): string {
-  return URL.createObjectURL(file)
-}
-
-// Clean up a thumbnail URL when done
-export function revokeThumbnailUrl(url: string): void {
-  URL.revokeObjectURL(url)
 }

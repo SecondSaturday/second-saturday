@@ -189,7 +189,8 @@ export const updateProfile = mutation({
     const updates: Record<string, unknown> = { updatedAt: Date.now() }
 
     if (args.name !== undefined) {
-      updates.name = args.name
+      if (args.name.trim().length < 1) throw new Error('Name cannot be empty')
+      updates.name = args.name.trim()
     }
 
     if (args.avatarStorageId !== undefined) {

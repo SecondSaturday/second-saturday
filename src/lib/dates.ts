@@ -55,13 +55,6 @@ export function formatShortDate(date: Date): string {
 }
 
 /**
- * Format a date as "Mon YYYY" (e.g., "Mar 2026") for the dashboard date picker label.
- */
-export function formatMonthYear(date: Date): string {
-  return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-}
-
-/**
  * Returns 10:59 AM UTC on the second Saturday of the month containing `date`.
  */
 export function getSecondSaturdayDeadline(date: Date): Date {
