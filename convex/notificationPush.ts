@@ -25,7 +25,7 @@ export const sendPushNotification = internalAction({
 
     const payload: Record<string, unknown> = {
       app_id: appId,
-      include_player_ids: args.playerIds,
+      include_subscription_ids: args.playerIds,
       headings: { en: args.title },
       contents: { en: args.message },
     }
