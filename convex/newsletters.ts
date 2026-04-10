@@ -3,6 +3,7 @@ import { internal } from './_generated/api'
 import { v } from 'convex/values'
 import { getAuthUser, requireMembership } from './authHelpers'
 import { MONTH_NAMES } from './lib/constants'
+import { computeSecondSaturdayDeadline, parseCycleId } from './lib/dates'
 
 export const getNewsletterById = query({
   args: { newsletterId: v.id('newsletters') },
@@ -144,17 +145,51 @@ export const compileNewsletter = internalMutation({
   handler: async (ctx, args) => {
     const { circleId, cycleId } = args
 
-    // Idempotency guard: check if newsletter already exists for this circle + cycle
+    // Idempotency guard: published newsletters are final.
     const existing = await ctx.db
       .query('newsletters')
       .withIndex('by_circle_cycle', (q) => q.eq('circleId', circleId).eq('cycleId', cycleId))
       .first()
-    if (existing) {
+    if (existing && existing.status === 'published') {
       return {
         newsletterId: existing._id,
         submissionCount: existing.submissionCount ?? 0,
         memberCount: existing.memberCount ?? 0,
-        missedMonth: (existing.submissionCount ?? 0) === 0,
+        missedMonth: false,
+      }
+    }
+    // A prior 'skipped' row whose missed-month email was already dispatched
+    // is final — preserve it so idempotency on the send path holds.
+    if (existing && existing.status === 'skipped' && existing.sentAt) {
+      return {
+        newsletterId: existing._id,
+        submissionCount: 0,
+        memberCount: existing.memberCount ?? 0,
+        missedMonth: true,
+      }
+    }
+    // Otherwise a prior 'skipped' row is an un-sent tombstone; delete so we
+    // can recompile (submissions may have arrived late, or this is a retry
+    // before the missed-month email fired).
+    if (existing && existing.status === 'skipped') {
+      await ctx.db.delete(existing._id)
+    }
+
+    // Synchronously lock any unlocked submissions for this cycle if deadline has passed.
+    // Eliminates the race where the 10:59 lock cron and the 11:00 compile cron
+    // run with no guaranteed ordering.
+    const { year: cYear, month: cMonth } = parseCycleId(cycleId)
+    const deadlineMs = computeSecondSaturdayDeadline(cYear, cMonth)
+    if (Date.now() >= deadlineMs) {
+      const allForLock = await ctx.db
+        .query('submissions')
+        .withIndex('by_circle', (q) => q.eq('circleId', circleId))
+        .collect()
+      const lockNow = Date.now()
+      for (const s of allForLock) {
+        if (s.cycleId === cycleId && !s.lockedAt) {
+          await ctx.db.patch(s._id, { lockedAt: lockNow, updatedAt: lockNow })
+        }
       }
     }
 
@@ -177,12 +212,32 @@ export const compileNewsletter = internalMutation({
     const activeMembers = allMemberships.filter((m) => !m.leftAt)
     const memberCount = activeMembers.length
 
-    // Get all submissions for this circle and cycle
+    // Get all submissions for this circle and cycle.
+    // Include submissions that were either explicitly submitted (submittedAt set)
+    // OR locked by the deadline (lockedAt set). For the locked-but-never-submitted
+    // case, only include if the user wrote non-empty content for at least one
+    // response — this avoids inflating submissionCount with empty drafts.
     const allSubmissions = await ctx.db
       .query('submissions')
       .withIndex('by_circle', (q) => q.eq('circleId', circleId))
       .collect()
-    const submissions = allSubmissions.filter((s) => s.cycleId === cycleId && s.submittedAt)
+    const candidates = allSubmissions.filter(
+      (s) => s.cycleId === cycleId && (s.submittedAt || s.lockedAt)
+    )
+    const submissions: typeof candidates = []
+    for (const s of candidates) {
+      if (s.submittedAt) {
+        submissions.push(s)
+        continue
+      }
+      const sResponses = await ctx.db
+        .query('responses')
+        .withIndex('by_submission', (q) => q.eq('submissionId', s._id))
+        .collect()
+      if (sResponses.some((r) => r.text.trim().length > 0)) {
+        submissions.push(s)
+      }
+    }
     const submissionCount = submissions.length
 
     // Build a map of userId -> user for member names

@@ -17,9 +17,10 @@ export function getNextSecondSaturday(from: Date = new Date()): Date {
   const month = from.getMonth()
 
   const thisMonth = getSecondSaturday(year, month)
+  const thisDeadline = getSecondSaturdayDeadline(thisMonth)
 
-  // If today is on or before this month's second Saturday, use it
-  if (from <= thisMonth) {
+  // If we're still before this month's deadline, use it
+  if (from.getTime() <= thisDeadline.getTime()) {
     return thisMonth
   }
 
@@ -93,4 +94,20 @@ export function getTimeRemaining(deadline: Date): {
   const seconds = totalSeconds % 60
 
   return { days, hours, minutes, seconds, isPast: false }
+}
+
+/**
+ * Returns a human-friendly "Due in N days" label for the current cycle's deadline.
+ * Uses calendar-day diff in the local timezone so crossings aren't off-by-one.
+ */
+export function getDueLabel(): string {
+  const now = new Date()
+  const deadline = getSecondSaturdayDeadline(now)
+  if (now.getTime() > deadline.getTime()) return 'Submissions locked'
+  const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const dlDay = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate()).getTime()
+  const days = Math.round((dlDay - nowDay) / 86400000)
+  if (days <= 0) return 'Due today'
+  if (days === 1) return 'Due tomorrow'
+  return `Due in ${days} days`
 }

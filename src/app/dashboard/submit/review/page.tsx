@@ -6,22 +6,11 @@ import { api } from '../../../../../convex/_generated/api'
 import type { Id } from '../../../../../convex/_generated/dataModel'
 import { ChevronLeft, Check } from 'lucide-react'
 import Link from 'next/link'
-import { getSecondSaturdayDeadline } from '@/lib/dates'
+import { getDueLabel } from '@/lib/dates'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { toast } from 'sonner'
-
-function getDueLabel(): string {
-  const now = new Date()
-  const deadline = getSecondSaturdayDeadline(now)
-  if (now.getTime() > deadline.getTime()) return 'Submissions locked'
-  const diffMs = deadline.getTime() - now.getTime()
-  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-  if (days === 0) return 'Due today'
-  if (days === 1) return 'Due tomorrow'
-  return `Due in ${days} days`
-}
 
 function getEditionTitle(): string {
   const now = new Date()
@@ -46,7 +35,7 @@ function formatSubmittedDate(timestamp: number): string {
   })
 }
 
-type CircleStatus = 'ready' | 'submitted' | 'unsubmitted-changes' | 'empty'
+type CircleStatus = 'ready' | 'submitted' | 'unsubmitted-changes' | 'locked-unsubmitted' | 'empty'
 
 interface CircleReviewData {
   circleId: Id<'circles'>
@@ -62,10 +51,12 @@ interface CircleReviewData {
 
 function getCircleStatus(circle: CircleReviewData): CircleStatus {
   if (circle.answeredCount === 0) return 'empty'
-  // Still locked = submitted
-  if (circle.lockedAt) return 'submitted'
-  // Was submitted but now unlocked (edited after submit)
+  // User explicitly submitted and still locked
+  if (circle.submittedAt && circle.lockedAt) return 'submitted'
+  // Was submitted then re-opened for edits
   if (circle.submittedAt && !circle.lockedAt) return 'unsubmitted-changes'
+  // Cron locked an un-submitted draft at deadline
+  if (circle.lockedAt) return 'locked-unsubmitted'
   return 'ready'
 }
 
@@ -96,7 +87,7 @@ export default function ReviewPage() {
     reviewData.length > 0 &&
     reviewData.every((c) => {
       const status = getCircleStatus(c)
-      return status === 'submitted' || status === 'empty'
+      return status === 'submitted' || status === 'locked-unsubmitted' || status === 'empty'
     })
   const hasSubmittableCircles = reviewData.some((c) => {
     const status = getCircleStatus(c)
@@ -350,6 +341,13 @@ function StatusLabel({ circle, status }: { circle: CircleReviewData; status: Cir
           Unsubmitted changes · Last edited {formatRelativeTime(circle.updatedAt!)}
         </span>
       )
+    case 'locked-unsubmitted':
+      return (
+        <span className="flex items-center gap-1 text-[12px] text-muted-foreground">
+          <Check className="size-3" />
+          Locked at deadline
+        </span>
+      )
     case 'ready':
       return (
         <span className="text-[12px] text-muted-foreground">
@@ -382,6 +380,14 @@ function SubmitButton({
     return (
       <span className="shrink-0 rounded-lg bg-muted px-3.5 py-1.5 text-[13px] font-medium text-muted-foreground">
         Submitted
+      </span>
+    )
+  }
+
+  if (status === 'locked-unsubmitted') {
+    return (
+      <span className="shrink-0 rounded-lg bg-muted px-3.5 py-1.5 text-[13px] font-medium text-muted-foreground">
+        Locked
       </span>
     )
   }

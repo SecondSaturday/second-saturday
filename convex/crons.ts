@@ -15,14 +15,17 @@ export const lockPastDeadlineSubmissions = internalMutation({
     const year = d.getUTCFullYear()
     const month = d.getUTCMonth() // 0-indexed
 
-    // Build current and previous cycle IDs to scope the query
+    // Build current and prior two cycle IDs to scope the query.
+    // Three-cycle window gives headroom if a multi-week outage spans a boundary.
     const currentCycleId = `${year}-${String(month + 1).padStart(2, '0')}`
     const prevMonth = month === 0 ? 11 : month - 1
     const prevYear = month === 0 ? year - 1 : year
     const prevCycleId = `${prevYear}-${String(prevMonth + 1).padStart(2, '0')}`
+    const prev2Month = prevMonth === 0 ? 11 : prevMonth - 1
+    const prev2Year = prevMonth === 0 ? prevYear - 1 : prevYear
+    const prev2CycleId = `${prev2Year}-${String(prev2Month + 1).padStart(2, '0')}`
 
-    // Only scan current and previous cycle instead of the entire table
-    const cyclesToCheck = [currentCycleId, prevCycleId]
+    const cyclesToCheck = [currentCycleId, prevCycleId, prev2CycleId]
 
     let lockedCount = 0
     for (const cycleId of cyclesToCheck) {

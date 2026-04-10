@@ -11,21 +11,10 @@ import type { Circle } from '@/components/submissions'
 import { ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { getSecondSaturdayDeadline } from '@/lib/dates'
+import { getDueLabel } from '@/lib/dates'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { cn } from '@/lib/utils'
 import { CircleSidebar } from '@/components/submissions/CircleSidebar'
-
-function getDueLabel(): string {
-  const now = new Date()
-  const deadline = getSecondSaturdayDeadline(now)
-  if (now.getTime() > deadline.getTime()) return 'Submissions locked'
-  const diffMs = deadline.getTime() - now.getTime()
-  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-  if (days === 0) return 'Due today'
-  if (days === 1) return 'Due tomorrow'
-  return `Due in ${days} days`
-}
 
 function getEditionTitle(): string {
   const now = new Date()
