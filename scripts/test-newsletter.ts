@@ -234,7 +234,7 @@ async function main() {
   } else if (missedMonth) {
     log('step 3', 'Sending missed-month email...')
     try {
-      convexRun('newsletterEmails:sendMissedMonthEmail', { circleId, cycleId })
+      convexRun('newsletterEmails:sendMissedMonthEmail', { newsletterId, circleId, cycleId })
       log('step 3', '✅ Missed-month email sent')
     } catch (err) {
       log('step 3', `❌ Failed: ${(err as Error).message}`)

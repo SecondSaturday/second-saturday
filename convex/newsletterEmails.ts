@@ -25,6 +25,15 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://secondsaturday.app'
 export const sendNewsletter = internalAction({
   args: { newsletterId: v.id('newsletters') },
   handler: async (ctx, args) => {
+    // Atomically claim the send slot; bail if a prior invocation already sent.
+    const claimed = await ctx.runMutation(internal.newsletterHelpers.claimNewsletterSendSlot, {
+      newsletterId: args.newsletterId,
+    })
+    if (!claimed) {
+      console.log(`Newsletter ${args.newsletterId} already sent; skipping retry`)
+      return
+    }
+
     const data = await ctx.runQuery(internal.newsletterHelpers.getNewsletterSendData, {
       newsletterId: args.newsletterId,
     })
@@ -92,10 +101,20 @@ export const sendNewsletter = internalAction({
  */
 export const sendMissedMonthEmail = internalAction({
   args: {
+    newsletterId: v.id('newsletters'),
     circleId: v.id('circles'),
     cycleId: v.string(),
   },
   handler: async (ctx, args) => {
+    // Atomically claim the send slot; bail if a prior invocation already sent.
+    const claimed = await ctx.runMutation(internal.newsletterHelpers.claimNewsletterSendSlot, {
+      newsletterId: args.newsletterId,
+    })
+    if (!claimed) {
+      console.log(`Missed-month email for ${args.newsletterId} already sent; skipping retry`)
+      return
+    }
+
     const data = await ctx.runQuery(internal.newsletterHelpers.getCircleSendData, {
       circleId: args.circleId,
     })
@@ -189,6 +208,7 @@ export const processNewsletters = internalAction({
         if (result.missedMonth) {
           // No submissions — send missed-month email
           await ctx.scheduler.runAfter(0, internal.newsletterEmails.sendMissedMonthEmail, {
+            newsletterId: result.newsletterId,
             circleId: circle._id,
             cycleId,
           })

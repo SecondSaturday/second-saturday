@@ -105,3 +105,34 @@ export const updateRecipientCount = internalMutation({
     await ctx.db.patch(args.newsletterId, { recipientCount: args.recipientCount })
   },
 })
+
+/**
+ * Internal mutation to atomically claim the send slot for a newsletter.
+ * Returns true if the caller successfully claimed the slot (i.e., sentAt was unset).
+ * Returns false if a prior invocation already claimed it — caller must bail to avoid duplicate sends.
+ */
+export const claimNewsletterSendSlot = internalMutation({
+  args: { newsletterId: v.id('newsletters') },
+  handler: async (ctx, args) => {
+    const newsletter = await ctx.db.get(args.newsletterId)
+    if (!newsletter) return false
+    if (newsletter.sentAt) return false
+    await ctx.db.patch(args.newsletterId, { sentAt: Date.now() })
+    return true
+  },
+})
+
+/**
+ * Internal query to look up an existing newsletter row by (circleId, cycleId).
+ */
+export const getNewsletterByCircleCycle = internalQuery({
+  args: { circleId: v.id('circles'), cycleId: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query('newsletters')
+      .withIndex('by_circle_cycle', (q) =>
+        q.eq('circleId', args.circleId).eq('cycleId', args.cycleId)
+      )
+      .first()
+  },
+})
