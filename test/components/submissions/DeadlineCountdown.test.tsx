@@ -83,9 +83,4 @@ describe('DeadlineCountdown', () => {
 
     expect(container.firstChild).toHaveClass('my-custom-class')
   })
-
-  it('renders with default deadline when no timestamp provided', () => {
-    // Should not throw and should render some countdown or locked state
-    expect(() => render(<DeadlineCountdown />)).not.toThrow()
-  })
 })

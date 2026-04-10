@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useMutation, useQuery, useConvexAuth } from 'convex/react'
 import { api } from '../../../../../../convex/_generated/api'
@@ -32,6 +32,14 @@ export default function CustomizeCirclePage() {
   const [iconPreview, setIconPreview] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
+  useEffect(() => {
+    return () => {
+      if (coverPreview) URL.revokeObjectURL(coverPreview)
+      if (iconPreview) URL.revokeObjectURL(iconPreview)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const handleFileUpload = async (file: File, field: 'icon' | 'cover') => {
     try {
       const compressed = await compressImage(file, {
@@ -41,8 +49,13 @@ export default function CustomizeCirclePage() {
 
       // Show preview immediately
       const previewUrl = URL.createObjectURL(compressed)
-      if (field === 'cover') setCoverPreview(previewUrl)
-      else setIconPreview(previewUrl)
+      if (field === 'cover') {
+        if (coverPreview) URL.revokeObjectURL(coverPreview)
+        setCoverPreview(previewUrl)
+      } else {
+        if (iconPreview) URL.revokeObjectURL(iconPreview)
+        setIconPreview(previewUrl)
+      }
 
       const uploadUrl = await generateUploadUrl()
       const result = await fetch(uploadUrl, {

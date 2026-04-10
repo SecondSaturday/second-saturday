@@ -3,16 +3,15 @@
 import { Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useDeadlineCountdown } from '@/hooks/useDeadlineCountdown'
-import { getSecondSaturdayDeadline } from '@/lib/dates'
 
 interface DeadlineCountdownProps {
-  /** Unix timestamp in milliseconds. Defaults to the next Second Saturday at 10:59 AM UTC. */
-  deadlineTimestamp?: number
+  /** Unix timestamp in milliseconds. */
+  deadlineTimestamp: number
   className?: string
 }
 
 export function DeadlineCountdown({ deadlineTimestamp, className }: DeadlineCountdownProps) {
-  const resolvedTimestamp = deadlineTimestamp ?? getSecondSaturdayDeadline(new Date()).getTime()
+  const resolvedTimestamp = deadlineTimestamp
 
   const { days, hours, minutes, seconds, isPast, isUrgent } =
     useDeadlineCountdown(resolvedTimestamp)

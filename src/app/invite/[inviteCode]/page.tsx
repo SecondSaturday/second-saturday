@@ -16,7 +16,7 @@ import { ProfileHeaderImageLayout } from '@/components/ProfileHeaderImageLayout'
 export default function InvitePreviewPage() {
   const params = useParams()
   const router = useRouter()
-  const { isSignedIn } = useAuth()
+  const { isLoaded, isSignedIn } = useAuth()
   const inviteCode = params.inviteCode as string
 
   const circle = useQuery(api.circles.getCircleByInviteCode, { inviteCode })
@@ -60,7 +60,7 @@ export default function InvitePreviewPage() {
     }
   }
 
-  if (circle === undefined || inviteStatus === undefined) {
+  if (!isLoaded || circle === undefined || inviteStatus === undefined) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-background">
         <div className="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
