@@ -38,6 +38,27 @@ export const upsertUser = internalMutation({
   },
 })
 
+export const updateUserFromClerk = internalMutation({
+  args: {
+    clerkId: v.string(),
+    email: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const existingUser = await ctx.db
+      .query('users')
+      .withIndex('by_clerk_id', (q) => q.eq('clerkId', args.clerkId))
+      .first()
+
+    if (!existingUser) return null
+
+    await ctx.db.patch(existingUser._id, {
+      email: args.email,
+      updatedAt: Date.now(),
+    })
+    return existingUser._id
+  },
+})
+
 export const deleteUser = internalMutation({
   args: { clerkId: v.string() },
   handler: async (ctx, args) => {
