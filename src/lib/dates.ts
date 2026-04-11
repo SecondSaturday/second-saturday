@@ -17,9 +17,10 @@ export function getNextSecondSaturday(from: Date = new Date()): Date {
   const month = from.getMonth()
 
   const thisMonth = getSecondSaturday(year, month)
+  const thisDeadline = getSecondSaturdayDeadline(thisMonth)
 
-  // If today is on or before this month's second Saturday, use it
-  if (from <= thisMonth) {
+  // If we're still before this month's deadline, use it
+  if (from.getTime() <= thisDeadline.getTime()) {
     return thisMonth
   }
 
