@@ -88,7 +88,14 @@ export default function NewsletterEmail({
               {section.responses.map((response, rIdx) => (
                 <Section key={rIdx} style={responseBlock}>
                   <Text style={memberName}>{response.memberName}</Text>
-                  <Text style={responseText}>{response.text}</Text>
+                  {response.text
+                    .split(/\n+/)
+                    .filter(Boolean)
+                    .map((para, pIdx) => (
+                      <Text key={pIdx} style={responseText}>
+                        {para}
+                      </Text>
+                    ))}
 
                   {response.media && response.media.length > 0 && (
                     <Row style={mediaRow}>

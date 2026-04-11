@@ -167,15 +167,6 @@ export const sendAdminReminder = mutation({
       )
     }
 
-    // Insert reminder row
-    await ctx.db.insert('adminReminders', {
-      circleId: args.circleId,
-      adminUserId: user._id,
-      targetUserId: args.targetUserId,
-      cycleId: args.cycleId,
-      sentAt: Date.now(),
-    })
-
     // Verify target is an active member of the circle
     const targetMembership = await ctx.db
       .query('memberships')
@@ -190,17 +181,30 @@ export const sendAdminReminder = mutation({
     // Get target user's player IDs for push notification (native + web)
     const targetUser = await ctx.db.get(args.targetUserId)
     const targetPlayerIds = collectPlayerIds(targetUser)
-    if (targetPlayerIds.length > 0) {
-      const circle = await ctx.db.get(args.circleId)
-      await ctx.scheduler.runAfter(0, internal.notificationPush.sendPushNotification, {
-        playerIds: targetPlayerIds,
-        title: 'Submission Reminder',
-        message: `Your admin in ${circle?.name ?? 'your circle'} is reminding you to submit!`,
-        data: { type: 'admin_reminder', circleId: args.circleId, cycleId: args.cycleId },
-      })
+
+    // No push tokens → no-op, preserve quota
+    if (targetPlayerIds.length === 0) {
+      return { success: true, notifiedCount: 0 }
     }
 
-    return { success: true }
+    // Insert reminder row
+    await ctx.db.insert('adminReminders', {
+      circleId: args.circleId,
+      adminUserId: user._id,
+      targetUserId: args.targetUserId,
+      cycleId: args.cycleId,
+      sentAt: Date.now(),
+    })
+
+    const circle = await ctx.db.get(args.circleId)
+    await ctx.scheduler.runAfter(0, internal.notificationPush.sendPushNotification, {
+      playerIds: targetPlayerIds,
+      title: 'Submission Reminder',
+      message: `Your admin in ${circle?.name ?? 'your circle'} is reminding you to submit!`,
+      data: { type: 'admin_reminder', circleId: args.circleId, cycleId: args.cycleId },
+    })
+
+    return { success: true, notifiedCount: 1 }
   },
 })
 
@@ -231,14 +235,6 @@ export const sendBulkAdminReminder = mutation({
       )
     }
 
-    // Insert a single reminder row with no targetUserId (bulk)
-    await ctx.db.insert('adminReminders', {
-      circleId: args.circleId,
-      adminUserId: user._id,
-      cycleId: args.cycleId,
-      sentAt: Date.now(),
-    })
-
     // Get non-submitters and their player IDs (native + web)
     const nonSubmitters = await getNonSubmittersInternal(ctx, args.circleId, args.cycleId)
     const playerIds: string[] = []
@@ -248,15 +244,26 @@ export const sendBulkAdminReminder = mutation({
       playerIds.push(...collectPlayerIds(memberUser))
     }
 
-    if (playerIds.length > 0) {
-      const circle = await ctx.db.get(args.circleId)
-      await ctx.scheduler.runAfter(0, internal.notificationPush.sendPushNotification, {
-        playerIds,
-        title: 'Submission Reminder',
-        message: `Your admin in ${circle?.name ?? 'your circle'} is reminding you to submit!`,
-        data: { type: 'admin_reminder', circleId: args.circleId, cycleId: args.cycleId },
-      })
+    // No recipients → no-op, preserve quota
+    if (playerIds.length === 0) {
+      return { success: true, notifiedCount: 0 }
     }
+
+    // Insert a single reminder row with no targetUserId (bulk)
+    await ctx.db.insert('adminReminders', {
+      circleId: args.circleId,
+      adminUserId: user._id,
+      cycleId: args.cycleId,
+      sentAt: Date.now(),
+    })
+
+    const circle = await ctx.db.get(args.circleId)
+    await ctx.scheduler.runAfter(0, internal.notificationPush.sendPushNotification, {
+      playerIds,
+      title: 'Submission Reminder',
+      message: `Your admin in ${circle?.name ?? 'your circle'} is reminding you to submit!`,
+      data: { type: 'admin_reminder', circleId: args.circleId, cycleId: args.cycleId },
+    })
 
     return { success: true, notifiedCount: playerIds.length }
   },

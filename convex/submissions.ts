@@ -116,13 +116,15 @@ export const updateResponse = mutation({
     if (!submission) throw new Error('Submission not found')
     if (submission.userId !== user._id) throw new Error('Not authorized to modify this submission')
 
-    // If locked, auto-unlock if deadline hasn't passed; otherwise block
+    // Enforce deadline regardless of lock state
+    const deadlineTs = computeDeadlineTimestamp(submission.cycleId)
+    if (Date.now() >= deadlineTs) {
+      throw new Error('Cannot modify submission after deadline')
+    }
+
+    // If locked pre-deadline, silently unlock for editing
+    // (keep submittedAt to track "unsubmitted changes" state)
     if (submission.lockedAt && submission.lockedAt > 0) {
-      const deadlineTs = computeDeadlineTimestamp(submission.cycleId)
-      if (Date.now() >= deadlineTs) {
-        throw new Error('Cannot modify submission after deadline')
-      }
-      // Silently unlock for editing (keep submittedAt to track "unsubmitted changes" state)
       await ctx.db.patch(args.submissionId, {
         lockedAt: undefined,
         updatedAt: Date.now(),
@@ -386,12 +388,14 @@ export const addMediaToResponse = mutation({
     if (!submission) throw new Error('Submission not found')
     if (submission.userId !== user._id) throw new Error('Not authorized to modify this response')
 
-    // If locked, auto-unlock if deadline hasn't passed; otherwise block
+    // Enforce deadline regardless of lock state
+    const deadlineTs = computeDeadlineTimestamp(submission.cycleId)
+    if (Date.now() >= deadlineTs) {
+      throw new Error('Cannot modify submission after deadline')
+    }
+
+    // If locked pre-deadline, silently unlock for editing
     if (submission.lockedAt && submission.lockedAt > 0) {
-      const deadlineTs = computeDeadlineTimestamp(submission.cycleId)
-      if (Date.now() >= deadlineTs) {
-        throw new Error('Cannot modify submission after deadline')
-      }
       await ctx.db.patch(response.submissionId, {
         lockedAt: undefined,
         updatedAt: Date.now(),
@@ -407,6 +411,14 @@ export const addMediaToResponse = mutation({
     // Guard against duplicate media on retry (must precede count check)
     if (args.storageId) {
       const existing = existingMedia.find((m) => m.storageId === args.storageId)
+      if (existing) return existing._id
+    }
+    if (args.videoId) {
+      const existing = existingMedia.find((m) => m.videoId === args.videoId)
+      if (existing) return existing._id
+    }
+    if (args.muxAssetId) {
+      const existing = existingMedia.find((m) => m.muxAssetId === args.muxAssetId)
       if (existing) return existing._id
     }
 
@@ -462,12 +474,14 @@ export const removeMediaFromResponse = mutation({
     if (!submission) throw new Error('Submission not found')
     if (submission.userId !== user._id) throw new Error('Not authorized to remove this media')
 
-    // If locked, auto-unlock if deadline hasn't passed; otherwise block
+    // Enforce deadline regardless of lock state
+    const deadlineTs = computeDeadlineTimestamp(submission.cycleId)
+    if (Date.now() >= deadlineTs) {
+      throw new Error('Cannot modify submission after deadline')
+    }
+
+    // If locked pre-deadline, silently unlock for editing
     if (submission.lockedAt && submission.lockedAt > 0) {
-      const deadlineTs = computeDeadlineTimestamp(submission.cycleId)
-      if (Date.now() >= deadlineTs) {
-        throw new Error('Cannot modify submission after deadline')
-      }
       await ctx.db.patch(response.submissionId, {
         lockedAt: undefined,
         updatedAt: Date.now(),

@@ -8,6 +8,18 @@ const internalVideos = internal.videos
 
 const http = httpRouter()
 
+function extractPrimaryEmail(data: {
+  primary_email_address_id?: string
+  email_addresses?: Array<{ id: string; email_address: string }>
+}): string | undefined {
+  const primaryId = data.primary_email_address_id
+  if (primaryId) {
+    const primary = data.email_addresses?.find((e) => e.id === primaryId)
+    if (primary) return primary.email_address
+  }
+  return data.email_addresses?.[0]?.email_address
+}
+
 // Clerk webhook endpoint
 http.route({
   path: '/clerk-webhook',
@@ -37,7 +49,8 @@ http.route({
       type: string
       data: {
         id: string
-        email_addresses?: Array<{ email_address: string }>
+        email_addresses?: Array<{ id: string; email_address: string }>
+        primary_email_address_id?: string
         first_name?: string
         last_name?: string
         image_url?: string
@@ -62,7 +75,7 @@ http.route({
       // Handle different event types
       switch (type) {
         case 'user.created': {
-          const email = data.email_addresses?.[0]?.email_address
+          const email = extractPrimaryEmail(data)
           if (!email) {
             console.error('No email found in webhook payload')
             return new Response('No email in payload', { status: 400 })
@@ -82,19 +95,15 @@ http.route({
         }
 
         case 'user.updated': {
-          const email = data.email_addresses?.[0]?.email_address
+          const email = extractPrimaryEmail(data)
           if (!email) {
             console.error('No email found in webhook payload')
             return new Response('No email in payload', { status: 400 })
           }
 
-          const name = [data.first_name, data.last_name].filter(Boolean).join(' ') || undefined
-
-          await ctx.runMutation(internal.users.upsertUser, {
+          await ctx.runMutation(internal.users.updateUserFromClerk, {
             clerkId: data.id,
             email,
-            name,
-            imageUrl: data.image_url,
           })
           break
         }

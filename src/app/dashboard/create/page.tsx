@@ -23,10 +23,11 @@ export default function CreateCirclePage() {
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
 
   const handleNext = async () => {
-    if (name.length < 3 || submitting) return
+    const trimmed = name.trim()
+    if (trimmed.length < 3 || submitting) return
     setSubmitting(true)
     try {
-      const circleId = await createCircle({ name, timezone })
+      const circleId = await createCircle({ name: trimmed, timezone })
       toast.success('Circle created!')
       trackEvent('circle_created', { circleId })
       router.push(`/dashboard/circles/${circleId}/customize`)
@@ -42,7 +43,11 @@ export default function CreateCirclePage() {
       step={1}
       backHref="/dashboard"
       footer={
-        <Button className="w-full" disabled={submitting || name.length < 3} onClick={handleNext}>
+        <Button
+          className="w-full"
+          disabled={submitting || name.trim().length < 3}
+          onClick={handleNext}
+        >
           {submitting ? 'Creating...' : 'Next'}
         </Button>
       }

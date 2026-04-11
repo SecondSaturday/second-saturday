@@ -79,11 +79,12 @@ export default defineSchema({
     title: v.optional(v.string()),
     htmlContent: v.optional(v.string()),
     issueNumber: v.number(),
-    status: v.string(), // draft, published
+    status: v.string(), // draft, published, skipped
     submissionCount: v.optional(v.number()),
     memberCount: v.optional(v.number()),
     recipientCount: v.optional(v.number()),
     publishedAt: v.optional(v.number()),
+    sentAt: v.optional(v.number()), // Set when dispatch claim starts (covers both newsletter and missed-month emails)
     createdAt: v.number(),
   })
     .index('by_circle', ['circleId'])

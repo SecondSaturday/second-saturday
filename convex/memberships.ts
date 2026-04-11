@@ -428,6 +428,18 @@ export const removeMember = mutation({
             if (item.storageId) {
               await ctx.storage.delete(item.storageId)
             }
+            // Video media: schedule Mux asset deletion and remove the videos row.
+            if (item.videoId) {
+              const video = await ctx.db.get(item.videoId)
+              if (video?.assetId) {
+                await ctx.scheduler.runAfter(0, internal.videoActions.deleteMuxAsset, {
+                  assetId: video.assetId,
+                })
+              }
+              if (video) {
+                await ctx.db.delete(video._id)
+              }
+            }
             await ctx.db.delete(item._id)
           }
         }
@@ -497,6 +509,7 @@ export const cleanupOrphanedCircles = internalMutation({
       const activeMembers = allMembers.filter((m) => !m.leftAt && m.userId !== args.deletedUserId)
 
       if (activeMembers.length === 0) {
+        // cascadeDeleteCircle removes all memberships including this one.
         await cascadeDeleteCircle(ctx, membership.circleId)
       } else {
         const circle = await ctx.db.get(membership.circleId)
@@ -508,6 +521,9 @@ export const cleanupOrphanedCircles = internalMutation({
             updatedAt: Date.now(),
           })
         }
+        // Delete the dangling membership row — userId would point to a
+        // soon-to-be-deleted user record.
+        await ctx.db.delete(membership._id)
       }
     }
   },

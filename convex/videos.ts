@@ -1,6 +1,7 @@
 import { v } from 'convex/values'
 import { mutation, query, internalMutation } from './_generated/server'
 import { internal } from './_generated/api'
+import type { Id } from './_generated/dataModel'
 import { getAuthUser, requireMembership } from './authHelpers'
 
 // Create a new video record when upload starts
@@ -207,16 +208,35 @@ export const deleteVideo = mutation({
       })
     }
 
-    // Clean up linked media records that reference this video
+    // Clean up linked media records that reference this video,
+    // tracking affected responses so we can renumber remaining siblings.
     const linkedMedia = await ctx.db
       .query('media')
       .withIndex('by_video', (q) => q.eq('videoId', args.id))
       .collect()
+    const affectedResponseIds = new Set<string>()
     for (const m of linkedMedia) {
       if (m.storageId) {
         await ctx.storage.delete(m.storageId)
       }
+      affectedResponseIds.add(m.responseId as unknown as string)
       await ctx.db.delete(m._id)
+    }
+
+    // Renumber remaining media per response to keep `order` contiguous (0..n-1)
+    for (const responseId of affectedResponseIds) {
+      const remaining = await ctx.db
+        .query('media')
+        .withIndex('by_response', (q) =>
+          q.eq('responseId', responseId as unknown as Id<'responses'>)
+        )
+        .collect()
+      const sorted = remaining.sort((a, b) => a.order - b.order)
+      for (let i = 0; i < sorted.length; i++) {
+        if (sorted[i]!.order !== i) {
+          await ctx.db.patch(sorted[i]!._id, { order: i })
+        }
+      }
     }
 
     await ctx.db.delete(args.id)

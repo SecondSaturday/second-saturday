@@ -7,7 +7,7 @@ import { Capacitor } from '@capacitor/core'
 const ONESIGNAL_APP_ID = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID
 
 export interface NotificationClickPayload {
-  type: 'submission_reminder' | 'newsletter_ready'
+  type: 'submission_reminder' | 'newsletter_ready' | 'admin_reminder'
   circleId: string
 }
 

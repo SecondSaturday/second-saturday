@@ -119,7 +119,7 @@ export function MediaUploader({
 
     try {
       // Ensure response exists before starting upload
-      await onEnsureResponse?.()
+      const ensuredId = await onEnsureResponse?.()
 
       setStage('selecting')
       setError(null)
@@ -154,7 +154,7 @@ export function MediaUploader({
       setPreview(`data:${mimeType};base64,${photo.base64String}`)
       setProgress(10)
 
-      await uploadPhoto(file)
+      await uploadPhoto(file, undefined, ensuredId)
     } catch (err: unknown) {
       // Handle specific permission errors
       const errorMessage = err instanceof Error ? err.message : String(err)
@@ -175,7 +175,11 @@ export function MediaUploader({
     }
   }
 
-  const uploadPhoto = async (file: File, existingStorageId?: Id<'_storage'>): Promise<boolean> => {
+  const uploadPhoto = async (
+    file: File,
+    existingStorageId?: Id<'_storage'>,
+    ensuredResponseId?: Id<'responses'>
+  ): Promise<boolean> => {
     const controller = new AbortController()
     abortControllerRef.current = controller
 
@@ -257,7 +261,7 @@ export function MediaUploader({
       setProgress(80)
 
       // Save media record to database
-      const actualResponseId = responseId
+      const actualResponseId = responseId ?? ensuredResponseId
       if (!actualResponseId) {
         toast.error('Failed to create response')
         resetUpload()
@@ -321,7 +325,7 @@ export function MediaUploader({
       if (!result.files || result.files.length === 0) return
 
       // Create response record only after user confirms selection
-      await onEnsureResponse?.()
+      const ensuredId = await onEnsureResponse?.()
 
       // Reject entire selection if it exceeds remaining slots
       const remainingSlots = maxMedia - currentMediaCount
@@ -359,10 +363,10 @@ export function MediaUploader({
         let success: boolean
         if (picked.mimeType?.startsWith('video/')) {
           setMediaType('video')
-          success = await uploadVideo(file)
+          success = await uploadVideo(file, ensuredId)
         } else {
           setMediaType('photo')
-          success = await uploadPhoto(file)
+          success = await uploadPhoto(file, undefined, ensuredId)
         }
 
         // Stop batch on failure
@@ -384,7 +388,7 @@ export function MediaUploader({
     }
   }
 
-  const uploadVideo = async (file: File): Promise<boolean> => {
+  const uploadVideo = async (file: File, ensuredResponseId?: Id<'responses'>): Promise<boolean> => {
     const controller = videoUpload.createAbortController()
 
     try {
@@ -485,7 +489,7 @@ export function MediaUploader({
       // Save media record to database
       // Note: muxAssetId will be updated via webhook when Mux processes the video
       // For now, we store the uploadId to track the video
-      const actualResponseId = responseId
+      const actualResponseId = responseId ?? ensuredResponseId
       if (!actualResponseId) {
         toast.error('Failed to create response')
         videoUpload.reset()
@@ -705,11 +709,11 @@ export function MediaUploader({
 
               setMediaType(type)
               void (async () => {
-                await onEnsureResponse?.()
+                const ensuredId = await onEnsureResponse?.()
                 if (type === 'photo') {
-                  await uploadPhoto(file, lastStorageIdRef.current ?? undefined)
+                  await uploadPhoto(file, lastStorageIdRef.current ?? undefined, ensuredId)
                 } else {
-                  await uploadVideo(file)
+                  await uploadVideo(file, ensuredId)
                 }
               })()
             }}

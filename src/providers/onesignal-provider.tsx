@@ -33,6 +33,9 @@ function navigateToDeepLink(
     case 'submission_reminder':
       router.push(`/dashboard/circles/${payload.circleId}/submit`)
       break
+    case 'admin_reminder':
+      router.push(`/dashboard/circles/${payload.circleId}/submit`)
+      break
     case 'newsletter_ready':
       if (isDesktop) {
         router.push(`/dashboard?circle=${payload.circleId}`)
@@ -58,6 +61,10 @@ export function OneSignalProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     isDesktopRef.current = isDesktop
   }, [isDesktop])
+  const isSignedInRef = useRef(isSignedIn)
+  useEffect(() => {
+    isSignedInRef.current = isSignedIn
+  }, [isSignedIn])
 
   // Process any pending deep link once signed in
   useEffect(() => {
@@ -102,7 +109,7 @@ export function OneSignalProvider({ children }: { children: React.ReactNode }) {
                 circle_id: payload.circleId,
               })
 
-              if (isSignedIn) {
+              if (isSignedInRef.current) {
                 navigateToDeepLink(router, payload, isDesktopRef.current)
               } else {
                 pendingDeepLinkRef.current = payload

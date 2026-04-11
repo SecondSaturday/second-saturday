@@ -19,12 +19,76 @@ const getResend = () => {
 const FROM = process.env.RESEND_FROM_EMAIL || 'noreply@secondsaturday.app'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://secondsaturday.app'
 
+// Resend allows up to 100 emails per batch call. Each call counts as one
+// request against the account rate limit (5 req/s on our plan), so batching
+// is what keeps us under the limit — a tight per-recipient loop would 429.
+const RESEND_BATCH_SIZE = 100
+// Spacing between batch calls: 4 req/s, leaving headroom under the 5/s limit.
+const RESEND_BATCH_DELAY_MS = 250
+
+type BatchEmail = {
+  from: string
+  to: [string]
+  subject: string
+  html: string
+}
+
+async function sendInBatches(
+  resend: Resend,
+  emails: BatchEmail[],
+  label: string
+): Promise<{ sentCount: number; failedEmails: string[] }> {
+  let sentCount = 0
+  const failedEmails: string[] = []
+
+  for (let i = 0; i < emails.length; i += RESEND_BATCH_SIZE) {
+    const chunk = emails.slice(i, i + RESEND_BATCH_SIZE)
+    try {
+      const result = await resend.batch.send(chunk, { batchValidation: 'permissive' })
+      if (result.error) {
+        console.error(`${label}: batch send failed for ${chunk.length} recipients:`, result.error)
+        for (const c of chunk) failedEmails.push(c.to[0])
+      } else {
+        const errors = result.data?.errors ?? []
+        const failedIdx = new Set(errors.map((e) => e.index))
+        sentCount += chunk.length - failedIdx.size
+        for (const e of errors) {
+          const addr = chunk[e.index]?.to[0]
+          if (addr) failedEmails.push(addr)
+          console.error(`${label}: failed to send to ${addr}: ${e.message}`)
+        }
+      }
+    } catch (error) {
+      console.error(`${label}: batch send threw for ${chunk.length} recipients:`, error)
+      for (const c of chunk) failedEmails.push(c.to[0])
+    }
+    if (i + RESEND_BATCH_SIZE < emails.length) {
+      await new Promise((r) => setTimeout(r, RESEND_BATCH_DELAY_MS))
+    }
+  }
+
+  if (failedEmails.length > 0) {
+    console.error(`${label}: ${failedEmails.length} recipients failed:`, failedEmails)
+  }
+
+  return { sentCount, failedEmails }
+}
+
 /**
  * Send a compiled newsletter to all active, subscribed circle members.
  */
 export const sendNewsletter = internalAction({
   args: { newsletterId: v.id('newsletters') },
   handler: async (ctx, args) => {
+    // Atomically claim the send slot; bail if a prior invocation already sent.
+    const claimed = await ctx.runMutation(internal.newsletterHelpers.claimNewsletterSendSlot, {
+      newsletterId: args.newsletterId,
+    })
+    if (!claimed) {
+      console.log(`Newsletter ${args.newsletterId} already sent; skipping retry`)
+      return
+    }
+
     const data = await ctx.runQuery(internal.newsletterHelpers.getNewsletterSendData, {
       newsletterId: args.newsletterId,
     })
@@ -56,21 +120,15 @@ export const sendNewsletter = internalAction({
     )
 
     const resend = getResend()
-    let sentCount = 0
+    const subject = `${circleName} - Issue #${newsletter.issueNumber}`
+    const emails: BatchEmail[] = recipients.map((r) => ({
+      from: FROM,
+      to: [r.email],
+      subject,
+      html,
+    }))
 
-    for (const recipient of recipients) {
-      try {
-        await resend.emails.send({
-          from: FROM,
-          to: [recipient.email],
-          subject: `${circleName} - Issue #${newsletter.issueNumber}`,
-          html,
-        })
-        sentCount++
-      } catch (error) {
-        console.error(`Failed to send newsletter to ${recipient.email}:`, error)
-      }
-    }
+    const { sentCount } = await sendInBatches(resend, emails, `Newsletter ${args.newsletterId}`)
 
     // Update recipient count
     await ctx.runMutation(internal.newsletterHelpers.updateRecipientCount, {
@@ -92,10 +150,20 @@ export const sendNewsletter = internalAction({
  */
 export const sendMissedMonthEmail = internalAction({
   args: {
+    newsletterId: v.id('newsletters'),
     circleId: v.id('circles'),
     cycleId: v.string(),
   },
   handler: async (ctx, args) => {
+    // Atomically claim the send slot; bail if a prior invocation already sent.
+    const claimed = await ctx.runMutation(internal.newsletterHelpers.claimNewsletterSendSlot, {
+      newsletterId: args.newsletterId,
+    })
+    if (!claimed) {
+      console.log(`Missed-month email for ${args.newsletterId} already sent; skipping retry`)
+      return
+    }
+
     const data = await ctx.runQuery(internal.newsletterHelpers.getCircleSendData, {
       circleId: args.circleId,
     })
@@ -127,21 +195,19 @@ export const sendMissedMonthEmail = internalAction({
     )
 
     const resend = getResend()
+    const subject = `No submissions this month for ${circleName}`
+    const emails: BatchEmail[] = recipients.map((r) => ({
+      from: FROM,
+      to: [r.email],
+      subject,
+      html,
+    }))
 
-    for (const recipient of recipients) {
-      try {
-        await resend.emails.send({
-          from: FROM,
-          to: [recipient.email],
-          subject: `No submissions this month for ${circleName}`,
-          html,
-        })
-      } catch (error) {
-        console.error(`Failed to send missed-month email to ${recipient.email}:`, error)
-      }
-    }
+    const { sentCount } = await sendInBatches(resend, emails, `Missed-month ${args.newsletterId}`)
 
-    console.log(`Missed-month email for ${circleName} sent to ${recipients.length} recipients`)
+    console.log(
+      `Missed-month email for ${circleName} sent to ${sentCount}/${recipients.length} recipients`
+    )
   },
 })
 
@@ -189,6 +255,7 @@ export const processNewsletters = internalAction({
         if (result.missedMonth) {
           // No submissions — send missed-month email
           await ctx.scheduler.runAfter(0, internal.newsletterEmails.sendMissedMonthEmail, {
+            newsletterId: result.newsletterId,
             circleId: circle._id,
             cycleId,
           })

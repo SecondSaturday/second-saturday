@@ -16,6 +16,9 @@ import type * as e2eCleanup from '../e2eCleanup.js'
 import type * as emails from '../emails.js'
 import type * as files from '../files.js'
 import type * as http from '../http.js'
+import type * as lib_constants from '../lib/constants.js'
+import type * as lib_dates from '../lib/dates.js'
+import type * as lib_sentry from '../lib/sentry.js'
 import type * as memberships from '../memberships.js'
 import type * as newsletterEmails from '../newsletterEmails.js'
 import type * as newsletterHelpers from '../newsletterHelpers.js'
@@ -41,6 +44,9 @@ declare const fullApi: ApiFromModules<{
   emails: typeof emails
   files: typeof files
   http: typeof http
+  'lib/constants': typeof lib_constants
+  'lib/dates': typeof lib_dates
+  'lib/sentry': typeof lib_sentry
   memberships: typeof memberships
   newsletterEmails: typeof newsletterEmails
   newsletterHelpers: typeof newsletterHelpers

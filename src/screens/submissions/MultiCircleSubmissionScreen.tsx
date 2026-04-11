@@ -74,8 +74,15 @@ export const MultiCircleSubmissionScreen = forwardRef<
   const savedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isLockedRef = useRef(false)
 
-  const deadlineTimestamp = useMemo(() => getDeadlineTimestamp(), [])
-  const { isPast: deadlineIsPast } = useDeadlineCountdown(deadlineTimestamp)
+  const [deadlineTimestamp, setDeadlineTimestamp] = useState(() => getDeadlineTimestamp())
+  const countdown = useDeadlineCountdown(deadlineTimestamp)
+  const { isPast: deadlineIsPast } = countdown
+  useEffect(() => {
+    if (countdown.isPast) {
+      const next = getDeadlineTimestamp()
+      if (next !== deadlineTimestamp) setDeadlineTimestamp(next)
+    }
+  }, [countdown.isPast, deadlineTimestamp])
 
   const activeCircle = circles.find((c) => c.id === activeCircleId)
 
