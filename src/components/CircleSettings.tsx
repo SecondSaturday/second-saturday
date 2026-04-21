@@ -36,6 +36,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { RemoveMemberModal } from '@/components/RemoveMemberModal'
+import { TransferAdminModal } from '@/components/TransferAdminModal'
 
 interface CircleSettingsProps {
   circleId: Id<'circles'>
@@ -66,6 +67,10 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
   const [removeTarget, setRemoveTarget] = useState<{ userId: Id<'users'>; name: string } | null>(
     null
   )
+  const [transferTarget, setTransferTarget] = useState<{
+    userId: Id<'users'>
+    name: string
+  } | null>(null)
 
   if (circle === undefined || members === undefined || currentUser === undefined) {
     return (
@@ -398,7 +403,8 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
             <>
               {sortedMembers.map((member) => {
                 const isSelf = member.userId === currentUser._id
-                const canRemove = isAdmin && !isSelf
+                const canManage = isAdmin && !isSelf
+                const canPromote = canManage && member.role !== 'admin'
 
                 return (
                   <div
@@ -419,7 +425,7 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
                       </span>
                     </div>
 
-                    {canRemove && (
+                    {canManage && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
@@ -432,6 +438,15 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          {canPromote && (
+                            <DropdownMenuItem
+                              onClick={() =>
+                                setTransferTarget({ userId: member.userId, name: member.name })
+                              }
+                            >
+                              Make admin
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem
                             onClick={() => handleRemoveClick(member.userId, member.name)}
                             className="text-destructive focus:text-destructive"
@@ -477,6 +492,19 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
           open={!!removeTarget}
           onOpenChange={(open) => {
             if (!open) setRemoveTarget(null)
+          }}
+        />
+      )}
+
+      {/* Transfer Admin Modal */}
+      {transferTarget && (
+        <TransferAdminModal
+          circleId={circleId}
+          targetUserId={transferTarget.userId}
+          targetName={transferTarget.name}
+          open={!!transferTarget}
+          onOpenChange={(open) => {
+            if (!open) setTransferTarget(null)
           }}
         />
       )}
