@@ -100,10 +100,32 @@ export function getTimeRemaining(deadline: Date): {
  * Returns a human-friendly "Due in N days" label for the current cycle's deadline.
  * Uses calendar-day diff in the local timezone so crossings aren't off-by-one.
  */
+/**
+ * Returns the active cycle id (format `YYYY-MM`) in UTC.
+ * If the current month's second-Saturday deadline has passed, rolls to next month —
+ * so the client never opens a locked (past-deadline) cycle.
+ */
+export function getActiveCycleId(now: Date = new Date()): string {
+  let year = now.getUTCFullYear()
+  let month = now.getUTCMonth() // 0-indexed
+  const deadline = getSecondSaturdayDeadline(now)
+  if (now.getTime() > deadline.getTime()) {
+    month += 1
+    if (month > 11) {
+      month = 0
+      year += 1
+    }
+  }
+  return `${year}-${String(month + 1).padStart(2, '0')}`
+}
+
 export function getDueLabel(): string {
   const now = new Date()
-  const deadline = getSecondSaturdayDeadline(now)
-  if (now.getTime() > deadline.getTime()) return 'Submissions locked'
+  let deadline = getSecondSaturdayDeadline(now)
+  if (now.getTime() > deadline.getTime()) {
+    const nextMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1))
+    deadline = getSecondSaturdayDeadline(nextMonth)
+  }
   const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
   const dlDay = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate()).getTime()
   const days = Math.round((dlDay - nowDay) / 86400000)

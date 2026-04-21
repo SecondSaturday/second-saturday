@@ -11,7 +11,7 @@ import type { Circle } from '@/components/submissions'
 import { ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { getDueLabel } from '@/lib/dates'
+import { getDueLabel, getActiveCycleId } from '@/lib/dates'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { cn } from '@/lib/utils'
 import { CircleSidebar } from '@/components/submissions/CircleSidebar'
@@ -22,10 +22,7 @@ function getEditionTitle(): string {
 }
 
 export default function SubmitPage() {
-  const cycleId = useMemo(() => {
-    const now = new Date()
-    return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`
-  }, [])
+  const cycleId = useMemo(() => getActiveCycleId(), [])
 
   const isDesktop = useMediaQuery('(min-width: 768px)')
   const userCircles = useQuery(api.circles.getCirclesByUser)

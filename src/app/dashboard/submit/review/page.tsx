@@ -6,7 +6,7 @@ import { api } from '../../../../../convex/_generated/api'
 import type { Id } from '../../../../../convex/_generated/dataModel'
 import { ChevronLeft, Check } from 'lucide-react'
 import Link from 'next/link'
-import { getDueLabel } from '@/lib/dates'
+import { getDueLabel, getActiveCycleId } from '@/lib/dates'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
@@ -61,10 +61,7 @@ function getCircleStatus(circle: CircleReviewData): CircleStatus {
 }
 
 export default function ReviewPage() {
-  const cycleId = useMemo(() => {
-    const now = new Date()
-    return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`
-  }, [])
+  const cycleId = useMemo(() => getActiveCycleId(), [])
 
   const isDesktop = useMediaQuery('(min-width: 768px)')
   const editionTitle = useMemo(() => getEditionTitle(), [])

@@ -1,6 +1,6 @@
 import { PromptSection } from './PromptSection'
 import { ProfileHeaderImageLayout } from '@/components/ProfileHeaderImageLayout'
-import { Settings, ChevronDown } from 'lucide-react'
+import { Settings, ChevronDown, PencilLine } from 'lucide-react'
 import Link from 'next/link'
 import {
   DropdownMenu,
@@ -150,6 +150,14 @@ export function NewsletterView({
             {currentMonthLabel}
           </span>
         )}
+
+        <Link
+          href={`/dashboard/circles/${circleId}/submit`}
+          aria-label="Submit to this circle"
+          className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <PencilLine className="size-5" />
+        </Link>
 
         {onSettingsOpen ? (
           <button

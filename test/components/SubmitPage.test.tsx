@@ -5,20 +5,26 @@ import type { Id } from '../../convex/_generated/dataModel'
 // ---------------------------------------------------------------------------
 // Hoist mock refs so they are available in vi.mock factory (hoisted)
 // ---------------------------------------------------------------------------
-const { mockGetCircle, mockGetSubmissionForCircle, mockUseQuery } = vi.hoisted(() => {
-  const mockGetCircle = { _type: 'query', _name: 'circles:getCircle' }
-  const mockGetSubmissionForCircle = {
-    _type: 'query',
-    _name: 'submissions:getSubmissionForCircle',
+const { mockGetCircle, mockGetSubmissionForCircle, mockHasAnyResponses, mockUseQuery } = vi.hoisted(
+  () => {
+    const mockGetCircle = { _type: 'query', _name: 'circles:getCircle' }
+    const mockGetSubmissionForCircle = {
+      _type: 'query',
+      _name: 'submissions:getSubmissionForCircle',
+    }
+    const mockHasAnyResponses = { _type: 'query', _name: 'submissions:hasAnyResponses' }
+    const mockUseQuery = vi.fn()
+    return { mockGetCircle, mockGetSubmissionForCircle, mockHasAnyResponses, mockUseQuery }
   }
-  const mockUseQuery = vi.fn()
-  return { mockGetCircle, mockGetSubmissionForCircle, mockUseQuery }
-})
+)
 
 vi.mock('../../convex/_generated/api', () => ({
   api: {
     circles: { getCircle: mockGetCircle },
-    submissions: { getSubmissionForCircle: mockGetSubmissionForCircle },
+    submissions: {
+      getSubmissionForCircle: mockGetSubmissionForCircle,
+      hasAnyResponses: mockHasAnyResponses,
+    },
   },
 }))
 
@@ -41,7 +47,7 @@ vi.mock('next/link', () => ({
 }))
 
 vi.mock('lucide-react', () => ({
-  ArrowLeft: () => <span>←</span>,
+  ChevronLeft: () => <span>‹</span>,
 }))
 
 vi.mock('@/hooks/useMediaQuery', () => ({
@@ -49,12 +55,29 @@ vi.mock('@/hooks/useMediaQuery', () => ({
   useMediaQuery: () => false,
 }))
 
+vi.mock('@/lib/dates', () => ({
+  getDueLabel: () => 'Due in 5 days',
+  getActiveCycleId: () => '2026-05',
+}))
+
 // Stub screen to capture props without rendering the full submission tree
 vi.mock('@/screens/submissions/MultiCircleSubmissionScreen', () => ({
-  MultiCircleSubmissionScreen: ({ circles, cycleId }: { circles: unknown[]; cycleId: string }) => (
+  MultiCircleSubmissionScreen: ({
+    circles,
+    cycleId,
+    variant,
+    activeCircleId,
+  }: {
+    circles: unknown[]
+    cycleId: string
+    variant?: string
+    activeCircleId?: string
+  }) => (
     <div
       data-testid="submission-screen"
       data-cycle-id={cycleId}
+      data-variant={variant ?? ''}
+      data-active-circle-id={activeCircleId ?? ''}
       data-circles={JSON.stringify(circles)}
     />
   ),
@@ -110,6 +133,7 @@ describe('SubmitPage', () => {
     mockUseQuery.mockImplementation((queryRef: unknown) => {
       if (queryRef === mockGetCircle) return mockCircle
       if (queryRef === mockGetSubmissionForCircle) return null
+      if (queryRef === mockHasAnyResponses) return false
       return undefined
     })
     render(<SubmitPage />)
@@ -120,6 +144,7 @@ describe('SubmitPage', () => {
     mockUseQuery.mockImplementation((queryRef: unknown) => {
       if (queryRef === mockGetCircle) return mockCircle
       if (queryRef === mockGetSubmissionForCircle) return null
+      if (queryRef === mockHasAnyResponses) return false
       return undefined
     })
     render(<SubmitPage />)
@@ -134,6 +159,7 @@ describe('SubmitPage', () => {
     mockUseQuery.mockImplementation((queryRef: unknown) => {
       if (queryRef === mockGetCircle) return mockCircle
       if (queryRef === mockGetSubmissionForCircle) return null
+      if (queryRef === mockHasAnyResponses) return false
       return undefined
     })
     render(<SubmitPage />)
@@ -141,10 +167,24 @@ describe('SubmitPage', () => {
     expect(cycleId).toMatch(/^\d{4}-\d{2}$/)
   })
 
+  it('uses the redesign variant and pre-selects the active circle', () => {
+    mockUseQuery.mockImplementation((queryRef: unknown) => {
+      if (queryRef === mockGetCircle) return mockCircle
+      if (queryRef === mockGetSubmissionForCircle) return null
+      if (queryRef === mockHasAnyResponses) return false
+      return undefined
+    })
+    render(<SubmitPage />)
+    const el = screen.getByTestId('submission-screen')
+    expect(el.dataset.variant).toBe('redesign')
+    expect(el.dataset.activeCircleId).toBe(CIRCLE_ID)
+  })
+
   it('sets circle status to not-started when no submission exists', () => {
     mockUseQuery.mockImplementation((queryRef: unknown) => {
       if (queryRef === mockGetCircle) return mockCircle
       if (queryRef === mockGetSubmissionForCircle) return null
+      if (queryRef === mockHasAnyResponses) return false
       return undefined
     })
     render(<SubmitPage />)
@@ -156,6 +196,7 @@ describe('SubmitPage', () => {
     mockUseQuery.mockImplementation((queryRef: unknown) => {
       if (queryRef === mockGetCircle) return mockCircle
       if (queryRef === mockGetSubmissionForCircle) return { _id: 'sub-1', responses: [] }
+      if (queryRef === mockHasAnyResponses) return true
       return undefined
     })
     render(<SubmitPage />)
@@ -172,6 +213,7 @@ describe('SubmitPage', () => {
           submittedAt: Date.now(),
           responses: [],
         }
+      if (queryRef === mockHasAnyResponses) return true
       return undefined
     })
     render(<SubmitPage />)
@@ -179,23 +221,27 @@ describe('SubmitPage', () => {
     expect(circles[0].status).toBe('submitted')
   })
 
-  it('renders back button with aria-label', () => {
+  it('renders back link to the circle page', () => {
     mockUseQuery.mockImplementation((queryRef: unknown) => {
       if (queryRef === mockGetCircle) return mockCircle
       if (queryRef === mockGetSubmissionForCircle) return null
+      if (queryRef === mockHasAnyResponses) return false
       return undefined
     })
     render(<SubmitPage />)
-    expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument()
+    const backLink = screen.getByRole('link', { name: /back/i })
+    expect(backLink).toBeInTheDocument()
+    expect(backLink.getAttribute('href')).toBe(`/dashboard/circles/${CIRCLE_ID}`)
   })
 
-  it('renders page title', () => {
+  it('renders the edition title', () => {
     mockUseQuery.mockImplementation((queryRef: unknown) => {
       if (queryRef === mockGetCircle) return mockCircle
       if (queryRef === mockGetSubmissionForCircle) return null
+      if (queryRef === mockHasAnyResponses) return false
       return undefined
     })
     render(<SubmitPage />)
-    expect(screen.getByRole('heading', { name: /make submission/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /edition/i })).toBeInTheDocument()
   })
 })
