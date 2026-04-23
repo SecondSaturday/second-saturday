@@ -252,6 +252,7 @@ export const compileNewsletter = internalMutation({
     const sections: Array<{
       promptTitle: string
       responses: Array<{
+        responseId: string
         memberName: string
         text: string
         media: Array<{ type: string; url: string; thumbnailUrl?: string }>
@@ -316,6 +317,7 @@ export const compileNewsletter = internalMutation({
         }
 
         promptResponses.push({
+          responseId: response._id as string,
           memberName: userMap.get(submission.userId as string) ?? 'Unknown Member',
           text: response.text,
           media,

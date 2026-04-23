@@ -149,6 +149,15 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index('by_user', ['userId']),
 
+  reactions: defineTable({
+    responseId: v.id('responses'),
+    userId: v.id('users'),
+    emoji: v.string(),
+    createdAt: v.number(),
+  })
+    .index('by_response', ['responseId'])
+    .index('by_response_user_emoji', ['responseId', 'userId', 'emoji']),
+
   adminReminders: defineTable({
     circleId: v.id('circles'),
     adminUserId: v.id('users'),

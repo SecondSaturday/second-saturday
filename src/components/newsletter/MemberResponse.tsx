@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Play } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { ReactionStrip, type ServerReaction } from './ReactionStrip'
 
 interface MediaItem {
   type: 'image' | 'video'
@@ -11,11 +12,13 @@ interface MediaItem {
 }
 
 interface MemberResponseProps {
+  responseId?: string
   memberName: string
   memberAvatarUrl?: string | null
   text: string
   media?: MediaItem[]
   showDivider?: boolean
+  reactions?: ServerReaction[]
 }
 
 function getInitials(name: string): string {
@@ -27,11 +30,13 @@ function getInitials(name: string): string {
 }
 
 export function MemberResponse({
+  responseId,
   memberName,
   memberAvatarUrl,
   text,
   media,
   showDivider = false,
+  reactions,
 }: MemberResponseProps) {
   const [expandedImage, setExpandedImage] = useState<string | null>(null)
 
@@ -98,6 +103,9 @@ export function MemberResponse({
 
         {/* Response text */}
         <p className="whitespace-pre-wrap text-base leading-relaxed text-foreground/90">{text}</p>
+
+        {/* Reactions strip (only when responseId present — back-compat for old newsletters) */}
+        {responseId && <ReactionStrip responseId={responseId} reactions={reactions} />}
 
         {/* Avatar + name at bottom */}
         <div className="flex items-center gap-2">

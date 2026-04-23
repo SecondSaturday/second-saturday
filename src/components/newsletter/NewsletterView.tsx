@@ -1,3 +1,7 @@
+import { useMemo } from 'react'
+import { useQuery } from 'convex/react'
+import { api } from '../../../convex/_generated/api'
+import type { Id } from '../../../convex/_generated/dataModel'
 import { PromptSection } from './PromptSection'
 import { ProfileHeaderImageLayout } from '@/components/ProfileHeaderImageLayout'
 import { Settings, ChevronDown, PencilLine } from 'lucide-react'
@@ -16,6 +20,7 @@ interface MediaItem {
 }
 
 interface Response {
+  responseId?: string
   memberName: string
   memberAvatarUrl?: string | null
   text: string
@@ -63,6 +68,26 @@ export function NewsletterView({
   onSettingsOpen,
   isLoading = false,
 }: NewsletterViewProps) {
+  // Collect responseIds across sections and batch-fetch reactions.
+  // Capped at 200 to match the server-side limit in `listReactionsForResponses`;
+  // fingerprinted by joined string so identity-only `sections` changes don't refetch.
+  const responseIdsKey = useMemo(
+    () =>
+      sections
+        .flatMap((s) => s.responses.map((r) => r.responseId).filter((id): id is string => !!id))
+        .slice(0, 200)
+        .join('|'),
+    [sections]
+  )
+  const allResponseIds = useMemo(
+    () => (responseIdsKey ? responseIdsKey.split('|') : []),
+    [responseIdsKey]
+  )
+  const reactionsByResponseId = useQuery(
+    api.reactions.listReactionsForResponses,
+    allResponseIds.length > 0 ? { responseIds: allResponseIds as Id<'responses'>[] } : 'skip'
+  )
+
   const formattedDate = publishedAt
     ? new Date(publishedAt).toLocaleDateString('en-US', {
         year: 'numeric',
@@ -183,6 +208,7 @@ export function NewsletterView({
             key={index}
             promptTitle={section.promptTitle}
             responses={section.responses}
+            reactionsByResponseId={reactionsByResponseId ?? undefined}
           />
         ))}
 

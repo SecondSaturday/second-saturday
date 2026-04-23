@@ -27,6 +27,7 @@ import type * as newsletters from '../newsletters.js'
 import type * as notificationPush from '../notificationPush.js'
 import type * as notifications from '../notifications.js'
 import type * as prompts from '../prompts.js'
+import type * as reactions from '../reactions.js'
 import type * as seed from '../seed.js'
 import type * as submissions from '../submissions.js'
 import type * as users from '../users.js'
@@ -55,6 +56,7 @@ declare const fullApi: ApiFromModules<{
   notificationPush: typeof notificationPush
   notifications: typeof notifications
   prompts: typeof prompts
+  reactions: typeof reactions
   seed: typeof seed
   submissions: typeof submissions
   users: typeof users

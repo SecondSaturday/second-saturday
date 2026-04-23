@@ -239,6 +239,13 @@ async function cascadeDeleteCircle(ctx: MutationCtx, circleId: Id<'circles'>) {
         if (m.storageId) await ctx.storage.delete(m.storageId)
         await ctx.db.delete(m._id)
       }
+      const reactions = await ctx.db
+        .query('reactions')
+        .withIndex('by_response', (q) => q.eq('responseId', resp._id))
+        .collect()
+      for (const r of reactions) {
+        await ctx.db.delete(r._id)
+      }
       await ctx.db.delete(resp._id)
     }
     await ctx.db.delete(sub._id)
