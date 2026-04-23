@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
@@ -37,6 +37,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { RemoveMemberModal } from '@/components/RemoveMemberModal'
 import { TransferAdminModal } from '@/components/TransferAdminModal'
+import { InviteQRCode } from '@/components/InviteQRCode'
 
 interface CircleSettingsProps {
   circleId: Id<'circles'>
@@ -58,6 +59,11 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [showQR, setShowQR] = useState(false)
+
+  useEffect(() => {
+    setCopied(false)
+  }, [circle?.inviteCode])
   const [regenerating, setRegenerating] = useState(false)
   const [showRegenDialog, setShowRegenDialog] = useState(false)
   const [showLeaveDialog, setShowLeaveDialog] = useState(false)
@@ -110,6 +116,7 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
 
   const handleRegenerate = async () => {
     setRegenerating(true)
+    setShowQR(false)
     try {
       await regenerateInviteCode({ circleId })
       toast.success('Invite link regenerated')
@@ -272,6 +279,23 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
                 {copied ? <Check className="size-4 text-green-600" /> : <Copy className="size-4" />}
               </Button>
             </div>
+
+            <button
+              type="button"
+              onClick={() => setShowQR((v) => !v)}
+              className="text-sm text-muted-foreground hover:underline"
+            >
+              {showQR ? 'Hide QR code' : 'Show QR code'}
+            </button>
+
+            {showQR && (
+              <div className="flex flex-col items-center gap-2 pt-1">
+                <InviteQRCode value={inviteLink} size={192} />
+                <p className="font-mono text-xs text-muted-foreground break-all text-center">
+                  {inviteLink}
+                </p>
+              </div>
+            )}
 
             {isAdmin && (
               <Dialog open={showRegenDialog} onOpenChange={setShowRegenDialog}>

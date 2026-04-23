@@ -10,6 +10,7 @@ import Link from 'next/link'
 import type { Id } from '../../../../../../convex/_generated/dataModel'
 import { CreationLayout } from '@/components/circles/CreationLayout'
 import { toast } from 'sonner'
+import { InviteQRCode } from '@/components/InviteQRCode'
 
 export default function SetupCompletePage() {
   const params = useParams()
@@ -17,6 +18,7 @@ export default function SetupCompletePage() {
 
   const circle = useQuery(api.circles.getCircle, { circleId })
   const [copied, setCopied] = useState(false)
+  const [showQR, setShowQR] = useState(false)
 
   if (circle === undefined) {
     return (
@@ -79,6 +81,23 @@ export default function SetupCompletePage() {
             {copied ? <Check className="size-4 text-green-600" /> : <Copy className="size-4" />}
           </button>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setShowQR((v) => !v)}
+          className="mt-3 text-sm text-muted-foreground hover:underline"
+        >
+          {showQR ? 'Hide QR code' : 'Show QR code'}
+        </button>
+
+        {showQR && (
+          <div className="mt-3 flex flex-col items-center gap-2">
+            <InviteQRCode value={inviteLink} size={192} />
+            <p className="font-mono text-xs text-muted-foreground break-all text-center">
+              {inviteLink}
+            </p>
+          </div>
+        )}
       </div>
     </CreationLayout>
   )

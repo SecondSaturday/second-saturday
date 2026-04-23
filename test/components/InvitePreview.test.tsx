@@ -41,7 +41,7 @@ vi.mock('next/navigation', () => ({
 }))
 
 vi.mock('@clerk/nextjs', () => ({
-  useAuth: () => ({ isSignedIn }),
+  useAuth: () => ({ isSignedIn, isLoaded: true }),
 }))
 
 vi.mock('sonner', () => ({

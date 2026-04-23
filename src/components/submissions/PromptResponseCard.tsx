@@ -6,6 +6,7 @@ import { MediaUploader } from './MediaUploader'
 import { MediaGrid } from './MediaGrid'
 import type { MediaItem } from './MediaGrid'
 import type { Id } from '../../../convex/_generated/dataModel'
+import { MAX_RESPONSE_TEXT_LENGTH } from '../../../convex/lib/constants'
 
 const EMPTY_MEDIA: MediaItem[] = []
 
@@ -92,6 +93,7 @@ export function PromptResponseCard({
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             disabled={disabled}
+            maxLength={MAX_RESPONSE_TEXT_LENGTH}
             placeholder="Type your response here..."
             className={cn(
               'flex-1 resize-none bg-transparent text-sm leading-relaxed text-foreground placeholder:text-foreground/25 focus:outline-none',
@@ -111,6 +113,16 @@ export function PromptResponseCard({
               existingMedia={existingMedia}
               onMediaRemove={disabled ? undefined : onMediaRemove}
             />
+            <span
+              className={cn(
+                'ml-auto text-xs tabular-nums',
+                MAX_RESPONSE_TEXT_LENGTH - value.length < 50
+                  ? 'text-destructive'
+                  : 'text-muted-foreground'
+              )}
+            >
+              {value.length}/{MAX_RESPONSE_TEXT_LENGTH}
+            </span>
           </div>
         </div>
       </div>

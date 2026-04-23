@@ -104,7 +104,7 @@ describe('InvitePreviewPage', () => {
 
   describe('Loading State', () => {
     it('shows loading spinner when data is loading', async () => {
-      mockUseAuth.mockReturnValue({ isSignedIn: false })
+      mockUseAuth.mockReturnValue({ isSignedIn: false, isLoaded: true })
       mockUseQuery.mockReturnValue(undefined) // Loading state
       mockUseMutation.mockReturnValue(vi.fn())
 
@@ -120,7 +120,7 @@ describe('InvitePreviewPage', () => {
 
   describe('Invalid Invite', () => {
     it('shows error message for invalid invite code', async () => {
-      mockUseAuth.mockReturnValue({ isSignedIn: false })
+      mockUseAuth.mockReturnValue({ isSignedIn: false, isLoaded: true })
       mockUseQuery.mockReturnValue(null) // Invalid invite
       mockUseMutation.mockReturnValue(vi.fn())
 
@@ -147,7 +147,7 @@ describe('InvitePreviewPage', () => {
         iconUrl: null,
       }
 
-      mockUseAuth.mockReturnValue({ isSignedIn: true })
+      mockUseAuth.mockReturnValue({ isSignedIn: true, isLoaded: true })
       mockUseQuery.mockReturnValueOnce(mockCircle).mockReturnValueOnce({ status: 'blocked' })
       mockUseMutation.mockReturnValue(vi.fn())
 
@@ -172,7 +172,7 @@ describe('InvitePreviewPage', () => {
         iconUrl: null,
       }
 
-      mockUseAuth.mockReturnValue({ isSignedIn: true })
+      mockUseAuth.mockReturnValue({ isSignedIn: true, isLoaded: true })
       mockUseQuery.mockReturnValueOnce(mockCircle).mockReturnValueOnce({ status: 'blocked' })
       mockUseMutation.mockReturnValue(vi.fn())
 
@@ -207,7 +207,7 @@ describe('InvitePreviewPage', () => {
         alreadyMember: true,
       })
 
-      mockUseAuth.mockReturnValue({ isSignedIn: true })
+      mockUseAuth.mockReturnValue({ isSignedIn: true, isLoaded: true })
       mockUseQuery.mockReturnValue(mockCircle)
       mockUseMutation.mockReturnValue(mockJoinCircle)
 
@@ -243,7 +243,7 @@ describe('InvitePreviewPage', () => {
         iconUrl: null,
       }
 
-      mockUseAuth.mockReturnValue({ isSignedIn: false })
+      mockUseAuth.mockReturnValue({ isSignedIn: false, isLoaded: true })
       mockUseQuery.mockReturnValue(mockCircle)
       mockUseMutation.mockReturnValue(vi.fn())
 
@@ -270,7 +270,7 @@ describe('InvitePreviewPage', () => {
         iconUrl: null,
       }
 
-      mockUseAuth.mockReturnValue({ isSignedIn: false })
+      mockUseAuth.mockReturnValue({ isSignedIn: false, isLoaded: true })
       mockUseQuery.mockReturnValue(mockCircle)
       mockUseMutation.mockReturnValue(vi.fn())
 
@@ -299,7 +299,7 @@ describe('InvitePreviewPage', () => {
         iconUrl: null,
       }
 
-      mockUseAuth.mockReturnValue({ isSignedIn: false })
+      mockUseAuth.mockReturnValue({ isSignedIn: false, isLoaded: true })
       mockUseQuery.mockReturnValue(mockCircle)
       mockUseMutation.mockReturnValue(vi.fn())
 
@@ -326,7 +326,7 @@ describe('InvitePreviewPage', () => {
         iconUrl: null,
       }
 
-      mockUseAuth.mockReturnValue({ isSignedIn: true })
+      mockUseAuth.mockReturnValue({ isSignedIn: true, isLoaded: true })
       mockUseQuery.mockReturnValue(mockCircle)
       mockUseMutation.mockReturnValue(vi.fn())
 
@@ -357,7 +357,7 @@ describe('InvitePreviewPage', () => {
         alreadyMember: false,
       })
 
-      mockUseAuth.mockReturnValue({ isSignedIn: true })
+      mockUseAuth.mockReturnValue({ isSignedIn: true, isLoaded: true })
       mockUseQuery.mockReturnValue(mockCircle)
       mockUseMutation.mockReturnValue(mockJoinCircle)
 
@@ -404,7 +404,7 @@ describe('InvitePreviewPage', () => {
             )
         )
 
-      mockUseAuth.mockReturnValue({ isSignedIn: true })
+      mockUseAuth.mockReturnValue({ isSignedIn: true, isLoaded: true })
       mockUseQuery.mockReturnValue(mockCircle)
       mockUseMutation.mockReturnValue(mockJoinCircle)
 
@@ -438,7 +438,7 @@ describe('InvitePreviewPage', () => {
 
       const mockJoinCircle = vi.fn().mockRejectedValue(new Error('Network error'))
 
-      mockUseAuth.mockReturnValue({ isSignedIn: true })
+      mockUseAuth.mockReturnValue({ isSignedIn: true, isLoaded: true })
       mockUseQuery.mockReturnValue(mockCircle)
       mockUseMutation.mockReturnValue(mockJoinCircle)
 
@@ -477,7 +477,7 @@ describe('InvitePreviewPage', () => {
         iconUrl: 'https://example.com/icon.jpg',
       }
 
-      mockUseAuth.mockReturnValue({ isSignedIn: false })
+      mockUseAuth.mockReturnValue({ isSignedIn: false, isLoaded: true })
       mockUseQuery.mockReturnValue(mockCircle)
       mockUseMutation.mockReturnValue(vi.fn())
 
@@ -500,7 +500,7 @@ describe('InvitePreviewPage', () => {
         iconUrl: null,
       }
 
-      mockUseAuth.mockReturnValue({ isSignedIn: false })
+      mockUseAuth.mockReturnValue({ isSignedIn: false, isLoaded: true })
       mockUseQuery.mockReturnValue(mockCircle)
       mockUseMutation.mockReturnValue(vi.fn())
 
@@ -523,7 +523,7 @@ describe('InvitePreviewPage', () => {
         iconUrl: null,
       }
 
-      mockUseAuth.mockReturnValue({ isSignedIn: false })
+      mockUseAuth.mockReturnValue({ isSignedIn: false, isLoaded: true })
       mockUseQuery.mockReturnValue(mockCircle)
       mockUseMutation.mockReturnValue(vi.fn())
 
@@ -546,7 +546,7 @@ describe('InvitePreviewPage', () => {
         iconUrl: null,
       }
 
-      mockUseAuth.mockReturnValue({ isSignedIn: false })
+      mockUseAuth.mockReturnValue({ isSignedIn: false, isLoaded: true })
       mockUseQuery.mockReturnValue(mockCircle)
       mockUseMutation.mockReturnValue(vi.fn())
 
