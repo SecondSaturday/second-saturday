@@ -133,20 +133,46 @@ export const listReactionsForResponses = query({
       )
     )
 
-    const result: Record<string, Array<{ emoji: string; count: number; reactedByMe: boolean }>> = {}
+    // Batch: resolve display names for every reactor referenced across responses.
+    const reactorIds = new Set<string>()
+    for (const rows of reactionsPerResponse) {
+      for (const r of rows) reactorIds.add(r.userId as string)
+    }
+    const reactorUsers = await Promise.all(
+      Array.from(reactorIds).map((uid) => ctx.db.get(uid as Id<'users'>))
+    )
+    const nameByUserId = new Map<string, string>()
+    Array.from(reactorIds).forEach((uid, i) => {
+      const u = reactorUsers[i]
+      nameByUserId.set(uid, u?.name ?? u?.email ?? 'Unknown Member')
+    })
+
+    const result: Record<
+      string,
+      Array<{ emoji: string; count: number; reactedByMe: boolean; reactorNames: string[] }>
+    > = {}
     allowedResponseIds.forEach((responseId, i) => {
       const rows = reactionsPerResponse[i] ?? []
-      const byEmoji = new Map<string, { count: number; reactedByMe: boolean }>()
+      const byEmoji = new Map<
+        string,
+        { count: number; reactedByMe: boolean; reactorNames: string[] }
+      >()
       for (const r of rows) {
-        const agg = byEmoji.get(r.emoji) ?? { count: 0, reactedByMe: false }
+        const agg = byEmoji.get(r.emoji) ?? { count: 0, reactedByMe: false, reactorNames: [] }
         agg.count += 1
-        if (r.userId === user._id) agg.reactedByMe = true
+        if (r.userId === user._id) {
+          agg.reactedByMe = true
+          agg.reactorNames.unshift('You')
+        } else {
+          agg.reactorNames.push(nameByUserId.get(r.userId as string) ?? 'Unknown Member')
+        }
         byEmoji.set(r.emoji, agg)
       }
       result[responseId as string] = Array.from(byEmoji.entries()).map(([emoji, agg]) => ({
         emoji,
         count: agg.count,
         reactedByMe: agg.reactedByMe,
+        reactorNames: agg.reactorNames,
       }))
     })
 

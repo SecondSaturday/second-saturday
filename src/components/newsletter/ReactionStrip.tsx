@@ -18,6 +18,15 @@ export interface ServerReaction {
   emoji: string
   count: number
   reactedByMe: boolean
+  reactorNames?: string[]
+}
+
+function formatReactorList(names: string[] | undefined): string {
+  if (!names || names.length === 0) return ''
+  if (names.length === 1) return names[0]!
+  if (names.length === 2) return `${names[0]} and ${names[1]}`
+  if (names.length <= 5) return `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`
+  return `${names.slice(0, 4).join(', ')}, and ${names.length - 4} others`
 }
 
 interface ReactionStripProps {
@@ -61,13 +70,16 @@ export function ReactionStrip({ responseId, reactions }: ReactionStripProps) {
 
   const merged = useMemo(() => {
     const base = new Map<string, ServerReaction>()
-    for (const r of reactions ?? []) base.set(r.emoji, { ...r })
+    for (const r of reactions ?? []) base.set(r.emoji, { ...r, reactorNames: r.reactorNames ?? [] })
     for (const [emoji, ov] of Object.entries(overrides)) {
-      const cur = base.get(emoji) ?? { emoji, count: 0, reactedByMe: false }
+      const cur = base.get(emoji) ?? { emoji, count: 0, reactedByMe: false, reactorNames: [] }
+      const serverNames = (cur.reactorNames ?? []).filter((n) => n !== 'You')
+      const nextNames = ov.reactedByMe ? ['You', ...serverNames] : serverNames
       base.set(emoji, {
         emoji,
         count: Math.max(0, cur.count + ov.delta),
         reactedByMe: ov.reactedByMe,
+        reactorNames: nextNames,
       })
     }
     return Array.from(base.values()).filter((r) => r.count > 0)
@@ -143,22 +155,37 @@ export function ReactionStrip({ responseId, reactions }: ReactionStripProps) {
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      {merged.map((r) => (
-        <button
-          key={r.emoji}
-          type="button"
-          onClick={() => toggle(r.emoji)}
-          disabled={!!pending[r.emoji]}
-          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors disabled:opacity-60 ${
-            r.reactedByMe
-              ? 'border-primary/40 bg-primary/10 text-foreground'
-              : 'border-border bg-muted/40 text-foreground/80 hover:bg-muted'
-          }`}
-        >
-          <span className="text-sm leading-none">{r.emoji}</span>
-          <span className="tabular-nums">{r.count}</span>
-        </button>
-      ))}
+      {merged.map((r) => {
+        const label = formatReactorList(r.reactorNames)
+        return (
+          <div key={r.emoji} className="group relative">
+            <button
+              type="button"
+              onClick={() => toggle(r.emoji)}
+              disabled={!!pending[r.emoji]}
+              title={label}
+              aria-label={label ? `${r.emoji} — ${label}` : undefined}
+              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors disabled:opacity-60 ${
+                r.reactedByMe
+                  ? 'border-primary/40 bg-primary/10 text-foreground'
+                  : 'border-border bg-muted/40 text-foreground/80 hover:bg-muted'
+              }`}
+            >
+              <span className="text-sm leading-none">{r.emoji}</span>
+              <span className="tabular-nums">{r.count}</span>
+            </button>
+            {label && (
+              <div
+                role="tooltip"
+                className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-foreground px-2 py-1 text-[11px] font-medium text-background shadow-md group-hover:block"
+              >
+                {label}
+                <span className="absolute left-1/2 top-full size-0 -translate-x-1/2 border-x-4 border-t-4 border-x-transparent border-t-foreground" />
+              </div>
+            )}
+          </div>
+        )
+      })}
       <DropdownMenu>
         <DropdownMenuTrigger
           className="inline-flex size-6 items-center justify-center rounded-full border border-border bg-muted/40 text-muted-foreground hover:bg-muted"
