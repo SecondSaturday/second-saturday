@@ -1,7 +1,13 @@
 import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
 import type { Id } from './_generated/dataModel'
-import { getAuthUser, getOrCreateAuthUser, requireAdmin, requireMembership } from './authHelpers'
+import {
+  getAuthUser,
+  getOrCreateAuthUser,
+  requireAdmin,
+  requireMembership,
+  requireOwner,
+} from './authHelpers'
 import { MEMBER_BATCH_LIMIT } from './lib/constants'
 
 const DEFAULT_PROMPTS = [
@@ -134,7 +140,7 @@ export const deleteCircle = mutation({
   args: { circleId: v.id('circles') },
   handler: async (ctx, args) => {
     const user = await getOrCreateAuthUser(ctx)
-    await requireAdmin(ctx, user._id, args.circleId)
+    await requireOwner(ctx, user._id, args.circleId)
 
     await ctx.db.patch(args.circleId, {
       archivedAt: Date.now(),

@@ -39,10 +39,12 @@ vi.mock('convex/react', () => ({
     // First call is leaveCircle, second is transferAdmin
     return mockMutationCall % 2 === 1 ? mockLeaveCircle : mockTransferAdmin
   },
-  useQuery: (queryRef: unknown, args: unknown) => {
+  useQuery: (_queryRef: unknown, args: unknown) => {
     if (args === 'skip') return undefined
-    // Return members for getCircleMembers, currentUser for getCurrentUser
-    if (typeof queryRef === 'object') return mockMembers
+    // getCircleMembers is called with { circleId }; getCurrentUser is called with no args.
+    if (args && typeof args === 'object' && 'circleId' in (args as Record<string, unknown>)) {
+      return mockMembers
+    }
     return mockGetCurrentUser
   },
 }))
@@ -128,22 +130,22 @@ describe('LeaveCircleModal', () => {
     })
   })
 
-  describe('admin flow', () => {
-    const adminProps = { ...defaultProps, isAdmin: true }
+  describe('owner flow', () => {
+    const ownerProps = { ...defaultProps, isAdmin: true, isOwner: true }
 
-    it('renders transfer dialog for admin', () => {
-      render(<LeaveCircleModal {...adminProps} />)
-      expect(screen.getByText('Transfer admin & leave')).toBeInTheDocument()
+    it('renders transfer ownership dialog for owner', () => {
+      render(<LeaveCircleModal {...ownerProps} />)
+      expect(screen.getByText('Transfer ownership & leave')).toBeInTheDocument()
     })
 
-    it('shows member picker for selecting new admin', () => {
-      render(<LeaveCircleModal {...adminProps} />)
+    it('shows member picker for selecting new owner', () => {
+      render(<LeaveCircleModal {...ownerProps} />)
       expect(screen.getByText('Alice')).toBeInTheDocument()
       expect(screen.getByText('Bob')).toBeInTheDocument()
     })
 
     it('does not show current user in member picker', () => {
-      render(<LeaveCircleModal {...adminProps} />)
+      render(<LeaveCircleModal {...ownerProps} />)
       // The current user should be filtered out
       const buttons = screen.getAllByRole('button')
       const memberButtons = buttons.filter(
@@ -153,9 +155,25 @@ describe('LeaveCircleModal', () => {
     })
 
     it('Transfer & Leave button is disabled until member is selected', () => {
-      render(<LeaveCircleModal {...adminProps} />)
+      render(<LeaveCircleModal {...ownerProps} />)
       const transferBtn = screen.getByText('Transfer & Leave')
       expect(transferBtn).toBeDisabled()
+    })
+  })
+
+  describe('last-admin (non-owner) flow', () => {
+    const lastAdminProps = { ...defaultProps, isAdmin: true, isOwner: false }
+
+    it('shows "promote another admin first" dialog', () => {
+      // mockMembers has user1 (self) as only admin; user2/user3 are members.
+      render(<LeaveCircleModal {...lastAdminProps} />)
+      expect(screen.getByText('Promote another admin first')).toBeInTheDocument()
+    })
+
+    it('does not call any mutation from this state', () => {
+      render(<LeaveCircleModal {...lastAdminProps} />)
+      expect(screen.queryByText('Leave Circle')).not.toBeInTheDocument()
+      expect(screen.queryByText('Transfer & Leave')).not.toBeInTheDocument()
     })
   })
 })

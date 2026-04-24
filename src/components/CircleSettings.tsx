@@ -70,13 +70,12 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const deleteCircle = useMutation(api.circles.deleteCircle)
+  const promoteToAdmin = useMutation(api.memberships.promoteToAdmin)
+  const demoteFromAdmin = useMutation(api.memberships.demoteFromAdmin)
   const [removeTarget, setRemoveTarget] = useState<{ userId: Id<'users'>; name: string } | null>(
     null
   )
-  const [transferTarget, setTransferTarget] = useState<{
-    userId: Id<'users'>
-    name: string
-  } | null>(null)
+  const [showTransferPicker, setShowTransferPicker] = useState(false)
 
   if (circle === undefined || members === undefined || currentUser === undefined) {
     return (
@@ -95,6 +94,7 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
   }
 
   const isAdmin = circle.role === 'admin'
+  const isOwner = currentUser._id === circle.adminId
   const displayName = name ?? circle.name
   const displayDescription = description ?? circle.description ?? ''
 
@@ -343,7 +343,7 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
               Leave this circle
             </Button>
 
-            {isAdmin && (
+            {isOwner && (
               <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                 <DialogTrigger asChild>
                   <Button variant="destructive" className="w-full">
@@ -389,6 +389,23 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
             )}
           </div>
 
+          {isOwner && (
+            <div className="flex flex-col gap-2 border-t border-border pt-4">
+              <Label>Ownership</Label>
+              <p className="text-xs text-muted-foreground">
+                You are the owner of this circle. Transfer ownership to another member if you want
+                someone else to be the circle&apos;s owner.
+              </p>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setShowTransferPicker(true)}
+              >
+                Transfer ownership...
+              </Button>
+            </div>
+          )}
+
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           {isAdmin && hasChanges && (
@@ -427,8 +444,13 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
             <>
               {sortedMembers.map((member) => {
                 const isSelf = member.userId === currentUser._id
+                const memberIsOwner = member.userId === circle.adminId
                 const canManage = isAdmin && !isSelf
                 const canPromote = canManage && member.role !== 'admin'
+                const canDemote = canManage && member.role === 'admin' && !memberIsOwner && isOwner
+
+                const roleLabel =
+                  member.role === 'admin' ? (memberIsOwner ? 'Admin · Owner' : 'Admin') : 'Member'
 
                 return (
                   <div
@@ -444,9 +466,7 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
                       <p className="text-sm font-medium text-foreground truncate">
                         {isSelf ? 'You' : member.name}
                       </p>
-                      <span className="text-xs text-muted-foreground">
-                        {member.role === 'admin' ? 'Admin' : 'Member'}
-                      </span>
+                      <span className="text-xs text-muted-foreground">{roleLabel}</span>
                     </div>
 
                     {canManage && (
@@ -464,11 +484,40 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
                         <DropdownMenuContent align="end">
                           {canPromote && (
                             <DropdownMenuItem
-                              onClick={() =>
-                                setTransferTarget({ userId: member.userId, name: member.name })
-                              }
+                              onClick={async () => {
+                                try {
+                                  await promoteToAdmin({
+                                    circleId,
+                                    targetUserId: member.userId,
+                                  })
+                                  toast.success(`${member.name} is now a co-admin`)
+                                } catch (err) {
+                                  toast.error(
+                                    err instanceof Error ? err.message : 'Failed to promote'
+                                  )
+                                }
+                              }}
                             >
-                              Make admin
+                              Make co-admin
+                            </DropdownMenuItem>
+                          )}
+                          {canDemote && (
+                            <DropdownMenuItem
+                              onClick={async () => {
+                                try {
+                                  await demoteFromAdmin({
+                                    circleId,
+                                    targetUserId: member.userId,
+                                  })
+                                  toast.success(`${member.name} is no longer a co-admin`)
+                                } catch (err) {
+                                  toast.error(
+                                    err instanceof Error ? err.message : 'Failed to demote'
+                                  )
+                                }
+                              }}
+                            >
+                              Remove co-admin
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuItem
@@ -502,6 +551,7 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
       <LeaveCircleModal
         circleId={circleId}
         isAdmin={isAdmin}
+        isOwner={isOwner}
         open={showLeaveDialog}
         onOpenChange={setShowLeaveDialog}
         onSuccess={() => router.replace('/dashboard')}
@@ -520,16 +570,13 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
         />
       )}
 
-      {/* Transfer Admin Modal */}
-      {transferTarget && (
+      {/* Transfer Ownership picker */}
+      {showTransferPicker && (
         <TransferAdminModal
           circleId={circleId}
-          targetUserId={transferTarget.userId}
-          targetName={transferTarget.name}
-          open={!!transferTarget}
-          onOpenChange={(open) => {
-            if (!open) setTransferTarget(null)
-          }}
+          currentUserId={currentUser._id}
+          open={showTransferPicker}
+          onOpenChange={setShowTransferPicker}
         />
       )}
     </div>

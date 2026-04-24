@@ -192,29 +192,108 @@ export const transferAdmin = mutation({
   handler: async (ctx, args) => {
     const user = await getAuthUser(ctx)
 
-    // Verify caller is current admin
-    const callerMembership = await getActiveMembership(ctx, user._id, args.circleId)
-    if (!callerMembership || callerMembership.role !== 'admin') {
-      throw new Error('Admin access required')
+    // Only the owner can transfer ownership.
+    const circle = await ctx.db.get(args.circleId)
+    if (!circle) throw new Error('Circle not found')
+    if (circle.adminId !== user._id) {
+      throw new Error('Only the circle owner can transfer ownership')
     }
 
     // Cannot transfer to yourself
     if (args.newAdminUserId === user._id) {
-      throw new Error('Cannot transfer admin to yourself')
+      throw new Error('Cannot transfer ownership to yourself')
     }
 
-    // Verify target is an active member
+    // Verify target is an active, unblocked member
     const targetMembership = await getActiveMembership(ctx, args.newAdminUserId, args.circleId)
     if (!targetMembership) throw new Error('Target user is not an active member')
+    if (targetMembership.blocked) throw new Error('Cannot transfer ownership to a blocked member')
 
-    // Transfer: promote target, demote caller
+    // Transfer ownership: promote target to admin; caller remains admin (co-admin).
     await ctx.db.patch(targetMembership._id, { role: 'admin' })
-    await ctx.db.patch(callerMembership._id, { role: 'member' })
 
-    // Update adminId on the circle
+    // Update adminId on the circle (represents ownership)
     await ctx.db.patch(args.circleId, { adminId: args.newAdminUserId, updatedAt: Date.now() })
 
     return { success: true }
+  },
+})
+
+export const promoteToAdmin = mutation({
+  args: {
+    circleId: v.id('circles'),
+    targetUserId: v.id('users'),
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthUser(ctx)
+
+    const callerMembership = await getActiveMembership(ctx, user._id, args.circleId)
+    if (!callerMembership || callerMembership.blocked || callerMembership.role !== 'admin') {
+      throw new Error('Admin access required')
+    }
+
+    const targetMembership = await getActiveMembership(ctx, args.targetUserId, args.circleId)
+    if (!targetMembership) throw new Error('Target user is not an active member')
+    if (targetMembership.blocked) throw new Error('Cannot promote a blocked member')
+
+    if (targetMembership.role === 'admin') {
+      return { success: true, alreadyAdmin: true }
+    }
+
+    await ctx.db.patch(targetMembership._id, { role: 'admin' })
+    return { success: true, alreadyAdmin: false }
+  },
+})
+
+export const demoteFromAdmin = mutation({
+  args: {
+    circleId: v.id('circles'),
+    targetUserId: v.id('users'),
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthUser(ctx)
+
+    const callerMembership = await getActiveMembership(ctx, user._id, args.circleId)
+    if (!callerMembership || callerMembership.blocked || callerMembership.role !== 'admin') {
+      throw new Error('Admin access required')
+    }
+
+    const targetMembership = await getActiveMembership(ctx, args.targetUserId, args.circleId)
+    if (!targetMembership) throw new Error('Target user is not an active member')
+
+    if (targetMembership.role !== 'admin') {
+      return { success: true, alreadyMember: true }
+    }
+
+    const circle = await ctx.db.get(args.circleId)
+    if (!circle) throw new Error('Circle not found')
+
+    // Cannot demote the owner
+    if (circle.adminId === args.targetUserId) {
+      throw new Error('Cannot demote the circle owner. Transfer ownership first.')
+    }
+
+    if (args.targetUserId === user._id) {
+      // Self-demote: require another non-blocked admin to remain.
+      const allMemberships = await ctx.db
+        .query('memberships')
+        .withIndex('by_circle', (q) => q.eq('circleId', args.circleId))
+        .collect()
+      const otherAdmins = allMemberships.filter(
+        (m) => !m.leftAt && !m.blocked && m.role === 'admin' && m.userId !== user._id
+      )
+      if (otherAdmins.length === 0) {
+        throw new Error('At least one admin must remain')
+      }
+    } else {
+      // Demoting another admin requires ownership.
+      if (circle.adminId !== user._id) {
+        throw new Error('Only the circle owner can remove a co-admin')
+      }
+    }
+
+    await ctx.db.patch(targetMembership._id, { role: 'member' })
+    return { success: true, alreadyMember: false }
   },
 })
 
@@ -332,8 +411,20 @@ export const leaveCircle = mutation({
       .collect()
     const activeMembers = allMemberships.filter((m) => !m.leftAt)
 
-    if (membership.role === 'admin' && activeMembers.length > 1) {
+    // If caller is the owner and other members remain, require ownership transfer first.
+    const circle = await ctx.db.get(args.circleId)
+    if (circle && circle.adminId === user._id && activeMembers.length > 1) {
       throw new Error('Transfer admin role before leaving')
+    }
+
+    // If caller is the last remaining (non-blocked) admin and other members remain, block leaving.
+    if (membership.role === 'admin' && activeMembers.length > 1) {
+      const otherAdmins = activeMembers.filter(
+        (m) => m.role === 'admin' && !m.blocked && m.userId !== user._id
+      )
+      if (otherAdmins.length === 0) {
+        throw new Error('Transfer admin role before leaving')
+      }
     }
 
     // Last member leaving — cascade delete the entire circle
@@ -360,17 +451,27 @@ export const transferAdminAndLeave = mutation({
       throw new Error('Admin access required')
     }
 
+    // Only the owner can transfer ownership.
+    const circle = await ctx.db.get(args.circleId)
+    if (!circle) throw new Error('Circle not found')
+    if (circle.adminId !== user._id) {
+      throw new Error('Only the circle owner can transfer ownership')
+    }
+
     if (args.newAdminUserId === user._id) {
-      throw new Error('Cannot transfer admin to yourself')
+      throw new Error('Cannot transfer ownership to yourself')
     }
 
     const targetMembership = await getActiveMembership(ctx, args.newAdminUserId, args.circleId)
     if (!targetMembership) throw new Error('Target user is not an active member')
+    if (targetMembership.blocked) throw new Error('Cannot transfer ownership to a blocked member')
 
-    // Transfer admin and leave atomically
+    // Transfer ownership and leave atomically. Promote target to admin if not already.
+    // Demote caller to 'member' on the way out so the left row doesn't carry a stale
+    // admin role if any future query forgets to filter by `leftAt`.
     await ctx.db.patch(targetMembership._id, { role: 'admin' })
     await ctx.db.patch(args.circleId, { adminId: args.newAdminUserId, updatedAt: Date.now() })
-    await ctx.db.patch(callerMembership._id, { leftAt: Date.now() })
+    await ctx.db.patch(callerMembership._id, { role: 'member', leftAt: Date.now() })
 
     return { success: true }
   },
@@ -514,20 +615,37 @@ export const cleanupOrphanedCircles = internalMutation({
         .collect()
 
       const activeMembers = allMembers.filter((m) => !m.leftAt && m.userId !== args.deletedUserId)
+      const eligibleMembers = activeMembers.filter((m) => !m.blocked)
 
       if (activeMembers.length === 0) {
         // cascadeDeleteCircle removes all memberships including this one.
         await cascadeDeleteCircle(ctx, membership.circleId)
       } else {
+        const activeAdmins = eligibleMembers.filter((m) => m.role === 'admin')
         const circle = await ctx.db.get(membership.circleId)
-        if (circle && circle.adminId === args.deletedUserId) {
-          const newAdmin = activeMembers[0]!
-          await ctx.db.patch(newAdmin._id, { role: 'admin' })
+
+        if (activeAdmins.length === 0) {
+          // No non-blocked admins remain — promote the first non-blocked member.
+          // If every remaining member is blocked, skip promotion; the circle is
+          // effectively abandoned but we don't want to grant admin to a blocked user.
+          const newAdmin = eligibleMembers[0]
+          if (newAdmin) {
+            await ctx.db.patch(newAdmin._id, { role: 'admin' })
+            if (circle && circle.adminId === args.deletedUserId) {
+              await ctx.db.patch(membership.circleId, {
+                adminId: newAdmin.userId,
+                updatedAt: Date.now(),
+              })
+            }
+          }
+        } else if (circle && circle.adminId === args.deletedUserId) {
+          // Another non-blocked admin exists — re-point ownership.
           await ctx.db.patch(membership.circleId, {
-            adminId: newAdmin.userId,
+            adminId: activeAdmins[0]!.userId,
             updatedAt: Date.now(),
           })
         }
+
         // Delete the dangling membership row — userId would point to a
         // soon-to-be-deleted user record.
         await ctx.db.delete(membership._id)

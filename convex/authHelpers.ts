@@ -65,6 +65,18 @@ export async function requireAdmin(
   return membership
 }
 
+/** Check if user is the owner (circle.adminId) of the circle */
+export async function requireOwner(
+  ctx: QueryCtx | MutationCtx,
+  userId: Id<'users'>,
+  circleId: Id<'circles'>
+): Promise<Doc<'circles'>> {
+  const circle = await ctx.db.get(circleId)
+  if (!circle) throw new Error('Circle not found')
+  if (circle.adminId !== userId) throw new Error('Owner access required')
+  return circle
+}
+
 /** Get active membership or null (non-throwing) */
 export async function getActiveMembership(
   ctx: QueryCtx | MutationCtx,
