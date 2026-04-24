@@ -92,7 +92,7 @@ export default function SetupCompletePage() {
 
         {showQR && (
           <div className="mt-3 flex flex-col items-center gap-2">
-            <InviteQRCode value={inviteLink} size={192} />
+            <InviteQRCode value={inviteLink} size={320} />
             <p className="font-mono text-xs text-muted-foreground break-all text-center">
               {inviteLink}
             </p>
