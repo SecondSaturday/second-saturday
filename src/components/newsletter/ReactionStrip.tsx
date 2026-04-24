@@ -2,16 +2,12 @@
 
 import { useEffect, useRef, useState, useMemo } from 'react'
 import { useMutation } from 'convex/react'
-import { Plus } from 'lucide-react'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { EmojiPickerPopover, DEFAULT_PICKER_EMOJIS } from './EmojiPickerPopover'
+import { ReactionChip } from './ReactionChip'
 
-export const DEFAULT_PICKER_EMOJIS = ['❤️', '😂', '🙌', '🔥', '🥹', '👀']
+export { DEFAULT_PICKER_EMOJIS }
 export const MAX_EMOJI_LENGTH = 16
 
 export interface ServerReaction {
@@ -19,14 +15,6 @@ export interface ServerReaction {
   count: number
   reactedByMe: boolean
   reactorNames?: string[]
-}
-
-function formatReactorList(names: string[] | undefined): string {
-  if (!names || names.length === 0) return ''
-  if (names.length === 1) return names[0]!
-  if (names.length === 2) return `${names[0]} and ${names[1]}`
-  if (names.length <= 5) return `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`
-  return `${names.slice(0, 4).join(', ')}, and ${names.length - 4} others`
 }
 
 interface ReactionStripProps {
@@ -155,57 +143,18 @@ export function ReactionStrip({ responseId, reactions }: ReactionStripProps) {
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      {merged.map((r) => {
-        const label = formatReactorList(r.reactorNames)
-        return (
-          <div key={r.emoji} className="group relative">
-            <button
-              type="button"
-              onClick={() => toggle(r.emoji)}
-              disabled={!!pending[r.emoji]}
-              title={label}
-              aria-label={label ? `${r.emoji} — ${label}` : undefined}
-              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors disabled:opacity-60 ${
-                r.reactedByMe
-                  ? 'border-primary/40 bg-primary/10 text-foreground'
-                  : 'border-border bg-muted/40 text-foreground/80 hover:bg-muted'
-              }`}
-            >
-              <span className="text-sm leading-none">{r.emoji}</span>
-              <span className="tabular-nums">{r.count}</span>
-            </button>
-            {label && (
-              <div
-                role="tooltip"
-                className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-foreground px-2 py-1 text-[11px] font-medium text-background shadow-md group-hover:block"
-              >
-                {label}
-                <span className="absolute left-1/2 top-full size-0 -translate-x-1/2 border-x-4 border-t-4 border-x-transparent border-t-foreground" />
-              </div>
-            )}
-          </div>
-        )
-      })}
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          className="inline-flex size-6 items-center justify-center rounded-full border border-border bg-muted/40 text-muted-foreground hover:bg-muted"
-          aria-label="Add reaction"
-        >
-          <Plus className="size-3.5" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="flex gap-1 p-1">
-          {DEFAULT_PICKER_EMOJIS.map((emoji) => (
-            <button
-              key={emoji}
-              type="button"
-              onClick={() => pickEmoji(emoji)}
-              className="rounded px-1.5 py-1 text-lg leading-none hover:bg-muted"
-            >
-              {emoji}
-            </button>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {merged.map((r) => (
+        <ReactionChip
+          key={r.emoji}
+          emoji={r.emoji}
+          count={r.count}
+          reactedByMe={r.reactedByMe}
+          reactorNames={r.reactorNames ?? []}
+          disabled={!!pending[r.emoji]}
+          onToggle={() => toggle(r.emoji)}
+        />
+      ))}
+      <EmojiPickerPopover onSelect={pickEmoji} />
     </div>
   )
 }
