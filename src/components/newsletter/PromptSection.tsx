@@ -1,5 +1,6 @@
 import { MemberResponse } from './MemberResponse'
 import type { ServerReaction } from './ReactionStrip'
+import type { Id } from '../../../convex/_generated/dataModel'
 
 interface MediaItem {
   type: 'image' | 'video'
@@ -9,6 +10,7 @@ interface MediaItem {
 
 interface Response {
   responseId?: string
+  memberUserId?: string
   memberName: string
   memberAvatarUrl?: string | null
   text: string
@@ -18,12 +20,14 @@ interface Response {
 interface PromptSectionProps {
   promptTitle: string
   responses: Response[]
+  circleId?: string
   reactionsByResponseId?: Record<string, ServerReaction[]>
 }
 
 export function PromptSection({
   promptTitle,
   responses,
+  circleId,
   reactionsByResponseId,
 }: PromptSectionProps) {
   return (
@@ -34,6 +38,8 @@ export function PromptSection({
           <MemberResponse
             key={response.responseId ?? `idx-${index}`}
             responseId={response.responseId}
+            memberUserId={response.memberUserId as Id<'users'> | undefined}
+            circleId={circleId as Id<'circles'> | undefined}
             memberName={response.memberName}
             memberAvatarUrl={response.memberAvatarUrl}
             text={response.text}

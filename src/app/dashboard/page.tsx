@@ -153,7 +153,17 @@ function DesktopCircleNewsletter({ circleId }: { circleId: Id<'circles'> }) {
     isAuthenticated && circle ? { circleId } : 'skip'
   )
   const [selectedNewsletterId, setSelectedNewsletterId] = useState<string | null>(null)
-  const [settingsOpen, setSettingsOpen] = useState(false)
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const [settingsOpen, setSettingsOpen] = useState(() => searchParams?.get('settings') === 'open')
+  useEffect(() => {
+    if (searchParams?.get('settings') === 'open') {
+      const next = new URLSearchParams(searchParams.toString())
+      next.delete('settings')
+      const qs = next.toString()
+      router.replace(`/dashboard${qs ? `?${qs}` : ''}`, { scroll: false })
+    }
+  }, [searchParams, router])
 
   // Derive the active newsletter: use explicit selection if valid, otherwise latest
   const defaultId = newsletters && newsletters.length > 0 ? newsletters[0]!._id : null

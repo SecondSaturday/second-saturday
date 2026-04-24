@@ -4,6 +4,8 @@ import { v } from 'convex/values'
 import { getAuthUser, requireMembership } from './authHelpers'
 import { MONTH_NAMES } from './lib/constants'
 import { computeSecondSaturdayDeadline, parseCycleId } from './lib/dates'
+import { resolveResponseMedia } from './newsletterHelpers'
+import type { Id } from './_generated/dataModel'
 
 export const getNewsletterById = query({
   args: { newsletterId: v.id('newsletters') },
@@ -253,6 +255,7 @@ export const compileNewsletter = internalMutation({
       promptTitle: string
       responses: Array<{
         responseId: string
+        memberUserId: Id<'users'>
         memberName: string
         text: string
         media: Array<{ type: string; url: string; thumbnailUrl?: string }>
@@ -273,51 +276,11 @@ export const compileNewsletter = internalMutation({
 
         if (!response) continue
 
-        // Get media for this response
-        const mediaItems = await ctx.db
-          .query('media')
-          .withIndex('by_response', (q) => q.eq('responseId', response._id))
-          .collect()
-        const sortedMedia = mediaItems.sort((a, b) => a.order - b.order)
-
-        // Resolve media URLs
-        const media: Array<{ type: string; url: string; thumbnailUrl?: string }> = []
-        for (const m of sortedMedia) {
-          if (m.type === 'image' && m.storageId) {
-            const url = await ctx.storage.getUrl(m.storageId)
-            if (url) {
-              media.push({ type: 'image', url })
-            }
-          } else if (m.type === 'video' && m.muxAssetId) {
-            // Look up playbackId from videos table
-            const video = await ctx.db
-              .query('videos')
-              .withIndex('by_asset_id', (q) => q.eq('assetId', m.muxAssetId!))
-              .first()
-            if (video?.playbackId) {
-              const thumbnailUrl = `https://image.mux.com/${video.playbackId}/thumbnail.jpg?width=640&height=360&fit_mode=smartcrop`
-              media.push({
-                type: 'video',
-                url: `https://stream.mux.com/${video.playbackId}.m3u8`,
-                thumbnailUrl,
-              })
-            }
-          } else if (m.type === 'video' && m.videoId) {
-            // Fallback: muxAssetId not yet populated, look up via videoId FK
-            const video = await ctx.db.get(m.videoId)
-            if (video?.playbackId) {
-              const thumbnailUrl = `https://image.mux.com/${video.playbackId}/thumbnail.jpg?width=640&height=360&fit_mode=smartcrop`
-              media.push({
-                type: 'video',
-                url: `https://stream.mux.com/${video.playbackId}.m3u8`,
-                thumbnailUrl,
-              })
-            }
-          }
-        }
+        const media = await resolveResponseMedia(ctx, response._id)
 
         promptResponses.push({
           responseId: response._id as string,
+          memberUserId: submission.userId,
           memberName: userMap.get(submission.userId as string) ?? 'Unknown Member',
           text: response.text,
           media,

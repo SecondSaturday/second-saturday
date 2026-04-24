@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { useUser } from '@clerk/nextjs'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useIsDesktop } from '@/hooks/useMediaQuery'
+import Link from 'next/link'
 import { api } from '../../convex/_generated/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -45,6 +47,20 @@ interface CircleSettingsProps {
 
 export function CircleSettings({ circleId }: CircleSettingsProps) {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const isDesktop = useIsDesktop()
+  const tabFromUrl = searchParams?.get('tab') ?? 'details'
+  const profileReturnTo = isDesktop
+    ? `/dashboard?circle=${circleId}&settings=open&tab=members`
+    : `/dashboard/circles/${circleId}/settings?tab=members`
+  const handleTabChange = (value: string) => {
+    const params = new URLSearchParams(searchParams?.toString() ?? '')
+    if (value === 'details') params.delete('tab')
+    else params.set('tab', value)
+    const qs = params.toString()
+    router.replace(`${pathname}${qs ? `?${qs}` : ''}`, { scroll: false })
+  }
   const { user } = useUser()
 
   const circle = useQuery(api.circles.getCircle, { circleId })
@@ -219,7 +235,7 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
   return (
     <div className="flex flex-col gap-6">
       {/* Tab layout */}
-      <Tabs defaultValue="details">
+      <Tabs value={tabFromUrl} onValueChange={handleTabChange}>
         <TabsList variant="line">
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="prompts">Prompts</TabsTrigger>
@@ -424,6 +440,9 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
         </TabsContent>
 
         <TabsContent value="members" className="flex flex-col gap-2">
+          <p className="py-2 text-xs text-muted-foreground">
+            Tip: tap a member to see their past contributions.
+          </p>
           {members === undefined ? (
             // Loading skeleton
             <>
@@ -452,11 +471,8 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
                 const roleLabel =
                   member.role === 'admin' ? (memberIsOwner ? 'Admin · Owner' : 'Admin') : 'Member'
 
-                return (
-                  <div
-                    key={member.userId}
-                    className="flex items-center gap-3 rounded-lg border border-border bg-card p-3"
-                  >
+                const rowInner = (
+                  <>
                     <Avatar>
                       <AvatarImage src={member.imageUrl || undefined} alt={member.name} />
                       <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
@@ -466,8 +482,35 @@ export function CircleSettings({ circleId }: CircleSettingsProps) {
                       <p className="text-sm font-medium text-foreground truncate">
                         {isSelf ? 'You' : member.name}
                       </p>
-                      <span className="text-xs text-muted-foreground">{roleLabel}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {roleLabel}
+                        {member.blocked && (
+                          <span className="ml-2 inline-block rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-destructive">
+                            Blocked
+                          </span>
+                        )}
+                      </span>
                     </div>
+                  </>
+                )
+
+                return (
+                  <div
+                    key={member.userId}
+                    className="flex items-center gap-3 rounded-lg border border-border bg-card p-3"
+                  >
+                    {member.blocked ? (
+                      <div className="flex flex-1 items-center gap-3 min-w-0 opacity-60">
+                        {rowInner}
+                      </div>
+                    ) : (
+                      <Link
+                        href={`/dashboard/circles/${circleId}/members/${member.userId}?returnTo=${encodeURIComponent(profileReturnTo)}`}
+                        className="flex flex-1 items-center gap-3 min-w-0 transition-opacity hover:opacity-80"
+                      >
+                        {rowInner}
+                      </Link>
+                    )}
 
                     {canManage && (
                       <DropdownMenu>

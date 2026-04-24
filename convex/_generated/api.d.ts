@@ -19,6 +19,7 @@ import type * as http from '../http.js'
 import type * as lib_constants from '../lib/constants.js'
 import type * as lib_dates from '../lib/dates.js'
 import type * as lib_sentry from '../lib/sentry.js'
+import type * as memberProfiles from '../memberProfiles.js'
 import type * as memberships from '../memberships.js'
 import type * as newsletterEmails from '../newsletterEmails.js'
 import type * as newsletterHelpers from '../newsletterHelpers.js'
@@ -48,6 +49,7 @@ declare const fullApi: ApiFromModules<{
   'lib/constants': typeof lib_constants
   'lib/dates': typeof lib_dates
   'lib/sentry': typeof lib_sentry
+  memberProfiles: typeof memberProfiles
   memberships: typeof memberships
   newsletterEmails: typeof newsletterEmails
   newsletterHelpers: typeof newsletterHelpers

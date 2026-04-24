@@ -21,6 +21,7 @@ interface MediaItem {
 
 interface Response {
   responseId?: string
+  memberUserId?: string
   memberName: string
   memberAvatarUrl?: string | null
   text: string
@@ -208,6 +209,7 @@ export function NewsletterView({
             key={index}
             promptTitle={section.promptTitle}
             responses={section.responses}
+            circleId={circleId}
             reactionsByResponseId={reactionsByResponseId ?? undefined}
           />
         ))}

@@ -1,5 +1,59 @@
 import { internalQuery, internalMutation } from './_generated/server'
+import type { MutationCtx, QueryCtx } from './_generated/server'
+import type { Id } from './_generated/dataModel'
 import { v } from 'convex/values'
+
+export interface ResolvedMediaItem {
+  type: 'image' | 'video'
+  url: string
+  thumbnailUrl?: string
+}
+
+/**
+ * Resolve all media attached to a response into renderable URLs.
+ * Images come from Convex storage; videos resolve to Mux HLS + thumbnail.
+ * Shared between newsletter compile and member profile queries.
+ */
+export async function resolveResponseMedia(
+  ctx: QueryCtx | MutationCtx,
+  responseId: Id<'responses'>
+): Promise<ResolvedMediaItem[]> {
+  const mediaItems = await ctx.db
+    .query('media')
+    .withIndex('by_response', (q) => q.eq('responseId', responseId))
+    .collect()
+  const sortedMedia = mediaItems.sort((a, b) => a.order - b.order)
+
+  const resolved: ResolvedMediaItem[] = []
+  for (const m of sortedMedia) {
+    if (m.type === 'image' && m.storageId) {
+      const url = await ctx.storage.getUrl(m.storageId)
+      if (url) resolved.push({ type: 'image', url })
+    } else if (m.type === 'video' && m.muxAssetId) {
+      const video = await ctx.db
+        .query('videos')
+        .withIndex('by_asset_id', (q) => q.eq('assetId', m.muxAssetId!))
+        .first()
+      if (video?.playbackId) {
+        resolved.push({
+          type: 'video',
+          url: `https://stream.mux.com/${video.playbackId}.m3u8`,
+          thumbnailUrl: `https://image.mux.com/${video.playbackId}/thumbnail.jpg?width=640&height=360&fit_mode=smartcrop`,
+        })
+      }
+    } else if (m.type === 'video' && m.videoId) {
+      const video = await ctx.db.get(m.videoId)
+      if (video?.playbackId) {
+        resolved.push({
+          type: 'video',
+          url: `https://stream.mux.com/${video.playbackId}.m3u8`,
+          thumbnailUrl: `https://image.mux.com/${video.playbackId}/thumbnail.jpg?width=640&height=360&fit_mode=smartcrop`,
+        })
+      }
+    }
+  }
+  return resolved
+}
 
 /**
  * Internal query to get newsletter data needed for sending emails.

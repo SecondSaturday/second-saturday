@@ -6,6 +6,7 @@ interface MediaItem {
 
 interface Response {
   responseId?: string
+  memberUserId?: string
   memberName: string
   text: string
   media?: MediaItem[]

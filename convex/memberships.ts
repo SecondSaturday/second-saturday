@@ -34,6 +34,7 @@ export const getCircleMembers = query({
           userId: m.userId,
           role: m.role,
           joinedAt: m.joinedAt,
+          blocked: m.blocked ?? false,
           name: memberUser?.name ?? memberUser?.email ?? 'Unknown',
           imageUrl: memberUser?.imageUrl,
         }

@@ -2,8 +2,10 @@
 
 import { useState } from 'react'
 import { Play } from 'lucide-react'
+import Link from 'next/link'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ReactionStrip, type ServerReaction } from './ReactionStrip'
+import type { Id } from '../../../convex/_generated/dataModel'
 
 interface MediaItem {
   type: 'image' | 'video'
@@ -19,6 +21,13 @@ interface MemberResponseProps {
   media?: MediaItem[]
   showDivider?: boolean
   reactions?: ServerReaction[]
+  /** When false, suppresses the reactions strip entirely (including its query). */
+  showReactions?: boolean
+  /** If both provided, the avatar+name footer links to the member profile page. */
+  memberUserId?: Id<'users'>
+  circleId?: Id<'circles'>
+  /** Optional prompt heading rendered above the text (used on the profile view). */
+  promptText?: string
 }
 
 function getInitials(name: string): string {
@@ -37,8 +46,25 @@ export function MemberResponse({
   media,
   showDivider = false,
   reactions,
+  showReactions = true,
+  memberUserId,
+  circleId,
+  promptText,
 }: MemberResponseProps) {
   const [expandedImage, setExpandedImage] = useState<string | null>(null)
+
+  const footerInner = (
+    <>
+      <Avatar className="size-6">
+        <AvatarImage src={memberAvatarUrl ?? undefined} alt={memberName} />
+        <AvatarFallback className="bg-primary/10 text-[9px] font-semibold text-primary">
+          {getInitials(memberName)}
+        </AvatarFallback>
+      </Avatar>
+      <span className="text-xs text-muted-foreground">{memberName}</span>
+    </>
+  )
+  const canLinkFooter = !!(memberUserId && circleId)
 
   return (
     <div>
@@ -50,6 +76,11 @@ export function MemberResponse({
       )}
 
       <div className="flex flex-col gap-3 px-6 py-5">
+        {promptText && (
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {promptText}
+          </p>
+        )}
         {/* Media on top */}
         {media && media.length > 0 && (
           <div
@@ -105,18 +136,21 @@ export function MemberResponse({
         <p className="whitespace-pre-wrap text-base leading-relaxed text-foreground/90">{text}</p>
 
         {/* Reactions strip (only when responseId present — back-compat for old newsletters) */}
-        {responseId && <ReactionStrip responseId={responseId} reactions={reactions} />}
+        {showReactions && responseId && (
+          <ReactionStrip responseId={responseId} reactions={reactions} />
+        )}
 
         {/* Avatar + name at bottom */}
-        <div className="flex items-center gap-2">
-          <Avatar className="size-6">
-            <AvatarImage src={memberAvatarUrl ?? undefined} alt={memberName} />
-            <AvatarFallback className="bg-primary/10 text-[9px] font-semibold text-primary">
-              {getInitials(memberName)}
-            </AvatarFallback>
-          </Avatar>
-          <span className="text-xs text-muted-foreground">{memberName}</span>
-        </div>
+        {canLinkFooter ? (
+          <Link
+            href={`/dashboard/circles/${circleId}/members/${memberUserId}`}
+            className="flex items-center gap-2 transition-opacity hover:opacity-80"
+          >
+            {footerInner}
+          </Link>
+        ) : (
+          <div className="flex items-center gap-2">{footerInner}</div>
+        )}
       </div>
 
       {/* Lightbox for expanded image */}
