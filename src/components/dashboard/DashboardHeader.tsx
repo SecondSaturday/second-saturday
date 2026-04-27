@@ -1,7 +1,7 @@
 'use client'
 
 import { UserButton } from '@clerk/nextjs'
-import { MoreVertical, PlusCircle, Bell } from 'lucide-react'
+import { MoreVertical, PlusCircle, Bell, BookHeart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -23,6 +23,12 @@ export function DashboardHeader() {
       />
 
       <div className="flex-1" />
+
+      <Button variant="ghost" size="icon" className="size-9" asChild aria-label="Your Month">
+        <Link href="/dashboard/my-month">
+          <BookHeart className="size-5" />
+        </Link>
+      </Button>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
