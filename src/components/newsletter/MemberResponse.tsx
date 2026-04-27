@@ -5,6 +5,7 @@ import { Play } from 'lucide-react'
 import Link from 'next/link'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ReactionStrip, type ServerReaction } from './ReactionStrip'
+import { CommentsStrip, type ServerComment } from './CommentsStrip'
 import type { Id } from '../../../convex/_generated/dataModel'
 
 interface MediaItem {
@@ -23,6 +24,8 @@ interface MemberResponseProps {
   reactions?: ServerReaction[]
   /** When false, suppresses the reactions strip entirely (including its query). */
   showReactions?: boolean
+  /** Server-fetched comments for this response (batched at the newsletter level). */
+  comments?: ServerComment[]
   /** If both provided, the avatar+name footer links to the member profile page. */
   memberUserId?: Id<'users'>
   circleId?: Id<'circles'>
@@ -47,6 +50,7 @@ export function MemberResponse({
   showDivider = false,
   reactions,
   showReactions = true,
+  comments,
   memberUserId,
   circleId,
   promptText,
@@ -138,6 +142,15 @@ export function MemberResponse({
         {/* Reactions strip (only when responseId present — back-compat for old newsletters) */}
         {showReactions && responseId && (
           <ReactionStrip responseId={responseId} reactions={reactions} />
+        )}
+
+        {/* Comments strip — same back-compat gating as reactions, plus circleId required. */}
+        {responseId && circleId && (
+          <CommentsStrip
+            responseId={responseId as Id<'responses'>}
+            comments={comments}
+            circleId={circleId}
+          />
         )}
 
         {/* Avatar + name at bottom */}

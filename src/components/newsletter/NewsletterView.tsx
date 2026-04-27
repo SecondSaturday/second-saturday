@@ -88,6 +88,10 @@ export function NewsletterView({
     api.reactions.listReactionsForResponses,
     allResponseIds.length > 0 ? { responseIds: allResponseIds as Id<'responses'>[] } : 'skip'
   )
+  const commentsByResponseId = useQuery(
+    api.comments.listCommentsForResponses,
+    allResponseIds.length > 0 ? { responseIds: allResponseIds as Id<'responses'>[] } : 'skip'
+  )
 
   const formattedDate = publishedAt
     ? new Date(publishedAt).toLocaleDateString('en-US', {
@@ -211,6 +215,7 @@ export function NewsletterView({
             responses={section.responses}
             circleId={circleId}
             reactionsByResponseId={reactionsByResponseId ?? undefined}
+            commentsByResponseId={commentsByResponseId ?? undefined}
           />
         ))}
 

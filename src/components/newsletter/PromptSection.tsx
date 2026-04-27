@@ -1,5 +1,6 @@
 import { MemberResponse } from './MemberResponse'
 import type { ServerReaction } from './ReactionStrip'
+import type { ServerComment } from './CommentsStrip'
 import type { Id } from '../../../convex/_generated/dataModel'
 
 interface MediaItem {
@@ -22,6 +23,7 @@ interface PromptSectionProps {
   responses: Response[]
   circleId?: string
   reactionsByResponseId?: Record<string, ServerReaction[]>
+  commentsByResponseId?: Record<string, ServerComment[]>
 }
 
 export function PromptSection({
@@ -29,6 +31,7 @@ export function PromptSection({
   responses,
   circleId,
   reactionsByResponseId,
+  commentsByResponseId,
 }: PromptSectionProps) {
   return (
     <div className="space-y-4">
@@ -48,6 +51,7 @@ export function PromptSection({
             reactions={
               response.responseId ? reactionsByResponseId?.[response.responseId] : undefined
             }
+            comments={response.responseId ? commentsByResponseId?.[response.responseId] : undefined}
           />
         ))}
       </div>

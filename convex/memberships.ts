@@ -326,6 +326,13 @@ async function cascadeDeleteCircle(ctx: MutationCtx, circleId: Id<'circles'>) {
       for (const r of reactions) {
         await ctx.db.delete(r._id)
       }
+      const comments = await ctx.db
+        .query('comments')
+        .withIndex('by_response', (q) => q.eq('responseId', resp._id))
+        .collect()
+      for (const c of comments) {
+        await ctx.db.delete(c._id)
+      }
       await ctx.db.delete(resp._id)
     }
     await ctx.db.delete(sub._id)
@@ -517,6 +524,23 @@ export const removeMember = mutation({
         )
         .collect()
 
+      const softDeleteAt = Date.now()
+
+      // Soft-delete every comment authored by the removed user across this circle.
+      // Use the by_user index instead of walking every submission/response.
+      const userCommentsAnywhere = await ctx.db
+        .query('comments')
+        .withIndex('by_user', (q) => q.eq('userId', args.targetUserId))
+        .collect()
+      for (const c of userCommentsAnywhere) {
+        if (c.deletedAt) continue
+        const resp = await ctx.db.get(c.responseId)
+        if (!resp) continue
+        const sub = await ctx.db.get(resp.submissionId)
+        if (!sub || sub.circleId !== args.circleId) continue
+        await ctx.db.patch(c._id, { deletedAt: softDeleteAt })
+      }
+
       for (const submission of userSubmissions) {
         // Redact all responses for this submission
         const responses = await ctx.db
@@ -526,6 +550,25 @@ export const removeMember = mutation({
 
         for (const response of responses) {
           await ctx.db.patch(response._id, { text: '[Removed]', updatedAt: Date.now() })
+
+          // Wipe ALL engagement on this redacted response so the thread fully disappears.
+          // Other members' comments on a [Removed] post would otherwise hang under nothing.
+          const allComments = await ctx.db
+            .query('comments')
+            .withIndex('by_response', (q) => q.eq('responseId', response._id))
+            .collect()
+          for (const c of allComments) {
+            if (!c.deletedAt) {
+              await ctx.db.patch(c._id, { deletedAt: softDeleteAt })
+            }
+          }
+          const allReactions = await ctx.db
+            .query('reactions')
+            .withIndex('by_response', (q) => q.eq('responseId', response._id))
+            .collect()
+          for (const r of allReactions) {
+            await ctx.db.delete(r._id)
+          }
 
           // Delete associated media
           const mediaItems = await ctx.db

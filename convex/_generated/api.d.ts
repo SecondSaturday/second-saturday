@@ -11,6 +11,7 @@
 import type * as authHelpers from '../authHelpers.js'
 import type * as circles from '../circles.js'
 import type * as cleanup from '../cleanup.js'
+import type * as comments from '../comments.js'
 import type * as crons from '../crons.js'
 import type * as e2eCleanup from '../e2eCleanup.js'
 import type * as emails from '../emails.js'
@@ -34,6 +35,7 @@ import type * as submissions from '../submissions.js'
 import type * as users from '../users.js'
 import type * as videoActions from '../videoActions.js'
 import type * as videos from '../videos.js'
+import type * as yourMonth from '../yourMonth.js'
 
 import type { ApiFromModules, FilterApi, FunctionReference } from 'convex/server'
 
@@ -41,6 +43,7 @@ declare const fullApi: ApiFromModules<{
   authHelpers: typeof authHelpers
   circles: typeof circles
   cleanup: typeof cleanup
+  comments: typeof comments
   crons: typeof crons
   e2eCleanup: typeof e2eCleanup
   emails: typeof emails
@@ -64,6 +67,7 @@ declare const fullApi: ApiFromModules<{
   users: typeof users
   videoActions: typeof videoActions
   videos: typeof videos
+  yourMonth: typeof yourMonth
 }>
 
 /**
